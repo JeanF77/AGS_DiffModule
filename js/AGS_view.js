@@ -1746,54 +1746,68 @@ function gui_DisplayDiff () {
       // ---- "dataTables" permet de creer des tables avec un tas de sous-fonctions (tri, flitres ...)
 
       g_DiffTable.dataTable({
-         destroy: true,                                     // ---- Regenerer la table a chaque nouvel affichage
-         dom: "<'row'<'col-sm-2'l><'col-sm-2'B><'col-sm-4'f><'col-sm-4'p>>" + "<'row'<'col-sm-12'tr>>" + "<'row'<'col-sm-6'i><'col-sm-6'p>>",
+         destroy: true,
+         layout: {
+            top1:        { searchPanes: { cascadePanes: true, layout: 'columns-2', initCollapsed: true } },
+            topStart:    'pageLength',
+            topEnd:      'search',
+            bottomStart: 'info',
+            bottomEnd:   'paging'
+         },
          paging: true,
-         autoWidth: true,
          scrollY: "600px",
-         columnDefs: [                                      // ---- Specifier les colonnes qui peuvent etre triees
-            { targets: [RPT_COL_ID], type: "num" },
-            { targets: [RPT_COL_TYPE, RPT_COL_DIFFLABEL, RPT_COL_ATTR, RPT_COL_OLDVAL, RPT_COL_NEWVAL], type: "string" },
-            { targets: [RPT_COL_OLDVAL, RPT_COL_NEWVAL, RPT_COL_DIFFCONTENT], orderable: false },
-            { targets: [RPT_COL_DIFFCONTENT], searchable: false },
-            { searchPanes: {                                // ---- Selectionner les colonnes filtrables dans SearchPanes
-                   show: true
-               },
-               targets: [RPT_COL_TYPE, RPT_COL_DIFFLABEL, RPT_COL_ATTR]
-            },
-            { searchPanes: {                                // ---- Masquer les colonnes non filtrables dans SearchPanes
-                   show: false
-               },
-               targets: [RPT_COL_ID, RPT_COL_OLDVAL, RPT_COL_NEWVAL, RPT_COL_DIFFCONTENT]
-            },
-         ],
-         columns: [                                         // ---- Largeur des colonnes
-            { width: "5%", targets: [RPT_COL_ID] },
-            { width: "10%", targets: [RPT_COL_TYPE] },
-            { width: "15%", targets: [RPT_COL_DIFFLABEL] },
-            { width: "10%", targets: [RPT_COL_ATTR] },
-            { width: "15%", targets: [RPT_COL_OLDVAL] },
-            { width: "15%", targets: [RPT_COL_NEWVAL] },
-            { width: "30%", targets: [RPT_COL_DIFFCONTENT] }
-         ],
-         buttons: [  
-            { extend: 'searchPanes',                        // ---- Activer le bouton pour "searchPan"
-              config: {
-                  cascadePanes: true,
-                  layout: 'columns-2'
-              }
+         columnDefs: [
+            { targets: RPT_COL_ID,       type: "num",    width: "4%"  },
+            { targets: RPT_COL_TYPE,     type: "string", width: "9%",  searchPanes: { show: true  } },
+            { targets: RPT_COL_ATTR,     type: "string", width: "9%",  searchPanes: { show: true  } },
+            { targets: RPT_COL_OLDVAL,   type: "string", width: "14%", orderable: false, searchPanes: { show: false } },
+            { targets: RPT_COL_NEWVAL,   type: "string", width: "14%", orderable: false, searchPanes: { show: false } },
+            { targets: RPT_COL_DIFFCONTENT, width: "35%", orderable: false, searchable: false, searchPanes: { show: false } },
+            { targets: RPT_COL_ID,       searchPanes: { show: false } },
+            {
+               targets: RPT_COL_DIFFLABEL,
+               type: "string",
+               width: "15%",
+               searchPanes: { show: true },
+               render: function(data, type) {             // ---- Badge coloré selon le type de différence
+                  if (type !== 'display') return data;
+                  const BADGE = {};
+                  BADGE[DIFF_LABEL[DIFF_NEWARTIFACT]]         = 'bg-success';
+                  BADGE[DIFF_LABEL[DIFF_DELARTIFACT]]         = 'bg-danger';
+                  BADGE[DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]] = 'bg-warning text-dark';
+                  BADGE[DIFF_LABEL[DIFF_CUSTATTRCHANGED]]     = 'bg-warning text-dark';
+                  BADGE[DIFF_LABEL[DIFF_CONTENTCHANGED]]      = 'bg-primary';
+                  BADGE[DIFF_LABEL[DIFF_IMAGECHANGED]]        = 'bg-info text-dark';
+                  BADGE[DIFF_LABEL[DIFF_IMAGENEW]]            = 'bg-info text-dark';
+                  BADGE[DIFF_LABEL[DIFF_IMAGEDEL]]            = 'bg-secondary';
+                  BADGE[DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]]   = 'bg-danger';
+                  BADGE[DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]]   = 'bg-danger';
+                  BADGE[DIFF_LABEL[DIFF_TAGCHANGED]]          = 'bg-warning text-dark';
+                  let cls = BADGE[data] || 'bg-secondary';
+                  return '<span class="badge ' + cls + ' text-wrap">' + data + '</span>';
+               }
             }
          ],
-         drawCallback: function (settings) {                // ---- Necessaire pour les fenetres modales Bootstrap !
+         drawCallback: function (settings) {               // ---- Necessaire pour les fenetres modales Bootstrap !
             document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
                new bootstrap.Tooltip(el, { placement: 'left', html: true });
             });
          },
-         rowCallback: function(row, data, index){           // ---- Changer la couleur de certaines cellules, selon son contenu
-            if(data[RPT_COL_DIFFLABEL] === DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW] || data[RPT_COL_DIFFLABEL] === DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]){
-               $(row).find('td:eq(2)').css('color', 'red');
-               $(row).find('td:eq(2)').css('font-weight', 'bold');
-            }
+         rowCallback: function(row, data) {               // ---- Colorier les lignes selon le type de différence
+            const ROW_CLASS = {};
+            ROW_CLASS[DIFF_LABEL[DIFF_NEWARTIFACT]]         = 'table-success';
+            ROW_CLASS[DIFF_LABEL[DIFF_DELARTIFACT]]         = 'table-danger';
+            ROW_CLASS[DIFF_LABEL[DIFF_CONTENTCHANGED]]      = 'table-primary';
+            ROW_CLASS[DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]] = 'table-warning';
+            ROW_CLASS[DIFF_LABEL[DIFF_CUSTATTRCHANGED]]     = 'table-warning';
+            ROW_CLASS[DIFF_LABEL[DIFF_TAGCHANGED]]          = 'table-warning';
+            ROW_CLASS[DIFF_LABEL[DIFF_IMAGECHANGED]]        = 'table-info';
+            ROW_CLASS[DIFF_LABEL[DIFF_IMAGENEW]]            = 'table-info';
+            ROW_CLASS[DIFF_LABEL[DIFF_IMAGEDEL]]            = 'table-secondary';
+            ROW_CLASS[DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]]   = 'table-danger';
+            ROW_CLASS[DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]]   = 'table-danger';
+            let cls = ROW_CLASS[data[RPT_COL_DIFFLABEL]];
+            if (cls) $(row).addClass(cls);
          }
       });
 
@@ -1894,7 +1908,7 @@ function export_report (isCompact) {
 
    // ---- Si le rapport a été filtre, alors ne recuperer que les lignes pertinentes !
 
-   myFilteredTable = g_DiffTable._('tr', {filter:'applied'});  // ---- Bonne combine pour recuperer les lignes filtrees d'une DataTable !
+   myFilteredTable = g_DiffTable.DataTable().rows({filter: 'applied'}).data().toArray();
 
    // ---- Importer le resultat de comparaison dans une table temporaire
 

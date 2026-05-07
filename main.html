@@ -15,16 +15,20 @@
 
 	<script src="../ELM_sharedLib/handlebars/handlebars.min-v4.7.8.js"></script>
 
-	<!-- DataTables -->
-	<script src="../ELM_sharedLib/datatables/datatables.min.js"></script>
-	<link rel="stylesheet" href="../ELM_sharedLib/datatables/datatables.min.css">
-	<script src="../ELM_sharedLib/datatables/searchpanes-1.2.2/js/dataTables.searchPanes.min.js"></script>
-	<link rel="stylesheet" href="../ELM_sharedLib/datatables/searchpanes-1.2.2/css/searchPanes.dataTables.min.css">
-	<script src="../ELM_sharedLib/datatables/buttons-1.6.5/js/dataTables.buttons.min.js"></script>
-	<link rel="stylesheet" href="../ELM_sharedLib/datatables/buttons-1.6.5/css/buttons.dataTables.min.css">
-	<script src="../ELM_sharedLib/datatables/select-1.3.1/js/dataTables.select.min.js"></script>
-	<link rel="stylesheet" href="../ELM_sharedLib/datatables/select-1.3.1/css/select.dataTables.min.css">
-	<link rel="stylesheet" href="../ELM_sharedLib/datatables/fixedheader-3.1.7/css/fixedHeader.bootstrap.min.css">
+	<!-- DataTables 2.1.8 + Bootstrap 5 -->
+	<script src="../ELM_sharedLib/datatables/datatables-2.1.8/dataTables.min.js"></script>
+	<script src="../ELM_sharedLib/datatables/datatables-2.1.8/dataTables.bootstrap5.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/datatables-2.1.8/css/dataTables.bootstrap5.min.css">
+	<script src="../ELM_sharedLib/datatables/searchpanes-2.3.3/dataTables.searchPanes.min.js"></script>
+	<script src="../ELM_sharedLib/datatables/searchpanes-2.3.3/searchPanes.bootstrap5.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/searchpanes-2.3.3/css/searchPanes.bootstrap5.min.css">
+	<script src="../ELM_sharedLib/datatables/buttons-3.2.0/dataTables.buttons.min.js"></script>
+	<script src="../ELM_sharedLib/datatables/buttons-3.2.0/buttons.bootstrap5.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/buttons-3.2.0/css/buttons.bootstrap5.min.css">
+	<script src="../ELM_sharedLib/datatables/select-2.1.0/dataTables.select.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/select-2.1.0/css/select.bootstrap5.min.css">
+	<script src="../ELM_sharedLib/datatables/fixheader-4.0.1/dataTables.fixedHeader.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/fixheader-4.0.1/css/fixedHeader.bootstrap5.min.css">
 	<script src="../ELM_sharedLib/datatables/JSZip-2.5.0/jszip.min.js"></script>
 
 	<!-- Diff2Html -->
@@ -393,7 +397,7 @@
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body p-2">
-				<table class="display" id="gui_diffresult">
+				<table class="display table table-sm table-hover" id="gui_diffresult">
 					<!-- Rapport de comparaison -->
 				</table>
 			</div>
