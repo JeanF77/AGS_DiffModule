@@ -9,8 +9,8 @@
 	<!-- Frameworks -->
 	<script src="lib/jquery/jquery-3.7.1.min.js"></script>
 
-	<script src="js/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-	<link rel="stylesheet" href="js/bootstrap/3.4.1/css/bootstrap.min.css">
+	<link rel="stylesheet" href="../ELM_sharedLib/bootstrap/5.3.3/css/bootstrap.min.css">
+	<script src="../ELM_sharedLib/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 
 	<script src="../ELM_sharedLib/handlebars/handlebars.min-v4.7.8.js"></script>
 
@@ -69,32 +69,31 @@
 
 <body>
 	<div class="container-fluid">
-		<div class="panel panel-info">
-			<div class="panel-heading">
-				<h3 class="panel-title">Module Compare</h3>
+		<div class="card border-info">
+			<div class="card-header">
+				<h3 class="card-title">Module Compare</h3>
 			</div>
-			<div class="panel-body">
+			<div class="card-body">
 				<div class="row">
 					<div class="col-lg-12">
-						<div class="panel panel-default">
-							<div class="panel-heading">
+						<div class="card">
+							<div class="card-header">
 								<div class="row">
 									<div class="col-lg-2">
 										<h4><strong>Mode :</strong></h4>
 									</div>
 									<div class="col-lg-10">
 										<div class="btn-group">
-											<button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_compareModeBtn">
-												Source <span class="caret"></span>
-											</button>
+											<button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_compareModeBtn">
+												Source											</button>
 											<ul class="dropdown-menu" aria-labelledby="gui_compareModeBtn" id="gui_compareModeBtnContent">
-												<li><a href="#">Label Mode</a></li>
+												<li><a class="dropdown-item" href="#">Label Mode</a></li>
 											</ul>
 										</div>										
 									</div>	
 								</div>
 							</div>
-							<div class="panel-body">
+							<div class="card-body">
 								<!-- Selectionner projet -->
 								<div class="row" id="gui_blckproject">
 									<div class="col-lg-2">
@@ -102,12 +101,11 @@
 									</div>
 									<div class="col-lg-9">
 										<div class="btn-group">
-											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_projectBtn">
-												Select Project <span class="caret"></span>
-											</button>
+											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_projectBtn">
+												Select Project											</button>
 											<ul class="dropdown-menu" aria-labelledby="gui_projectBtn" id="gui_projectBtnContent">
-												<li><a href="#">Project 1</a></li>
-												<li><a href="#">Project 2</a></li>
+												<li><a class="dropdown-item" href="#">Project 1</a></li>
+												<li><a class="dropdown-item" href="#">Project 2</a></li>
 											</ul>
 										</div>									
 									</div>
@@ -130,12 +128,11 @@
 									</div>
 									<div class="col-lg-9">
 										<div class="btn-group">
-											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_componentBtn">
-												Select Component <span class="caret"></span>
-											</button>
+											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_componentBtn">
+												Select Component											</button>
 											<ul class="dropdown-menu" aria-labelledby="gui_componentBtn" id="gui_componentBtnContent">
-												<li><a href="#">Component 1</a></li>
-												<li><a href="#">Component 2</a></li>
+												<li><a class="dropdown-item" href="#">Component 1</a></li>
+												<li><a class="dropdown-item" href="#">Component 2</a></li>
 											</ul>
 										</div>									
 									</div>
@@ -158,12 +155,11 @@
 									</div>
 									<div class="col-lg-3">
 										<div class="btn-group">
-											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldconfigBtn">
-												Select Configuration <span class="caret"></span>
-											</button>
+											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldconfigBtn">
+												Select Configuration											</button>
 											<ul class="dropdown-menu" aria-labelledby="gui_oldconfigBtn" id="gui_oldconfigBtnContent">
-												<li><a href="#">Configuration 1</a></li>
-												<li><a href="#">Configuration 2</a></li>
+												<li><a class="dropdown-item" href="#">Configuration 1</a></li>
+												<li><a class="dropdown-item" href="#">Configuration 2</a></li>
 											</ul>
 										</div>
 									</div>
@@ -171,19 +167,18 @@
 										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_oldconfigIndLoading" style="display: none;">
 										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_oldconfigIndSuccess" style="display: none;">
 										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_oldconfigIndError" style="display: none;">
-										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_oldconfigIndWarning" style="display: none;" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Identical configurations !">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_oldconfigIndWarning" style="display: none;" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top" data-bs-content="Identical configurations !">
 									</div>
 									<div class="col-lg-2">
 										<h5>Old Module :</h5>
 									</div>
 									<div class="col-lg-3">
 										<div class="btn-group">
-											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldmoduleBtn">
-												Select Module <span class="caret"></span>
-											</button>
+											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldmoduleBtn">
+												Select Module											</button>
 											<ul class="dropdown-menu" aria-labelledby="gui_oldmoduleBtn" id="gui_oldmoduleBtnContent">
-												<li><a href="#">Module 1</a></li>
-												<li><a href="#">Module 2</a></li>
+												<li><a class="dropdown-item" href="#">Module 1</a></li>
+												<li><a class="dropdown-item" href="#">Module 2</a></li>
 											</ul>
 										</div>
 									</div>
@@ -217,12 +212,11 @@
 									</div>
 									<div class="col-lg-3">
 										<div class="btn-group">
-											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newconfigBtn">
-												Select Configuration <span class="caret"></span>
-											</button>
+											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newconfigBtn">
+												Select Configuration											</button>
 											<ul class="dropdown-menu" aria-labelledby="gui_newconfigBtn" id="gui_newconfigBtnContent">
-												<li><a href="#">Configuration 1</a></li>
-												<li><a href="#">Configuration 2</a></li>
+												<li><a class="dropdown-item" href="#">Configuration 1</a></li>
+												<li><a class="dropdown-item" href="#">Configuration 2</a></li>
 											</ul>
 										</div>									
 									</div>
@@ -230,19 +224,18 @@
 										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_newconfigIndLoading" style="display: none;">
 										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_newconfigIndSuccess" style="display: none;">
 										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_newconfigIndError" style="display: none;">
-										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_newconfigIndWarning" style="display: none;" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Identical configurations !">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_newconfigIndWarning" style="display: none;" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top" data-bs-content="Identical configurations !">
 									</div>
 									<div class="col-lg-2">
 										<h5>New Module :</h5>
 									</div>
 									<div class="col-lg-3">
 										<div class="btn-group">
-											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newmoduleBtn">
-												Select Module <span class="caret"></span>
-											</button>
+											<button type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newmoduleBtn">
+												Select Module											</button>
 											<ul class="dropdown-menu" aria-labelledby="gui_newmoduleBtn" id="gui_newmoduleBtnContent">
-												<li><a href="#">Module 1</a></li>
-												<li><a href="#">Module 2</a></li>
+												<li><a class="dropdown-item" href="#">Module 1</a></li>
+												<li><a class="dropdown-item" href="#">Module 2</a></li>
 											</ul>
 										</div>									
 									</div>
@@ -262,7 +255,7 @@
 										<form>
 											<div class="form-group">
 												<label for="gui_newreqifload">Choose ReqIF File</label>
-												<input type="file" class="form-control-file" id="gui_newreqifload" accept=".reqifz" required>
+												<input type="file" class="form-control" id="gui_newreqifload" accept=".reqifz" required>
 											</div>
 										</form>
 									</div>
@@ -280,7 +273,7 @@
 								</div>
 								<div>
 									<!-- Charger les modules -->
-									<button type="button" class="btn btn-primary" id="gui_loadmoduleBtn" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Only type 'Text' artifacts are analyzed !">Load Modules</button>
+									<button type="button" class="btn btn-primary" id="gui_loadmoduleBtn" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="right" data-bs-content="Only type 'Text' artifacts are analyzed !">Load Modules</button>
 								</div>
 							</div>
 						</div>
@@ -288,11 +281,11 @@
 				</div>
 				<div class="row">
 					<div class="col-lg-6">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<h3 class="panel-title"><b>Old Module Info</b></h3>
+						<div class="card">
+							<div class="card-header">
+								<h3 class="card-title"><b>Old Module Info</b></h3>
 							</div>
-							<div class="panel-body">
+							<div class="card-body">
 								<table class="table" id="gui_olddivstat">
 									<!-- Resultats Old module -->
 								</table>
@@ -300,11 +293,11 @@
 						</div>
 					</div>
 					<div class="col-lg-6">
-						<div class="panel panel-default">
-							<div class="panel-heading">
-								<h3 class="panel-title"><b>New Module Info</b></h3>
+						<div class="card">
+							<div class="card-header">
+								<h3 class="card-title"><b>New Module Info</b></h3>
 							</div>
-							<div class="panel-body">
+							<div class="card-body">
 								<table class="table" id="gui_newdivstat">
 									<!-- Statistiques New module -->
 								</table>
@@ -315,7 +308,7 @@
 								<button type="button" class="btn btn-primary" id="gui_compareBtn"
 									style="display:none">Compare All</button>
 								<button type="button" class="btn btn-primary" id="gui_displaydiffBtn" style="display:none"
-									data-toggle="modal" href="#gui_diffmodal">Display Results</button>
+									data-bs-toggle="modal" data-bs-target="#gui_diffmodal">Display Results</button>
 							</div>
 						</div>
 					</div>
@@ -339,10 +332,8 @@
 		<div class="modal-dialog modal-lg" role="document" style="width:90%;">
 			<div class="modal-content">
 				<div class="modal-header">
-					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-					<center>
-						<h4 class="modal-title"><b>Module Diff Report</b></h4>
-					</center>
+					<h4 class="modal-title w-100 text-center"><b>Module Diff Report</b></h4>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
 					<table class="display" id="gui_diffresult">
@@ -356,12 +347,12 @@
 						</div>
 						<div class="col-md-3">
 							<center>
-								<button type="button" class="btn btn-primary" id="gui_exportBtn" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Open the exported HTML report file with MS-Excel !">Standard Report</button>
+								<button type="button" class="btn btn-primary" id="gui_exportBtn" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top" data-bs-content="Open the exported HTML report file with MS-Excel !">Standard Report</button>
 							</center>	
 						</div>
 						<div class="col-md-3">
 							<center>
-								<button type="button" class="btn btn-primary" id="gui_exportCompactBtn" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Open the exported HTML report file with MS-Excel !">Compact Export</button>
+								<button type="button" class="btn btn-primary" id="gui_exportCompactBtn" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top" data-bs-content="Open the exported HTML report file with MS-Excel !">Compact Export</button>
 							</center>	
 						</div>
 						<div class="col-md-3">

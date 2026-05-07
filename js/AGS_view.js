@@ -723,12 +723,12 @@ function gui_BuildProjectBtn (data) {
    // ---- Trier les projets et construire le bouton
 
    if (g_ProjectList.length === 1) { // ---- 1 seul element, donc rien a trier
-	   myItem.push('<li id="' + g_ProjectList[0].id + '" onclick="gui_SelectProject (this)"><a>'+ g_ProjectList[0].name + '</a></li>');
+	   myItem.push('<li id="' + g_ProjectList[0].id + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">'+ g_ProjectList[0].name + '</a></li>');
    } else if (g_ProjectList.length > 1) {
 	   g_ProjectList.sort((a, b) => (a.name > b.name) ? 1 : -1);
    
 	   for (let i=0; i < g_ProjectList.length; i++) {
-	      myItem.push('<li id="' + g_ProjectList[i].id + '" onclick="gui_SelectProject (this)"><a>'+ g_ProjectList[i].name + '</a></li>');
+	      myItem.push('<li id="' + g_ProjectList[i].id + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">'+ g_ProjectList[i].name + '</a></li>');
 	   }
    }
 
@@ -851,7 +851,7 @@ function gui_BuildComponentBtn (data) {
    g_ComponentList.sort((a, b) => (a.name > b.name) ? 1 : -1);
 
    for (let myComponent of g_ComponentList) {
-      myItem.push('<li id="' + myComponent.id + '" onclick="gui_SelectComponent (this)"><a><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> '+ myComponent.name + '</a></li>');
+      myItem.push('<li id="' + myComponent.id + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> '+ myComponent.name + '</a></li>');
    }
 
    // ---- Activer le bouton s'il existe des composants
@@ -1007,10 +1007,10 @@ function gui_BuildConfBtn (data) {
             myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
          }
 
-         myItem = '<li id="_old' + myConf.id + '" onclick="gui_SelectConf (this)"><a>' + myConfIcon + myConf.name + '</a></li>';
+         myItem = '<li id="_old' + myConf.id + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.name + '</a></li>';
          gui_mgtButtonDrop (GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
 
-         myItem = '<li id="_new' + myConf.id + '" onclick="gui_SelectConf (this)"><a>' + myConfIcon + myConf.name + '</a></li>';
+         myItem = '<li id="_new' + myConf.id + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.name + '</a></li>';
          gui_mgtButtonDrop (GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
       }
    }
@@ -1269,9 +1269,9 @@ function gui_BuildModuleBtn (data, moduleList, moduleObj, btnName, loadInd) {
 
       for (let myModule of moduleList) {
          if (moduleObj.status === IS_OLD) {
-            myItem = '<li id="_old' + myModule.id + '" onclick="gui_SelectModule (this)"><a><img src="' + GUI_ICON_MODULE + '" alt="Module"> '+ myModule.name + '</a></li>';
+            myItem = '<li id="_old' + myModule.id + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> '+ myModule.name + '</a></li>';
          } else {
-            myItem = '<li id="_new' + myModule.id + '" onclick="gui_SelectModule (this)"><a><img src="' + GUI_ICON_MODULE + '" alt="Module"> '+ myModule.name + '</a></li>';
+            myItem = '<li id="_new' + myModule.id + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> '+ myModule.name + '</a></li>';
          }
    
          gui_mgtButtonDrop (btnName, ACTION_APPENDCONTENT, myItem);
@@ -1785,9 +1785,8 @@ function gui_DisplayDiff () {
             }
          ],
          drawCallback: function (settings) {                // ---- Necessaire pour les fenetres modales Bootstrap !
-            $('[data-toggle="tooltip"]').tooltip({
-               placement: 'left',
-               html: true
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+               new bootstrap.Tooltip(el, { placement: 'left', html: true });
             });
          },
          rowCallback: function(row, data, index){           // ---- Changer la couleur de certaines cellules, selon son contenu
@@ -2145,7 +2144,7 @@ function view_init () {
    // ---- Compare Mode
 
    for (let i=0; i < COMPARE_MODE_LABEL.length; i++) {
-      myItem.push ('<li id="CompareMode-' + i + '" onclick="gui_selectCompareMode (this)"><a>'+ COMPARE_MODE_LABEL[i] + '</a></li>');
+      myItem.push ('<li id="CompareMode-' + i + '" onclick="gui_selectCompareMode (this)"><a class="dropdown-item">'+ COMPARE_MODE_LABEL[i] + '</a></li>');
    }
 
    gui_mgtButtonDrop (GUI_ITEM_COMPAREMODE_BTN_ROOT, ACTION_SETLABEL, COMPARE_MODE_LABEL[COMPARE_MODE_LOCALLOCAL]);
@@ -2162,9 +2161,9 @@ function view_init () {
 
    // ---- Bootstrap : initialisation "popover"
 
-   $(function () {
-      $('[data-toggle="popover"]').popover()
-   })
+   document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
+      new bootstrap.Popover(el);
+   });
    
    // ---- Get Project List
 
