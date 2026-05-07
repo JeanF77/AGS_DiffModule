@@ -2164,6 +2164,24 @@ function view_init () {
    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function(el) {
       new bootstrap.Popover(el);
    });
+
+   // ---- Filtrage des dropdowns avec champ de recherche
+
+   $(document).on('input', '.dropdown-search', function() {
+      let filter = $(this).val().toLowerCase();
+      $(this).closest('.dropdown-menu').find('ul > li').each(function() {
+         $(this).toggle($(this).text().toLowerCase().includes(filter));
+      });
+   });
+
+   $(document).on('shown.bs.dropdown', '[data-bs-toggle="dropdown"]', function() {
+      let search = $(this).next('.dropdown-menu').find('.dropdown-search');
+      if (search.length) {
+         search.val('');
+         search.closest('.dropdown-menu').find('ul > li').show();
+         search.trigger('focus');
+      }
+   });
    
    // ---- Get Project List
 
