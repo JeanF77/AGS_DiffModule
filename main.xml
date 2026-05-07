@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- ***********************************************************************************
+                   (C) Copyright 2019 by Safran Aircraft Engines
+                            All rights reserved
+
+v2021a : version initiale
+v2021b : implémentation du LiF 43046
+************************************************************************************ -->
+
+<Module specificationVersion="2.0">
+
+	<ModulePrefs title="AGS Diff Module" icon="resources/compare_icon.png" height="1000" scrolling="true">
+		<Require feature="dynamic-height"/>
+	</ModulePrefs>
+
+	<UserPref name="JAZZ_RMHOSTNAME" display_name="RM Hostname" datatype="string" required="true" default_value="https://rm-host-fqdn:port"></UserPref>
+
+	<Content type="html" href="./main.html"/>
+
+</Module>

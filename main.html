@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta http-equiv="Cache-Control" content="no-cache" />
+	<meta http-equiv="Pragma" content="no-cache" />
+
+	<!-- Frameworks -->
+	<script src="lib/jquery/jquery-3.7.1.min.js"></script>
+
+	<script src="js/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="js/bootstrap/3.4.1/css/bootstrap.min.css">
+
+	<script src="../ELM_sharedLib/handlebars/handlebars.min-v4.7.8.js"></script>
+
+	<!-- DataTables : Provide table with display, sort, filter functions -->
+	<script src="../ELM_sharedLib/datatables/datatables.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/datatables.min.css">
+
+	<script src="../ELM_sharedLib/datatables/searchpanes-1.2.2/js/dataTables.searchPanes.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/searchpanes-1.2.2/css/searchPanes.dataTables.min.css">
+	<script src="../ELM_sharedLib/datatables/buttons-1.6.5/js/dataTables.buttons.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/buttons-1.6.5/css/buttons.dataTables.min.css">
+	<script src="../ELM_sharedLib/datatables/select-1.3.1/js/dataTables.select.min.js"></script>
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/select-1.3.1/css/select.dataTables.min.css">
+	<link rel="stylesheet" href="../ELM_sharedLib/datatables/fixedheader-3.1.7/css/fixedHeader.bootstrap.min.css">
+	<script src="../ELM_sharedLib/datatables/JSZip-2.5.0/jszip.min.js"></script>
+
+	<!-- Diff2Html : Display Diff from Unified Diff -->
+	<link rel="stylesheet" href="lib/highlight/11.5.1/default.min.css"> <!-- The highlight.js css should come before the diff2html css -->
+	<link rel="stylesheet" href="lib/diff2html/diff2html.min.css">
+	<script src="lib/diff2html/diff2html.min.js"></script>
+	<script src="lib/compare/5.1.0/diff.min.js"></script> <!-- Provide Unified Diff for diff2html-->
+	
+	<script src="lib/utils/jszip.min.js"></script>
+	<script src="lib/utils/download.js"></script>
+	<script src="lib/utils/AGS_utils.js"></script>
+
+	<script src="lib/compare/jsdiff.js"></script>
+
+	<!-- Internal Tools -->
+	<script src="js/AGS_main.js"></script>
+	<script src="js/AGS_controller.js"></script>
+	<script src="js/AGS_view.js"></script>
+	<script src="js/AGS_cmptools.js"></script>
+	<script src="js/AGS_reqif.js"></script>
+	<script src="lib/compare/AGS_compare.js"></script>
+
+	<link rel="icon" type="image/png" href="resources/compare_icon.png" />
+
+	<!-- HTML Templates -->
+	<script id="templ-compare-stat" type="text/x-handlebars-template">
+		New artifacts : <b>{{nb_newart}}</b><br>
+		Deleted artifacts : <b>{{nb_delart}}</b><br>
+		Updated artifact type : <b>{{nb_updtype}}</b><br>
+		Updated custom attributes : <b>{{nb_updattr}}</b><br>
+		Updated tags : <b>{{nb_updtag}}</b><br>
+		Updated primary text : <b>{{nb_updcontent}}</b><br>
+		New images : <b>{{nb_newimg}}</b><br>
+		Updated images : <b>{{nb_updimg}}</b><br>
+		Images deleted : <b>{{nb_delimg}}</b><br>
+		Images not found in new module ! : <b>{{nb_imgnew}}</b><br>
+		Images not found in old module ! : <b>{{nb_imgold}}</b><br>
+	</script>
+
+	<title>DNG Module Compare</title>
+</head>
+
+<body>
+	<div class="container-fluid">
+		<div class="panel panel-info">
+			<div class="panel-heading">
+				<h3 class="panel-title">Module Compare</h3>
+			</div>
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-lg-12">
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<div class="row">
+									<div class="col-lg-2">
+										<h4><strong>Mode :</strong></h4>
+									</div>
+									<div class="col-lg-10">
+										<div class="btn-group">
+											<button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_compareModeBtn">
+												Source <span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="gui_compareModeBtn" id="gui_compareModeBtnContent">
+												<li><a href="#">Label Mode</a></li>
+											</ul>
+										</div>										
+									</div>	
+								</div>
+							</div>
+							<div class="panel-body">
+								<!-- Selectionner projet -->
+								<div class="row" id="gui_blckproject">
+									<div class="col-lg-2">
+										<h5>Project :</h5>
+									</div>
+									<div class="col-lg-9">
+										<div class="btn-group">
+											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_projectBtn">
+												Select Project <span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="gui_projectBtn" id="gui_projectBtnContent">
+												<li><a href="#">Project 1</a></li>
+												<li><a href="#">Project 2</a></li>
+											</ul>
+										</div>									
+									</div>
+									<div class="col-lg-1">
+										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_projectIndLoading" style="display: none;">
+										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_projectIndSuccess" style="display: none;">
+										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_projectIndError" style="display: none;">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_projectIndWarning" style="display: none;">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col">
+										<p></p>
+									</div>
+								</div>
+								<!-- Selectionner composant -->
+								<div class="row" id="gui_blckcomponent">
+									<div class="col-lg-2">
+										<h5>Component :</h5>
+									</div>
+									<div class="col-lg-9">
+										<div class="btn-group">
+											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_componentBtn">
+												Select Component <span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="gui_componentBtn" id="gui_componentBtnContent">
+												<li><a href="#">Component 1</a></li>
+												<li><a href="#">Component 2</a></li>
+											</ul>
+										</div>									
+									</div>
+									<div class="col-lg-1">
+										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_componentIndLoading" style="display: none;">
+										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_componentIndSuccess" style="display: none;">
+										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_componentIndError" style="display: none;">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_componentIndWarning" style="display: none;">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col">
+										<p></p>
+									</div>
+								</div>
+								<!-- Selectionner Configuration 1 -->
+								<div class="row" id="gui_blckoldconfig">
+									<div class="col-lg-2">
+										<h5>Old Configuration :</h5>
+									</div>
+									<div class="col-lg-3">
+										<div class="btn-group">
+											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldconfigBtn">
+												Select Configuration <span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="gui_oldconfigBtn" id="gui_oldconfigBtnContent">
+												<li><a href="#">Configuration 1</a></li>
+												<li><a href="#">Configuration 2</a></li>
+											</ul>
+										</div>
+									</div>
+									<div class="col-lg-1">
+										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_oldconfigIndLoading" style="display: none;">
+										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_oldconfigIndSuccess" style="display: none;">
+										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_oldconfigIndError" style="display: none;">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_oldconfigIndWarning" style="display: none;" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Identical configurations !">
+									</div>
+									<div class="col-lg-2">
+										<h5>Old Module :</h5>
+									</div>
+									<div class="col-lg-3">
+										<div class="btn-group">
+											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldmoduleBtn">
+												Select Module <span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="gui_oldmoduleBtn" id="gui_oldmoduleBtnContent">
+												<li><a href="#">Module 1</a></li>
+												<li><a href="#">Module 2</a></li>
+											</ul>
+										</div>
+									</div>
+									<div class="col-lg-1">
+										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_oldmoduleIndLoading" style="display: none;">
+										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_oldmoduleIndSuccess" style="display: none;">
+										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_oldmoduleIndError" style="display: none;">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_oldmoduleIndWarning" style="display: none;">
+									</div>
+								</div>
+								<div class="row" id="gui_blckoldreqif" style="display:none;">
+									<!-- Charger ReqIF -->
+									<div class="col-lg-2">
+										<h5>Not ye implemented</h5>
+									</div>
+									<div class="col-lg-9">
+										<h5>Not ye implemented</h5>
+									</div>
+									<div class="col-lg-1">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col">
+										<p></p>
+									</div>
+								</div>
+								<!-- Selectionner Configuration 2 -->
+								<div class="row" id="gui_blcknewconfig">
+									<div class="col-lg-2">
+										<h5>New Configuration :</h5>
+									</div>
+									<div class="col-lg-3">
+										<div class="btn-group">
+											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newconfigBtn">
+												Select Configuration <span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="gui_newconfigBtn" id="gui_newconfigBtnContent">
+												<li><a href="#">Configuration 1</a></li>
+												<li><a href="#">Configuration 2</a></li>
+											</ul>
+										</div>									
+									</div>
+									<div class="col-lg-1">
+										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_newconfigIndLoading" style="display: none;">
+										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_newconfigIndSuccess" style="display: none;">
+										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_newconfigIndError" style="display: none;">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_newconfigIndWarning" style="display: none;" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Identical configurations !">
+									</div>
+									<div class="col-lg-2">
+										<h5>New Module :</h5>
+									</div>
+									<div class="col-lg-3">
+										<div class="btn-group">
+											<button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newmoduleBtn">
+												Select Module <span class="caret"></span>
+											</button>
+											<ul class="dropdown-menu" aria-labelledby="gui_newmoduleBtn" id="gui_newmoduleBtnContent">
+												<li><a href="#">Module 1</a></li>
+												<li><a href="#">Module 2</a></li>
+											</ul>
+										</div>									
+									</div>
+									<div class="col-lg-1">
+										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_newmoduleIndLoading" style="display: none;">
+										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_newmoduleIndSuccess" style="display: none;">
+										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_newmoduleIndError" style="display: none;">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_newmoduleIndWarning" style="display: none;">
+									</div>
+								</div>
+								<div class="row" id="gui_blcknewreqif" style="display:none;">
+									<!-- Charger ReqIF -->
+									<div class="col-lg-2">
+										<h5>ReqIF File :</h5>
+									</div>
+									<div class="col-lg-9">
+										<form>
+											<div class="form-group">
+												<label for="gui_newreqifload">Choose ReqIF File</label>
+												<input type="file" class="form-control-file" id="gui_newreqifload" accept=".reqifz" required>
+											</div>
+										</form>
+									</div>
+									<div class="col-lg-1">
+										<img src="resources/icon_loading.gif" alt="Loading Icon" width="25" height="25" id="gui_newreqifloadIndLoading" style="display: none;">
+										<img src="resources/icon_success.png" alt="Success Icon" width="25" height="25" id="gui_newreqifloadIndSuccess" style="display: none;">
+										<img src="resources/icon_failed.png" alt="Failed Icon" width="25" height="25" id="gui_newreqifloadIndError" style="display: none;">
+										<img src="resources/icon_warning.png" alt="Warnind Icon" width="25" height="25" id="gui_newreqifloadIndWarning" style="display: none;">
+									</div>
+								</div>
+								<div class="row">
+									<div class="col">
+										<p></p>
+									</div>
+								</div>
+								<div>
+									<!-- Charger les modules -->
+									<button type="button" class="btn btn-primary" id="gui_loadmoduleBtn" data-toggle="popover" data-trigger="hover" data-placement="right" data-content="Only type 'Text' artifacts are analyzed !">Load Modules</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-lg-6">
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<h3 class="panel-title"><b>Old Module Info</b></h3>
+							</div>
+							<div class="panel-body">
+								<table class="table" id="gui_olddivstat">
+									<!-- Resultats Old module -->
+								</table>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-6">
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<h3 class="panel-title"><b>New Module Info</b></h3>
+							</div>
+							<div class="panel-body">
+								<table class="table" id="gui_newdivstat">
+									<!-- Statistiques New module -->
+								</table>
+								<div id="gui_newloadingcellstat" style="display:none">
+									<img src="./resources/loading.gif" alt="Compare is running" width="35" height="35" style="display: block;margin-left: auto;margin-right: auto;">
+									<p style="text-align:center"><b>Compare in Progress ...</b></p>
+								</div>			
+								<button type="button" class="btn btn-primary" id="gui_compareBtn"
+									style="display:none">Compare All</button>
+								<button type="button" class="btn btn-primary" id="gui_displaydiffBtn" style="display:none"
+									data-toggle="modal" href="#gui_diffmodal">Display Results</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- <div class="row">
+					<div class="col-lg-12" id="gui_alert">
+						<div class="alert alert-warning" role="alert" id="gui_alertWarning" style="display: none;">Warnig Alert Text</div>
+						<div class="alert alert-danger" role="alert" id="gui_alertError" style="display: none;">Error Alert Text</div>
+					</div>
+				</div> -->
+				<!-- Alertes -->
+				<p></p>
+				<div id="gui_alert">
+				</div>
+				<p></p>
+			</div>
+		</div>
+	</div>
+	<!-- Panneau modal pour afficher les resultats -->
+	<div class="modal modal-wide fade" id="gui_diffmodal" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-lg" role="document" style="width:90%;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+					<center>
+						<h4 class="modal-title"><b>Module Diff Report</b></h4>
+					</center>
+				</div>
+				<div class="modal-body">
+					<table class="display" id="gui_diffresult">
+						<!-- Rapport de comparaison -->
+					</table>
+				</div>
+				<div class="modal-footer">
+					<div class="row">
+						<div class="col-md-3">
+							<!-- Empty -->
+						</div>
+						<div class="col-md-3">
+							<center>
+								<button type="button" class="btn btn-primary" id="gui_exportBtn" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Open the exported HTML report file with MS-Excel !">Standard Report</button>
+							</center>	
+						</div>
+						<div class="col-md-3">
+							<center>
+								<button type="button" class="btn btn-primary" id="gui_exportCompactBtn" data-toggle="popover" data-trigger="hover" data-placement="top" data-content="Open the exported HTML report file with MS-Excel !">Compact Export</button>
+							</center>	
+						</div>
+						<div class="col-md-3">
+							<!-- Empty -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<br />
+	<div id="widget_version">
+		<center>Widget version : v2024a</center>
+	</div>
+	<!-- Zone temporaire pour la generation du rapport d'exportation -->
+	<div style="display:none">
+		<table id="gui_tmpexport">
+		</table>
+	</div>
+</body>
+
+</html>

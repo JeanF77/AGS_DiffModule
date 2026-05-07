@@ -1,0 +1,8 @@
+# NFS temporary files
+.nfs*
+
+# Editor / IDE
+.vscode/
+*.swp
+*.swo
+*~
