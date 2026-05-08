@@ -11,14 +11,14 @@
 */
 
 /* ------------------------------------------------------------------------------
-	---- Constantes
+   ---- Constantes
    --------------------------------------------------------------------------- */
 
-const WIDGET_PREF_RM_HOSTNAME		= "JAZZ_RMHOSTNAME";
+const WIDGET_PREF_RM_HOSTNAME = "JAZZ_RMHOSTNAME";
 
 // const RM_HOSTNAME_STATIC       = "https://jazzrm-dev.snm.snecma:9443";
 // const RM_HOSTNAME_STATIC       = "https://agsrm-3ap.snm.snecma:9443";
-// const RM_HOSTNAME_STATIC       = "https://agsrm-2.snm.snecma:9443";
+const RM_HOSTNAME_STATIC = "https://elm703.raoulnet";
 
 /* ------------------------------------------------------------------------------
    ---- Classes
@@ -27,7 +27,7 @@ const WIDGET_PREF_RM_HOSTNAME		= "JAZZ_RMHOSTNAME";
 /* ------------------------------------------------------------------------------
    ---- Variables globales
    --------------------------------------------------------------------------- */
-   
+
 var RM_HOSTNAME;           // ---- Nom d'hote du serveur RM
 
 /* ------------------------------------------------------------------------------
@@ -35,15 +35,18 @@ var RM_HOSTNAME;           // ---- Nom d'hote du serveur RM
    --------------------------------------------------------------------------- */
 
 /** Point d'entree du widget */
- 
-$().ready(function() {
 
-	// ---- External Parameters
+$().ready(function () {
 
-	RM_HOSTNAME = widget_get_UserPref (WIDGET_PREF_RM_HOSTNAME);
-   // RM_HOSTNAME = RM_HOSTNAME_STATIC;
+   // ---- External Parameters
 
-	// ---- Main view
+   try {
+      RM_HOSTNAME = widget_get_UserPref(WIDGET_PREF_RM_HOSTNAME);
+   } catch (e) {
+      RM_HOSTNAME = RM_HOSTNAME_STATIC;
+   }
 
-	view_init ();
+   // ---- Main view
+
+   view_init();
 });

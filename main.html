@@ -38,11 +38,13 @@
 	<script src="lib/compare/5.1.0/diff.min.js"></script>
 
 	<script src="lib/utils/jszip.min.js"></script>
-	<script src="lib/utils/download.js"></script>
+	<script src="lib/utils/xlsx-js-style.min.js"></script>
 	<script src="lib/utils/AGS_utils.js"></script>
 	<script src="lib/compare/jsdiff.js"></script>
 
 	<!-- Internal Tools -->
+
+	<script src="js/export_Report.js"></script>
 	<script src="js/AGS_main.js"></script>
 	<script src="js/AGS_controller.js"></script>
 	<script src="js/AGS_view.js"></script>
@@ -50,13 +52,9 @@
 	<script src="js/AGS_reqif.js"></script>
 	<script src="lib/compare/AGS_compare.js"></script>
 
-	<link rel="icon" type="image/png" href="resources/compare_icon.png" />
+	<link rel="stylesheet" href="css/widget.css" />
 
-	<style>
-		.spin-icon { animation: spin 0.8s linear infinite; }
-		@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-		.ind-icon { font-size: 1.1rem; vertical-align: middle; }
-	</style>
+	<link rel="icon" type="image/png" href="resources/compare_icon.png" />
 
 	<!-- HTML Templates -->
 	<script id="templ-compare-stat" type="text/x-handlebars-template">
@@ -77,350 +75,400 @@
 </head>
 
 <body class="bg-light">
-<div class="container-fluid py-3">
+	<div class="container-fluid py-3">
 
-	<!-- ===== Main card ===== -->
-	<div class="card shadow-sm border-0">
+		<!-- ===== Main card ===== -->
+		<div class="card shadow-sm border-0">
 
-		<!-- Header : title + mode selector -->
-		<div class="card-header bg-primary text-white d-flex align-items-center gap-3 py-2">
-			<i class="bi bi-arrows-angle-contract fs-5"></i>
-			<span class="fw-semibold">DNG Module Compare</span>
-			<div class="ms-auto d-flex align-items-center gap-2">
-				<i class="bi bi-sliders text-white-50"></i>
-				<small class="text-white-50">Mode :</small>
-				<div class="btn-group btn-group-sm">
-					<button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown"
-						aria-haspopup="true" aria-expanded="false" id="gui_compareModeBtn">
-						Source
-					</button>
-					<ul class="dropdown-menu" aria-labelledby="gui_compareModeBtn" id="gui_compareModeBtnContent">
-						<li><a class="dropdown-item" href="#">Label Mode</a></li>
-					</ul>
-				</div>
-			</div>
-		</div>
-
-		<div class="card-body p-3">
-
-			<!-- ===== Configuration section ===== -->
-			<div class="bg-white rounded-2 border p-3 mb-3">
-
-				<!-- Project -->
-				<div class="row g-2 align-items-center mb-2" id="gui_blckproject">
-					<div class="col-auto">
-						<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
-							<i class="bi bi-folder2-open text-primary me-1"></i>Project
-						</span>
-					</div>
-					<div class="col-auto">
-						<div class="btn-group btn-group-sm">
-							<button type="button" class="btn btn-outline-primary dropdown-toggle"
-								data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_projectBtn">
-								Select Project
-							</button>
-							<div class="dropdown-menu p-0" aria-labelledby="gui_projectBtn">
-								<div class="px-2 pt-2 pb-1">
-									<input type="text" class="form-control form-control-sm dropdown-search" placeholder="Filter...">
-								</div>
-								<div class="dropdown-divider m-0"></div>
-								<ul id="gui_projectBtnContent" style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
-									<li><a class="dropdown-item" href="#">Project 1</a></li>
-									<li><a class="dropdown-item" href="#">Project 2</a></li>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon" id="gui_projectIndLoading" style="display:none;"></i>
-						<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_projectIndSuccess" style="display:none;"></i>
-						<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_projectIndError" style="display:none;"></i>
-						<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_projectIndWarning" style="display:none;"></i>
-					</div>
-				</div>
-
-				<!-- Component -->
-				<div class="row g-2 align-items-center mb-2" id="gui_blckcomponent">
-					<div class="col-auto">
-						<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
-							<i class="bi bi-diagram-3 text-primary me-1"></i>Component
-						</span>
-					</div>
-					<div class="col-auto">
-						<div class="btn-group btn-group-sm">
-							<button type="button" class="btn btn-outline-primary dropdown-toggle"
-								data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_componentBtn">
-								Select Component
-							</button>
-							<div class="dropdown-menu p-0" aria-labelledby="gui_componentBtn">
-								<div class="px-2 pt-2 pb-1">
-									<input type="text" class="form-control form-control-sm dropdown-search" placeholder="Filter...">
-								</div>
-								<div class="dropdown-divider m-0"></div>
-								<ul id="gui_componentBtnContent" style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
-									<li><a class="dropdown-item" href="#">Component 1</a></li>
-									<li><a class="dropdown-item" href="#">Component 2</a></li>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon" id="gui_componentIndLoading" style="display:none;"></i>
-						<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_componentIndSuccess" style="display:none;"></i>
-						<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_componentIndError" style="display:none;"></i>
-						<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_componentIndWarning" style="display:none;"></i>
-					</div>
-				</div>
-
-				<!-- Old Configuration + Old Module -->
-				<div class="row g-2 align-items-center mb-2" id="gui_blckoldconfig">
-					<div class="col-auto">
-						<span class="badge bg-primary">OLD</span>
-					</div>
-					<div class="col-auto">
-						<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
-							<i class="bi bi-clock-history text-primary me-1"></i>Config
-						</span>
-					</div>
-					<div class="col-auto">
-						<div class="btn-group btn-group-sm">
-							<button type="button" class="btn btn-outline-primary dropdown-toggle"
-								data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldconfigBtn">
-								Select Configuration
-							</button>
-							<div class="dropdown-menu p-0" aria-labelledby="gui_oldconfigBtn">
-								<div class="px-2 pt-2 pb-1">
-									<input type="text" class="form-control form-control-sm dropdown-search" placeholder="Filter...">
-								</div>
-								<div class="dropdown-divider m-0"></div>
-								<ul id="gui_oldconfigBtnContent" style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
-									<li><a class="dropdown-item" href="#">Configuration 1</a></li>
-									<li><a class="dropdown-item" href="#">Configuration 2</a></li>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon" id="gui_oldconfigIndLoading" style="display:none;"></i>
-						<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_oldconfigIndSuccess" style="display:none;"></i>
-						<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_oldconfigIndError" style="display:none;"></i>
-						<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_oldconfigIndWarning" style="display:none;"
-							data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top" data-bs-content="Identical configurations !"></i>
-					</div>
-					<div class="col-auto">
-						<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
-							<i class="bi bi-file-earmark-text text-primary me-1"></i>Module
-						</span>
-					</div>
-					<div class="col-auto">
-						<div class="btn-group btn-group-sm">
-							<button type="button" class="btn btn-outline-primary dropdown-toggle"
-								data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_oldmoduleBtn">
-								Select Module
-							</button>
-							<ul class="dropdown-menu" aria-labelledby="gui_oldmoduleBtn" id="gui_oldmoduleBtnContent">
-								<li><a class="dropdown-item" href="#">Module 1</a></li>
-								<li><a class="dropdown-item" href="#">Module 2</a></li>
-							</ul>
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon" id="gui_oldmoduleIndLoading" style="display:none;"></i>
-						<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_oldmoduleIndSuccess" style="display:none;"></i>
-						<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_oldmoduleIndError" style="display:none;"></i>
-						<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_oldmoduleIndWarning" style="display:none;"></i>
-					</div>
-				</div>
-
-				<!-- ReqIF Old (hidden) -->
-				<div class="row g-2 align-items-center mb-2" id="gui_blckoldreqif" style="display:none;">
-					<div class="col-auto">
-						<span class="text-muted small">Not yet implemented</span>
-					</div>
-				</div>
-
-				<!-- New Configuration + New Module -->
-				<div class="row g-2 align-items-center mb-2" id="gui_blcknewconfig">
-					<div class="col-auto">
-						<span class="badge bg-success">NEW</span>
-					</div>
-					<div class="col-auto">
-						<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
-							<i class="bi bi-clock text-success me-1"></i>Config
-						</span>
-					</div>
-					<div class="col-auto">
-						<div class="btn-group btn-group-sm">
-							<button type="button" class="btn btn-outline-success dropdown-toggle"
-								data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newconfigBtn">
-								Select Configuration
-							</button>
-							<div class="dropdown-menu p-0" aria-labelledby="gui_newconfigBtn">
-								<div class="px-2 pt-2 pb-1">
-									<input type="text" class="form-control form-control-sm dropdown-search" placeholder="Filter...">
-								</div>
-								<div class="dropdown-divider m-0"></div>
-								<ul id="gui_newconfigBtnContent" style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
-									<li><a class="dropdown-item" href="#">Configuration 1</a></li>
-									<li><a class="dropdown-item" href="#">Configuration 2</a></li>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon" id="gui_newconfigIndLoading" style="display:none;"></i>
-						<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_newconfigIndSuccess" style="display:none;"></i>
-						<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_newconfigIndError" style="display:none;"></i>
-						<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_newconfigIndWarning" style="display:none;"
-							data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top" data-bs-content="Identical configurations !"></i>
-					</div>
-					<div class="col-auto">
-						<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
-							<i class="bi bi-file-earmark-text text-success me-1"></i>Module
-						</span>
-					</div>
-					<div class="col-auto">
-						<div class="btn-group btn-group-sm">
-							<button type="button" class="btn btn-outline-success dropdown-toggle"
-								data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="gui_newmoduleBtn">
-								Select Module
-							</button>
-							<ul class="dropdown-menu" aria-labelledby="gui_newmoduleBtn" id="gui_newmoduleBtnContent">
-								<li><a class="dropdown-item" href="#">Module 1</a></li>
-								<li><a class="dropdown-item" href="#">Module 2</a></li>
-							</ul>
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon" id="gui_newmoduleIndLoading" style="display:none;"></i>
-						<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_newmoduleIndSuccess" style="display:none;"></i>
-						<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_newmoduleIndError" style="display:none;"></i>
-						<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_newmoduleIndWarning" style="display:none;"></i>
-					</div>
-				</div>
-
-				<!-- ReqIF New (hidden) -->
-				<div class="row g-2 align-items-center mb-2" id="gui_blcknewreqif" style="display:none;">
-					<div class="col-auto">
-						<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
-							<i class="bi bi-file-earmark-code text-success me-1"></i>ReqIF File
-						</span>
-					</div>
-					<div class="col-auto">
-						<input type="file" class="form-control form-control-sm" id="gui_newreqifload" accept=".reqifz" required>
-					</div>
-					<div class="col-auto">
-						<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon" id="gui_newreqifloadIndLoading" style="display:none;"></i>
-						<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_newreqifloadIndSuccess" style="display:none;"></i>
-						<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_newreqifloadIndError" style="display:none;"></i>
-						<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_newreqifloadIndWarning" style="display:none;"></i>
-					</div>
-				</div>
-
-				<!-- Load Modules button -->
-				<div class="row g-2 align-items-center mt-1">
-					<div class="col-auto">
-						<button type="button" class="btn btn-primary btn-sm" id="gui_loadmoduleBtn"
-							data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="right"
-							data-bs-content="Only type 'Text' artifacts are analyzed !">
-							<i class="bi bi-cloud-download me-1"></i>Load Modules
+			<!-- Header : title + mode selector -->
+			<div class="card-header bg-primary text-white d-flex align-items-center gap-3 py-2">
+				<i class="bi bi-arrows-angle-contract fs-5"></i>
+				<span class="fw-semibold">DNG Module Compare</span>
+				<div class="ms-auto d-flex align-items-center gap-2">
+					<i class="bi bi-sliders text-white-50"></i>
+					<small class="text-white-50">Mode :</small>
+					<div class="btn-group btn-group-sm">
+						<button type="button" class="btn btn-warning dropdown-toggle" data-bs-toggle="dropdown"
+							aria-haspopup="true" aria-expanded="false" id="gui_compareModeBtn">
+							Source
 						</button>
+						<ul class="dropdown-menu" aria-labelledby="gui_compareModeBtn" id="gui_compareModeBtnContent">
+							<li><a class="dropdown-item" href="#">Label Mode</a></li>
+						</ul>
 					</div>
 				</div>
+			</div>
 
-			</div><!-- end configuration section -->
+			<div class="card-body p-3">
 
-			<!-- ===== Old / New Module Info ===== -->
-			<div class="row g-3">
-				<div class="col-lg-6">
-					<div class="card h-100 border-primary">
-						<div class="card-header bg-primary bg-opacity-10 py-2 d-flex align-items-center gap-2">
-							<i class="bi bi-file-earmark-text text-primary"></i>
-							<h6 class="card-title mb-0 fw-semibold text-primary">Old Module Info</h6>
+				<!-- ===== Configuration section ===== -->
+				<div class="bg-white rounded-2 border p-3 mb-3">
+
+					<!-- Project -->
+					<div class="row g-2 align-items-center mb-2" id="gui_blckproject">
+						<div class="col-auto">
+							<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
+								<i class="bi bi-folder2-open text-primary me-1"></i>Project
+							</span>
 						</div>
-						<div class="card-body py-2">
-							<table class="table table-sm" id="gui_olddivstat">
-								<!-- Resultats Old module -->
-							</table>
-						</div>
-					</div>
-				</div>
-				<div class="col-lg-6">
-					<div class="card h-100 border-success">
-						<div class="card-header bg-success bg-opacity-10 py-2 d-flex align-items-center gap-2">
-							<i class="bi bi-file-earmark-text text-success"></i>
-							<h6 class="card-title mb-0 fw-semibold text-success">New Module Info</h6>
-						</div>
-						<div class="card-body py-2">
-							<table class="table table-sm" id="gui_newdivstat">
-								<!-- Statistiques New module -->
-							</table>
-							<div id="gui_newloadingcellstat" style="display:none">
-								<div class="text-center py-2">
-									<i class="bi bi-arrow-clockwise text-primary spin-icon" style="font-size:2rem;"></i>
-									<p class="mt-1 mb-0 fw-semibold">Compare in Progress ...</p>
+						<div class="col-auto">
+							<div class="btn-group btn-group-sm">
+								<button type="button" class="btn btn-outline-primary dropdown-toggle"
+									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+									id="gui_projectBtn">
+									Select Project
+								</button>
+								<div class="dropdown-menu p-0" aria-labelledby="gui_projectBtn">
+									<div class="px-2 pt-2 pb-1">
+										<input type="text" class="form-control form-control-sm dropdown-search"
+											placeholder="Filter...">
+									</div>
+									<div class="dropdown-divider m-0"></div>
+									<ul id="gui_projectBtnContent"
+										style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
+										<li><a class="dropdown-item" href="#">Project 1</a></li>
+										<li><a class="dropdown-item" href="#">Project 2</a></li>
+									</ul>
 								</div>
 							</div>
-							<div class="d-flex gap-2 mt-2">
-								<button type="button" class="btn btn-warning btn-sm" id="gui_compareBtn" style="display:none">
-									<i class="bi bi-play-circle me-1"></i>Compare All
+						</div>
+						<div class="col-auto">
+							<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon"
+								id="gui_projectIndLoading" style="display:none;"></i>
+							<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_projectIndSuccess"
+								style="display:none;"></i>
+							<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_projectIndError"
+								style="display:none;"></i>
+							<i class="bi bi-exclamation-triangle-fill text-warning ind-icon" id="gui_projectIndWarning"
+								style="display:none;"></i>
+						</div>
+					</div>
+
+					<!-- Component -->
+					<div class="row g-2 align-items-center mb-2" id="gui_blckcomponent">
+						<div class="col-auto">
+							<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
+								<i class="bi bi-diagram-3 text-primary me-1"></i>Component
+							</span>
+						</div>
+						<div class="col-auto">
+							<div class="btn-group btn-group-sm">
+								<button type="button" class="btn btn-outline-primary dropdown-toggle"
+									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+									id="gui_componentBtn">
+									Select Component
 								</button>
-								<button type="button" class="btn btn-success btn-sm" id="gui_displaydiffBtn" style="display:none"
-									data-bs-toggle="modal" data-bs-target="#gui_diffmodal">
-									<i class="bi bi-eye me-1"></i>Display Results
+								<div class="dropdown-menu p-0" aria-labelledby="gui_componentBtn">
+									<div class="px-2 pt-2 pb-1">
+										<input type="text" class="form-control form-control-sm dropdown-search"
+											placeholder="Filter...">
+									</div>
+									<div class="dropdown-divider m-0"></div>
+									<ul id="gui_componentBtnContent"
+										style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
+										<li><a class="dropdown-item" href="#">Component 1</a></li>
+										<li><a class="dropdown-item" href="#">Component 2</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="col-auto">
+							<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon"
+								id="gui_componentIndLoading" style="display:none;"></i>
+							<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_componentIndSuccess"
+								style="display:none;"></i>
+							<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_componentIndError"
+								style="display:none;"></i>
+							<i class="bi bi-exclamation-triangle-fill text-warning ind-icon"
+								id="gui_componentIndWarning" style="display:none;"></i>
+						</div>
+					</div>
+
+					<!-- Old Configuration + Old Module -->
+					<div class="row g-2 align-items-center mb-2" id="gui_blckoldconfig">
+						<div class="col-auto">
+							<span class="badge bg-primary">OLD</span>
+						</div>
+						<div class="col-auto">
+							<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
+								<i class="bi bi-clock-history text-primary me-1"></i>Config
+							</span>
+						</div>
+						<div class="col-auto">
+							<div class="btn-group btn-group-sm">
+								<button type="button" class="btn btn-outline-primary dropdown-toggle"
+									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+									id="gui_oldconfigBtn">
+									Select Configuration
 								</button>
+								<div class="dropdown-menu p-0" aria-labelledby="gui_oldconfigBtn">
+									<div class="px-2 pt-2 pb-1">
+										<input type="text" class="form-control form-control-sm dropdown-search"
+											placeholder="Filter...">
+									</div>
+									<div class="dropdown-divider m-0"></div>
+									<ul id="gui_oldconfigBtnContent"
+										style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
+										<li><a class="dropdown-item" href="#">Configuration 1</a></li>
+										<li><a class="dropdown-item" href="#">Configuration 2</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="col-auto">
+							<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon"
+								id="gui_oldconfigIndLoading" style="display:none;"></i>
+							<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_oldconfigIndSuccess"
+								style="display:none;"></i>
+							<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_oldconfigIndError"
+								style="display:none;"></i>
+							<i class="bi bi-exclamation-triangle-fill text-warning ind-icon"
+								id="gui_oldconfigIndWarning" style="display:none;" data-bs-toggle="popover"
+								data-bs-trigger="hover" data-bs-placement="top"
+								data-bs-content="Identical configurations !"></i>
+						</div>
+						<div class="col-auto">
+							<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
+								<i class="bi bi-file-earmark-text text-primary me-1"></i>Module
+							</span>
+						</div>
+						<div class="col-auto">
+							<div class="btn-group btn-group-sm">
+								<button type="button" class="btn btn-outline-primary dropdown-toggle"
+									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+									id="gui_oldmoduleBtn">
+									Select Module
+								</button>
+								<ul class="dropdown-menu" aria-labelledby="gui_oldmoduleBtn"
+									id="gui_oldmoduleBtnContent">
+									<li><a class="dropdown-item" href="#">Module 1</a></li>
+									<li><a class="dropdown-item" href="#">Module 2</a></li>
+								</ul>
+							</div>
+						</div>
+						<div class="col-auto">
+							<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon"
+								id="gui_oldmoduleIndLoading" style="display:none;"></i>
+							<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_oldmoduleIndSuccess"
+								style="display:none;"></i>
+							<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_oldmoduleIndError"
+								style="display:none;"></i>
+							<i class="bi bi-exclamation-triangle-fill text-warning ind-icon"
+								id="gui_oldmoduleIndWarning" style="display:none;"></i>
+						</div>
+					</div>
+
+					<!-- ReqIF Old (hidden) -->
+					<div class="row g-2 align-items-center mb-2" id="gui_blckoldreqif" style="display:none;">
+						<div class="col-auto">
+							<span class="text-muted small">Not yet implemented</span>
+						</div>
+					</div>
+
+					<!-- New Configuration + New Module -->
+					<div class="row g-2 align-items-center mb-2" id="gui_blcknewconfig">
+						<div class="col-auto">
+							<span class="badge bg-success">NEW</span>
+						</div>
+						<div class="col-auto">
+							<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
+								<i class="bi bi-clock text-success me-1"></i>Config
+							</span>
+						</div>
+						<div class="col-auto">
+							<div class="btn-group btn-group-sm">
+								<button type="button" class="btn btn-outline-success dropdown-toggle"
+									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+									id="gui_newconfigBtn">
+									Select Configuration
+								</button>
+								<div class="dropdown-menu p-0" aria-labelledby="gui_newconfigBtn">
+									<div class="px-2 pt-2 pb-1">
+										<input type="text" class="form-control form-control-sm dropdown-search"
+											placeholder="Filter...">
+									</div>
+									<div class="dropdown-divider m-0"></div>
+									<ul id="gui_newconfigBtnContent"
+										style="list-style:none; padding:0; margin:0; max-height:250px; overflow-y:auto;">
+										<li><a class="dropdown-item" href="#">Configuration 1</a></li>
+										<li><a class="dropdown-item" href="#">Configuration 2</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div class="col-auto">
+							<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon"
+								id="gui_newconfigIndLoading" style="display:none;"></i>
+							<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_newconfigIndSuccess"
+								style="display:none;"></i>
+							<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_newconfigIndError"
+								style="display:none;"></i>
+							<i class="bi bi-exclamation-triangle-fill text-warning ind-icon"
+								id="gui_newconfigIndWarning" style="display:none;" data-bs-toggle="popover"
+								data-bs-trigger="hover" data-bs-placement="top"
+								data-bs-content="Identical configurations !"></i>
+						</div>
+						<div class="col-auto">
+							<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
+								<i class="bi bi-file-earmark-text text-success me-1"></i>Module
+							</span>
+						</div>
+						<div class="col-auto">
+							<div class="btn-group btn-group-sm">
+								<button type="button" class="btn btn-outline-success dropdown-toggle"
+									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+									id="gui_newmoduleBtn">
+									Select Module
+								</button>
+								<ul class="dropdown-menu" aria-labelledby="gui_newmoduleBtn"
+									id="gui_newmoduleBtnContent">
+									<li><a class="dropdown-item" href="#">Module 1</a></li>
+									<li><a class="dropdown-item" href="#">Module 2</a></li>
+								</ul>
+							</div>
+						</div>
+						<div class="col-auto">
+							<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon"
+								id="gui_newmoduleIndLoading" style="display:none;"></i>
+							<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_newmoduleIndSuccess"
+								style="display:none;"></i>
+							<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_newmoduleIndError"
+								style="display:none;"></i>
+							<i class="bi bi-exclamation-triangle-fill text-warning ind-icon"
+								id="gui_newmoduleIndWarning" style="display:none;"></i>
+						</div>
+					</div>
+
+					<!-- ReqIF New (hidden) -->
+					<div class="row g-2 align-items-center mb-2" id="gui_blcknewreqif" style="display:none;">
+						<div class="col-auto">
+							<span class="col-form-label col-form-label-sm fw-semibold text-nowrap">
+								<i class="bi bi-file-earmark-code text-success me-1"></i>ReqIF File
+							</span>
+						</div>
+						<div class="col-auto">
+							<input type="file" class="form-control form-control-sm" id="gui_newreqifload"
+								accept=".reqifz" required>
+						</div>
+						<div class="col-auto">
+							<i class="bi bi-arrow-clockwise text-secondary spin-icon ind-icon"
+								id="gui_newreqifloadIndLoading" style="display:none;"></i>
+							<i class="bi bi-check-circle-fill text-success ind-icon" id="gui_newreqifloadIndSuccess"
+								style="display:none;"></i>
+							<i class="bi bi-x-circle-fill text-danger ind-icon" id="gui_newreqifloadIndError"
+								style="display:none;"></i>
+							<i class="bi bi-exclamation-triangle-fill text-warning ind-icon"
+								id="gui_newreqifloadIndWarning" style="display:none;"></i>
+						</div>
+					</div>
+
+					<!-- Load Modules button -->
+					<div class="row g-2 align-items-center mt-1">
+						<div class="col-auto">
+							<button type="button" class="btn btn-primary btn-sm" id="gui_loadmoduleBtn"
+								data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="right"
+								data-bs-content="Only type 'Text' artifacts are analyzed !">
+								<i class="bi bi-cloud-download me-1"></i>Load Modules
+							</button>
+						</div>
+					</div>
+
+				</div><!-- end configuration section -->
+
+				<!-- ===== Old / New Module Info ===== -->
+				<div class="row g-3">
+					<div class="col-lg-6">
+						<div class="card h-100 border-primary">
+							<div class="card-header bg-primary bg-opacity-10 py-2 d-flex align-items-center gap-2">
+								<i class="bi bi-file-earmark-text text-primary"></i>
+								<h6 class="card-title mb-0 fw-semibold text-primary">Old Module Info</h6>
+							</div>
+							<div class="card-body py-2">
+								<table class="table table-sm" id="gui_olddivstat">
+									<!-- Resultats Old module -->
+								</table>
+							</div>
+						</div>
+					</div>
+					<div class="col-lg-6">
+						<div class="card h-100 border-success">
+							<div class="card-header bg-success bg-opacity-10 py-2 d-flex align-items-center gap-2">
+								<i class="bi bi-file-earmark-text text-success"></i>
+								<h6 class="card-title mb-0 fw-semibold text-success">New Module Info</h6>
+							</div>
+							<div class="card-body py-2">
+								<table class="table table-sm" id="gui_newdivstat">
+									<!-- Statistiques New module -->
+								</table>
+								<div id="gui_newloadingcellstat" style="display:none">
+									<div class="text-center py-2">
+										<i class="bi bi-arrow-clockwise text-primary spin-icon"
+											style="font-size:2rem;"></i>
+										<p class="mt-1 mb-0 fw-semibold">Compare in Progress ...</p>
+									</div>
+								</div>
+								<div class="d-flex gap-2 mt-2">
+									<button type="button" class="btn btn-warning btn-sm" id="gui_compareBtn"
+										style="display:none">
+										<i class="bi bi-play-circle me-1"></i>Compare All
+									</button>
+									<button type="button" class="btn btn-success btn-sm" id="gui_displaydiffBtn"
+										style="display:none" data-bs-toggle="modal" data-bs-target="#gui_diffmodal">
+										<i class="bi bi-eye me-1"></i>Display Results
+									</button>
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 
-			<!-- Alertes -->
-			<div id="gui_alert" class="mt-2"></div>
+				<!-- Alertes -->
+				<div id="gui_alert" class="mt-2"></div>
 
-		</div><!-- end card-body -->
-	</div><!-- end main card -->
+			</div><!-- end card-body -->
+		</div><!-- end main card -->
 
-	<!-- Version footer -->
-	<div id="widget_version" class="text-center text-muted small mt-2">Widget version : v2026a</div>
+		<!-- Version footer -->
+		<div id="widget_version" class="text-center text-muted small mt-2">Widget version : v2026a</div>
 
-</div><!-- end container-fluid -->
+	</div><!-- end container-fluid -->
 
-<!-- ===== Modal - Rapport de comparaison ===== -->
-<div class="modal modal-wide fade" id="gui_diffmodal" tabindex="-1" role="dialog" aria-hidden="true">
-	<div class="modal-dialog modal-xl" role="document" style="max-width:95vw;">
-		<div class="modal-content">
-			<div class="modal-header py-2">
-				<h5 class="modal-title w-100 text-center fw-semibold">
-					<i class="bi bi-bar-chart-line me-2 text-primary"></i>Module Diff Report
-				</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			</div>
-			<div class="modal-body p-2">
-				<table class="display table table-sm table-hover" id="gui_diffresult">
-					<!-- Rapport de comparaison -->
-				</table>
-			</div>
-			<div class="modal-footer py-2 justify-content-center gap-2">
-				<button type="button" class="btn btn-outline-primary btn-sm" id="gui_exportBtn"
-					data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top"
-					data-bs-content="Open the exported HTML report file with MS-Excel !">
-					<i class="bi bi-file-earmark-spreadsheet me-1"></i>Standard Report
-				</button>
-				<button type="button" class="btn btn-outline-secondary btn-sm" id="gui_exportCompactBtn"
-					data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top"
-					data-bs-content="Open the exported HTML report file with MS-Excel !">
-					<i class="bi bi-file-earmark-zip me-1"></i>Compact Export
-				</button>
+	<!-- ===== Modal - Rapport de comparaison ===== -->
+	<div class="modal modal-wide fade" id="gui_diffmodal" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-xl" role="document" style="max-width:95vw;">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<h5 class="modal-title w-100 text-center fw-semibold">
+						<i class="bi bi-bar-chart-line me-2 text-primary"></i>Module Diff Report
+					</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body p-2">
+					<table class="display table table-sm table-hover" id="gui_diffresult">
+						<!-- Rapport de comparaison -->
+					</table>
+				</div>
+				<div class="modal-footer py-2 justify-content-center gap-2">
+					<button type="button" class="btn btn-outline-primary btn-sm" id="gui_exportBtn"
+						data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top"
+						data-bs-content="Export the comparison report as an XLSX file (Standard format)">
+						<i class="bi bi-file-earmark-spreadsheet me-1"></i>Standard Report
+					</button>
+					<button type="button" class="btn btn-outline-secondary btn-sm" id="gui_exportCompactBtn"
+						data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top"
+						data-bs-content="Export the comparison report as an XLSX file (Compact format)">
+						<i class="bi bi-file-earmark-zip me-1"></i>Compact Export
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
-</div>
 
-<!-- Zone temporaire pour la generation du rapport d'exportation -->
-<div style="display:none">
-	<table id="gui_tmpexport"></table>
-</div>
+	<!-- Zone temporaire pour la generation du rapport d'exportation -->
+	<div style="display:none">
+		<table id="gui_tmpexport"></table>
+	</div>
 
 </body>
+
 </html>
