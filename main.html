@@ -38,7 +38,7 @@
 	<script src="lib/compare/5.1.0/diff.min.js"></script>
 
 	<script src="lib/utils/jszip.min.js"></script>
-	<script src="lib/utils/xlsx-js-style.min.js"></script>
+	<!-- xlsx-js-style retiré (export XLSX remplacé par export HTML, rev. 3) -->
 	<script src="lib/utils/AGS_utils.js"></script>
 	<script src="lib/compare/jsdiff.js"></script>
 
@@ -451,12 +451,12 @@
 				<div class="modal-footer py-2 justify-content-center gap-2">
 					<button type="button" class="btn btn-outline-primary btn-sm" id="gui_exportBtn"
 						data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top"
-						data-bs-content="Export the comparison report as an XLSX file (Standard format)">
-						<i class="bi bi-file-earmark-spreadsheet me-1"></i>Standard Report
+						data-bs-content="Export the comparison report as a styled HTML file (Standard format)">
+						<i class="bi bi-file-earmark-code me-1"></i>Standard Report
 					</button>
 					<button type="button" class="btn btn-outline-secondary btn-sm" id="gui_exportCompactBtn"
 						data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="top"
-						data-bs-content="Export the comparison report as an XLSX file (Compact format)">
+						data-bs-content="Export the comparison report as a styled HTML file (Compact format)">
 						<i class="bi bi-file-earmark-zip me-1"></i>Compact Export
 					</button>
 				</div>

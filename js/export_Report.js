@@ -9,6 +9,8 @@
 |     1    | 28/01/2021 |   Safran       | Initial version                      |
 |     2    | 08/05/2026 |   Safran       | Export XLSX via xlsx-js-style v1.2   |
 |          |            |                | Correction blocage CSP (blob: URL)   |
+|     3    | 08/05/2026 |   Safran       | Export HTML stylisé (diff riche,     |
+|          |            |                | autonome, compatible CSP, impression) |
 +-------------------------------------------------------------------------------+
 */
 
@@ -16,14 +18,18 @@
     ---- Constantes
    --------------------------------------------------------------------------- */
 
-// ---- Couleurs de remplissage hexadécimales pour le rapport XLSX (sans le #)
-const RPT_FILL_HEADER  = "1F3264";   // Bleu nuit  - en-tête de tableau / titre
-const RPT_FILL_META    = "E9EFF8";   // Bleu pâle  - bloc de métadonnées
-const RPT_FILL_NEWART  = "C6EFCE";   // Vert clair - nouvel artefact
-const RPT_FILL_DELART  = "FFC7CE";   // Rouge clair - artefact supprimé
-const RPT_FILL_CONTENT = "DDEBF7";   // Bleu clair - contenu modifié
-const RPT_FILL_CHANGED = "FFEB9C";   // Jaune ambre - type/attribut/tag modifié
-const RPT_FILL_IMAGE   = "BDD7EE";   // Bleu-gris  - image modifiée
+// ---- CSS diff2html minimal embarqué en fallback si le fetch du fichier échoue
+const RPT_DIFF2HTML_CSS_FALLBACK = [
+    '.d2h-diff-table{border-collapse:collapse;width:100%;font-family:monospace;font-size:11px}',
+    '.d2h-diff-table td{padding:1px 6px;white-space:pre-wrap;word-break:break-all}',
+    '.d2h-del{background:#ffe8e8}.d2h-ins{background:#e8ffe8}.d2h-info{background:#f0f7ff;color:#888}',
+    '.d2h-del .d2h-code-line-ctn{background:#ffc0c0}.d2h-ins .d2h-code-line-ctn{background:#9cf09c}',
+    '.d2h-code-linenumber{width:30px;min-width:30px;max-width:30px;color:rgba(0,0,0,.3);',
+    'padding:0 4px;border-right:1px solid #eee;text-align:right}',
+    '.d2h-file-wrapper{border:1px solid #e0e0e0;border-radius:3px;margin:3px 0;overflow:hidden}',
+    '.d2h-file-header{padding:4px 8px;background:#f6f8fa;font-size:11px;',
+    'color:#586069;border-bottom:1px solid #e0e0e0}'
+].join('');
 
 /* ------------------------------------------------------------------------------
    ---- Classes
@@ -38,7 +44,7 @@ const RPT_FILL_IMAGE   = "BDD7EE";   // Bleu-gris  - image modifiée
    --------------------------------------------------------------------------- */
 
 /**
- * Supprimer les balises HTML d'une valeur (string ou autre)
+ * Supprimer les balises HTML d'une valeur (utilisé pour les colonnes texte)
  * @param {*}      html - Valeur pouvant contenir du HTML
  * @returns {String}    - Texte brut sans balises
  */
@@ -52,125 +58,59 @@ function rpt_stripHtml(html) {
 }
 
 /**
- * Construire un objet de style de cellule compatible xlsx-js-style
- * @param {Object} opts - fillColor, fontColor, fontSize, bold, hAlign, vAlign, wrap
- * @returns {Object}    - Objet style
+ * Échapper les caractères HTML spéciaux pour insertion sécurisée dans du HTML
+ * @param {*}      str - Valeur à échapper
+ * @returns {String}   - Chaîne avec &, <, >, " remplacés par leurs entités HTML
  */
-function rpt_makeCellStyle(opts) {
-    const myOpts = opts || {};
-    return {
-        font: {
-            name:  "Calibri",
-            sz:    myOpts.fontSize  || 10,
-            bold:  myOpts.bold      || false,
-            color: { rgb: myOpts.fontColor || "000000" }
-        },
-        fill: {
-            patternType: "solid",
-            fgColor: { rgb: myOpts.fillColor || "FFFFFF" }
-        },
-        border: {
-            top:    { style: "thin", color: { rgb: "CCCCCC" } },
-            bottom: { style: "thin", color: { rgb: "CCCCCC" } },
-            left:   { style: "thin", color: { rgb: "CCCCCC" } },
-            right:  { style: "thin", color: { rgb: "CCCCCC" } }
-        },
-        alignment: {
-            horizontal: myOpts.hAlign || "left",
-            vertical:   myOpts.vAlign || "top",
-            wrapText:   myOpts.wrap   !== false
-        }
-    };
+function rpt_escHtml(str) {
+    return String(str === undefined || str === null ? "" : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 /**
- * Appliquer un style à toutes les cellules d'une plage de la feuille
- * Les cellules inexistantes (vides dans le AOA) sont créées automatiquement
- * @param {Object} ws       - Objet feuille xlsx
- * @param {Number} startRow - Ligne de début (0-indexée)
- * @param {Number} startCol - Colonne de début (0-indexée)
- * @param {Number} endRow   - Ligne de fin (0-indexée)
- * @param {Number} endCol   - Colonne de fin (0-indexée)
- * @param {Object} style    - Objet style xlsx-js-style
- */
-function rpt_applyRangeStyle(ws, startRow, startCol, endRow, endCol, style) {
-    for (let r = startRow; r <= endRow; r++) {
-        for (let c = startCol; c <= endCol; c++) {
-            const myAddr = XLSX.utils.encode_cell({ r: r, c: c });
-            if (!ws[myAddr]) ws[myAddr] = { v: "", t: "s" };
-            ws[myAddr].s = style;
-        }
-    }
-}
-
-/**
- * Retourner la couleur de fond XLSX correspondant à un label de différence
+ * Retourner la classe CSS de colorisation de ligne selon le label de diff
+ * Les classes correspondent aux couleurs définies dans rpt_buildCss()
  * @param {String} diffLabel - Valeur d'un élément de DIFF_LABEL[]
- * @returns {String}         - Code hexadécimal de couleur (sans #)
+ * @returns {String}         - Classe CSS (ex: "rpt-row-content")
  */
-function rpt_getDiffFillColor(diffLabel) {
+function rpt_getDiffRowClass(diffLabel) {
     switch (diffLabel) {
-        case DIFF_LABEL[DIFF_NEWARTIFACT]:          return RPT_FILL_NEWART;
-        case DIFF_LABEL[DIFF_DELARTIFACT]:          return RPT_FILL_DELART;
-        case DIFF_LABEL[DIFF_CONTENTCHANGED]:       return RPT_FILL_CONTENT;
+        case DIFF_LABEL[DIFF_NEWARTIFACT]:           return 'rpt-row-newart';
+        case DIFF_LABEL[DIFF_DELARTIFACT]:           return 'rpt-row-delart';
+        case DIFF_LABEL[DIFF_CONTENTCHANGED]:        return 'rpt-row-content';
         case DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]:
         case DIFF_LABEL[DIFF_CUSTATTRCHANGED]:
-        case DIFF_LABEL[DIFF_TAGCHANGED]:           return RPT_FILL_CHANGED;
+        case DIFF_LABEL[DIFF_TAGCHANGED]:            return 'rpt-row-changed';
         case DIFF_LABEL[DIFF_IMAGECHANGED]:
         case DIFF_LABEL[DIFF_IMAGENEW]:
-        case DIFF_LABEL[DIFF_IMAGEDEL]:             return RPT_FILL_IMAGE;
+        case DIFF_LABEL[DIFF_IMAGEDEL]:              return 'rpt-row-image';
         case DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]:
-        case DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]:    return RPT_FILL_DELART;
-        default:                                    return "FFFFFF";
+        case DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]:     return 'rpt-row-delart';
+        default:                                     return '';
     }
 }
 
 /**
- * Déclencher le téléchargement d'un classeur XLSX
- * Stratégie à 3 niveaux pour contourner le blocage CSP frame-src des iframes IBM Jazz :
- *   1. showSaveFilePicker  — dialogue natif OS, aucune navigation, hors portée du CSP
- *   2. Ancre dans window.top — le téléchargement depuis le document principal n'est pas
- *      soumis à frame-src (qui ne régit que les navigations de sous-frames)
- *   3. window.open()       — nouvelle fenêtre top-level, hors portée de frame-src
- * @param {Object} wb       - Classeur xlsx-js-style
- * @param {String} filename - Nom de fichier sans extension
+ * Déclencher le téléchargement d'un fichier HTML
+ * Stratégie identique à l'export XLSX : window.top pour contourner frame-src CSP
+ * @param {String} htmlContent - Contenu HTML complet du rapport
+ * @param {String} filename    - Nom de fichier sans extension
  */
-async function rpt_downloadXlsx(wb, filename) {
-    const myArray = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const myMime  = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    const myBlob  = new Blob([myArray], { type: myMime });
-    const myFile  = filename + '.xlsx';
-
-    // ---- Option 1 : File System Access API — dialogue natif OS, non soumis au CSP
-    if (typeof window.showSaveFilePicker === 'function') {
-        try {
-            const myHandle   = await window.showSaveFilePicker({
-                suggestedName: myFile,
-                types: [{ description: 'Microsoft Excel Workbook (.xlsx)', accept: { [myMime]: ['.xlsx'] } }]
-            });
-            const myWritable = await myHandle.createWritable();
-            await myWritable.write(myBlob);
-            await myWritable.close();
-            return;
-        } catch(e) {
-            if (e.name === 'AbortError') return;   // Annulé par l'utilisateur
-            console.warn("$$$ showSaveFilePicker indisponible :", e.message);
-        }
-    }
-
-    // ---- Options 2 et 3 : blob: URL
-    // ---- frame-src bloque blob: uniquement quand la navigation se produit dans une iframe ;
-    // ---- une ancre dans window.top ou window.open() opère dans un contexte top-level
+function rpt_downloadHtml(htmlContent, filename) {
+    const myBlob    = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
     const myBlobUrl = URL.createObjectURL(myBlob);
     const myCleanup = function() { URL.revokeObjectURL(myBlobUrl); };
 
-    // ---- Option 2 : ancre dans window.top (accessible si même origine que JTS)
+    // ---- Option 1 : ancre dans window.top (même origine JTS, échappe à frame-src)
     if (window !== window.top) {
         try {
             const myTopDoc = window.top.document;
             const myAnchor = myTopDoc.createElement('a');
             myAnchor.href  = myBlobUrl;
-            myAnchor.setAttribute('download', myFile);
+            myAnchor.setAttribute('download', filename + '.html');
             myAnchor.style.display = 'none';
             myTopDoc.body.appendChild(myAnchor);
             myAnchor.click();
@@ -178,24 +118,209 @@ async function rpt_downloadXlsx(wb, filename) {
             setTimeout(myCleanup, 500);
             return;
         } catch(e) {
-            // ---- Accès refusé (iframe cross-origin inattendu) → tentative suivante
             console.warn("$$$ window.top inaccessible :", e.message);
         }
     }
 
-    // ---- Option 3 : nouvelle fenêtre top-level (hors portée de frame-src)
+    // ---- Option 2 : nouvelle fenêtre top-level (hors portée de frame-src)
     const myNewWin = window.open(myBlobUrl, '_blank');
     if (!myNewWin) {
-        console.error("$$$ Téléchargement bloqué : veuillez autoriser les popups pour " + window.location.hostname);
+        console.error("$$$ Téléchargement bloqué : autoriser les popups pour " + window.location.hostname);
     }
     setTimeout(myCleanup, 1000);
 }
 
 /**
- * Exporter le rapport de comparaison au format XLSX
+ * Construire la feuille de style CSS complète du rapport
+ * Inclut le CSS du rapport + le CSS diff2html embarqué pour un fichier autonome
+ * @param {String} diff2htmlCss - CSS diff2html (complet ou fallback minimal)
+ * @returns {String}            - Bloc CSS complet
+ */
+function rpt_buildCss(diff2htmlCss) {
+    return `
+/* ---- Reset et base */
+*,*::before,*::after{box-sizing:border-box}
+body{font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10pt;color:#222;
+     margin:0;padding:16px;background:#f0f2f5}
+
+/* ---- Titre du rapport */
+.rpt-title{background:#1F3264;color:#fff;font-size:15pt;font-weight:bold;
+           text-align:center;padding:14px 24px;letter-spacing:.5px}
+
+/* ---- Bloc de métadonnées */
+.rpt-meta{background:#E9EFF8;border:1px solid #C5D3E8;padding:10px 18px;margin-bottom:12px}
+.rpt-meta table{border-collapse:collapse}
+.rpt-meta th{text-align:left;font-weight:bold;padding:3px 18px 3px 0;
+             color:#1F3264;white-space:nowrap;width:160px;font-size:10pt}
+.rpt-meta td{padding:3px 0;font-size:10pt}
+
+/* ---- Légende des couleurs */
+.rpt-legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;padding:6px 10px;
+            background:#fff;border:1px solid #ddd;border-radius:4px;font-size:8.5pt}
+.rpt-legend-item{display:flex;align-items:center;gap:5px}
+.rpt-legend-swatch{width:14px;height:14px;border:1px solid rgba(0,0,0,.2);flex-shrink:0;border-radius:2px}
+
+/* ---- Contrôles de filtrage */
+.rpt-filters{display:flex;align-items:center;flex-wrap:wrap;gap:10px;
+             padding:7px 10px;background:#fff;border:1px solid #ddd;border-radius:4px;
+             margin-bottom:10px;font-size:9pt}
+.rpt-filters label{font-weight:bold;color:#444;white-space:nowrap}
+.rpt-filters select,.rpt-filters input[type=text]{padding:4px 8px;border:1px solid #ccc;
+             border-radius:3px;font-size:9pt;font-family:inherit}
+.rpt-filters select{min-width:220px}
+.rpt-filters input[type=text]{min-width:240px}
+#rpt-count{margin-left:auto;color:#666;font-size:8.5pt;white-space:nowrap}
+
+/* ---- Conteneur du tableau avec défilement */
+.rpt-table-wrap{overflow-x:auto;border:1px solid #ccc;border-radius:4px;background:#fff}
+
+/* ---- Tableau principal */
+.rpt-table{border-collapse:collapse;width:100%;font-size:9pt}
+.rpt-table thead tr{background:#1F3264;color:#fff}
+.rpt-table thead{position:sticky;top:0;z-index:10}
+.rpt-table th{padding:8px 10px;text-align:center;font-weight:bold;font-size:9.5pt;
+              border:1px solid rgba(255,255,255,.3);white-space:nowrap}
+.rpt-table td{padding:5px 8px;border:1px solid #ccc;vertical-align:top}
+.rpt-table td:first-child{text-align:center;font-weight:bold;white-space:nowrap}
+
+/* ---- Colorisation des lignes par type de diff (cohérente avec le rapport XLSX) */
+.rpt-row-newart {background:#C6EFCE}
+.rpt-row-delart {background:#FFC7CE}
+.rpt-row-content{background:#DDEBF7}
+.rpt-row-changed{background:#FFEB9C}
+.rpt-row-image  {background:#BDD7EE}
+
+/* ---- Cellule "Diff Content" : conteneur du rendu diff2html */
+.rpt-diffcontent{min-width:360px}
+.rpt-diffcontent .d2h-wrapper{font-size:.85em}
+.rpt-diffcontent .d2h-file-wrapper{margin:0}
+
+/* ---- Impression (PDF et papier) */
+@media print{
+    body{background:#fff;padding:6px}
+    .rpt-filters{display:none}
+    .rpt-table-wrap{overflow:visible;border:none}
+    .rpt-table thead{position:static}
+    .rpt-table{page-break-inside:auto}
+    .rpt-table tr{page-break-inside:avoid;page-break-after:auto}
+    *{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+}
+
+/* ---- CSS diff2html intégré (rendu coloré des diffs de contenu) */
+${diff2htmlCss}
+`;
+}
+
+/**
+ * Assembler le document HTML complet et autonome du rapport
+ * @param {Object} info    - Métadonnées : project, newModule, oldModule, date, count, moduleName
+ * @param {Object} headers - { colgroup: HTML des <col>, ths: HTML des <th> }
+ * @param {String} rows    - HTML des lignes de données (<tr>…)
+ * @param {Array}  labels  - Labels de diff uniques présents dans les données (pour le filtre)
+ * @param {String} css     - CSS complet à embarquer dans <style>
+ * @returns {String}       - Document HTML complet
+ */
+function rpt_buildHtml(info, headers, rows, labels, css) {
+
+    // ---- Légende : n'afficher que les types réellement présents dans les données
+    const myLegendDefs = [
+        { cls: 'rpt-row-newart',  label: DIFF_LABEL[DIFF_NEWARTIFACT]          },
+        { cls: 'rpt-row-delart',  label: DIFF_LABEL[DIFF_DELARTIFACT]           },
+        { cls: 'rpt-row-content', label: DIFF_LABEL[DIFF_CONTENTCHANGED]        },
+        { cls: 'rpt-row-changed', label: DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]   },
+        { cls: 'rpt-row-changed', label: DIFF_LABEL[DIFF_CUSTATTRCHANGED]       },
+        { cls: 'rpt-row-changed', label: DIFF_LABEL[DIFF_TAGCHANGED]            },
+        { cls: 'rpt-row-image',   label: DIFF_LABEL[DIFF_IMAGECHANGED]          },
+        { cls: 'rpt-row-image',   label: DIFF_LABEL[DIFF_IMAGENEW]              },
+        { cls: 'rpt-row-image',   label: DIFF_LABEL[DIFF_IMAGEDEL]              },
+        { cls: 'rpt-row-delart',  label: DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]     },
+        { cls: 'rpt-row-delart',  label: DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]     }
+    ];
+
+    const myActiveSet  = new Set(labels);
+    const myLegendHtml = myLegendDefs
+        .filter(function(d) { return myActiveSet.has(d.label); })
+        .map(function(d) {
+            return '<span class="rpt-legend-item">'
+                 + '<span class="rpt-legend-swatch ' + d.cls + '"></span>'
+                 + rpt_escHtml(d.label)
+                 + '</span>';
+        }).join('');
+
+    // ---- Options du menu déroulant de filtrage par type
+    const myTypeOptions = labels
+        .map(function(l) {
+            return '<option value="' + rpt_escHtml(l) + '">' + rpt_escHtml(l) + '</option>';
+        }).join('');
+
+    // ---- Script de filtrage autonome intégré au rapport (pas de dépendance externe)
+    const myFilterScript =
+        'function rptFilter(){'
+        + 'var t=document.getElementById("rpt-type-filter").value;'
+        + 'var s=document.getElementById("rpt-text-filter").value.toLowerCase();'
+        + 'var rows=document.querySelectorAll("#rpt-tbody tr");'
+        + 'var n=0;'
+        + 'rows.forEach(function(r){'
+        + 'var ok=(!t||r.dataset.difflabel===t)&&(!s||r.textContent.toLowerCase().indexOf(s)>=0);'
+        + 'r.style.display=ok?"":"none";'
+        + 'if(ok)n++;'
+        + '});'
+        + 'document.getElementById("rpt-count").textContent=n+" row(s) displayed";'
+        + '}';
+
+    return '<!DOCTYPE html>\n'
+         + '<html lang="en">\n'
+         + '<head>\n'
+         + '<meta charset="UTF-8">\n'
+         + '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
+         + '<title>DNG Comparison Report — ' + rpt_escHtml(info.moduleName) + '</title>\n'
+         + '<style>' + css + '</style>\n'
+         + '</head>\n'
+         + '<body>\n'
+
+         + '<div class="rpt-title">DNG Module Comparison Report</div>\n'
+
+         + '<div class="rpt-meta"><table>\n'
+         + '  <tr><th>Project</th><td>'            + rpt_escHtml(info.project)   + '</td></tr>\n'
+         + '  <tr><th>New Module</th><td>'          + rpt_escHtml(info.newModule) + '</td></tr>\n'
+         + '  <tr><th>Old Module</th><td>'          + rpt_escHtml(info.oldModule) + '</td></tr>\n'
+         + '  <tr><th>Export Date</th><td>'         + rpt_escHtml(info.date)      + '</td></tr>\n'
+         + '  <tr><th>Number of Changes</th><td><b>' + info.count + '</b></td></tr>\n'
+         + '</table></div>\n'
+
+         + '<div class="rpt-legend">' + myLegendHtml + '</div>\n'
+
+         + '<div class="rpt-filters">\n'
+         + '  <label>Filter by type :</label>\n'
+         + '  <select id="rpt-type-filter" onchange="rptFilter()">\n'
+         + '    <option value="">— All types —</option>\n'
+         + myTypeOptions
+         + '  </select>\n'
+         + '  <label>Search :</label>\n'
+         + '  <input type="text" id="rpt-text-filter" oninput="rptFilter()"'
+         + '   placeholder="Search in all columns…">\n'
+         + '  <span id="rpt-count">' + info.count + ' row(s)</span>\n'
+         + '</div>\n'
+
+         + '<div class="rpt-table-wrap">\n'
+         + '  <table class="rpt-table">\n'
+         + '    <colgroup>' + headers.colgroup + '</colgroup>\n'
+         + '    <thead><tr>' + headers.ths + '</tr></thead>\n'
+         + '    <tbody id="rpt-tbody">' + rows + '</tbody>\n'
+         + '  </table>\n'
+         + '</div>\n'
+
+         + '<script>' + myFilterScript + '<\/script>\n'
+         + '</body>\n'
+         + '</html>';
+}
+
+/**
+ * Exporter le rapport de comparaison au format HTML autonome
+ * Le CSS diff2html est récupéré en fetch pour garantir un rendu fidèle de la diff
  * @param {Boolean} isCompact - true = format compact, false = format standard
  */
-function export_report(isCompact) {
+async function export_report(isCompact) {
     let myFilteredTable;
     let myCompactTable       = [];
     let myDate               = new Date();
@@ -205,29 +330,25 @@ function export_report(isCompact) {
     // ---- Récupérer uniquement les lignes visibles (filtre DataTables appliqué)
     myFilteredTable = g_DiffTable.DataTable().rows({ filter: 'applied' }).data().toArray();
 
-    // ---- Bloc de métadonnées commun aux deux formats
-    // ---- Contenu : titre + 5 lignes d'info + séparateur visuel = 7 lignes
-    const myMetaAoa = [
-        ["DNG Module Comparison Report"],
-        ["Project",            g_Project.name],
-        ["New Module",         g_ConfNew.name  + " / " + g_ModuleNew.name],
-        ["Old Module",         g_ConfOld.name  + " / " + g_ModuleOld.name],
-        ["Export Date",        myDate.toLocaleDateString('en-GB')],
-        ["Number of Changes",  myFilteredTable.length],
-        []
-    ];
+    // ---- Récupérer le CSS diff2html depuis le serveur pour l'embarquer dans le rapport
+    // ---- (fallback minimal si le fetch échoue, ex : hors réseau)
+    let myDiff2htmlCss = RPT_DIFF2HTML_CSS_FALLBACK;
+    try {
+        const myResp = await fetch('lib/diff2html/diff2html.min.css');
+        if (myResp.ok) myDiff2htmlCss = await myResp.text();
+    } catch(e) {
+        console.warn("$$$ CSS diff2html non récupéré, utilisation du fallback :", e.message);
+    }
 
-    // ---- Index (0-basé) de la ligne d'entête et de la première ligne de données
-    const myHeaderRow    = myMetaAoa.length;   // = 7
-    const myDataStartRow = myHeaderRow + 1;    // = 8
-
-    let myAoa;      // ---- Array of Arrays complet (méta + entête + données)
-    let myNumCols;  // ---- Nombre de colonnes du tableau de données
+    let myHeaderColgroup;  // ---- Balises <col> pour les largeurs de colonnes
+    let myHeaderThs;       // ---- Balises <th> de l'entête
+    let myRowsHtml = '';   // ---- Lignes de données (<tr>)
+    let myLabelSet = new Set();  // ---- Labels de diff uniques (pour le filtre)
 
     if (isCompact != undefined && isCompact === true) {
-        console.log("$$$ Compact Export Diff Report to XLSX");
+        console.log("$$$ Compact Export Diff Report to HTML");
 
-        // ---- Compacter la table : regrouper les lignes par artefact (même ID)
+        // ---- Compacter la table : regrouper les lignes par artefact (même logique que rev. 2)
         // ---- Structure entrée  : [ID, Type, Diff Label, Attribute, Old, New, Content]
         // ---- Structure sortie  : {id, type, difflabel, diffcontent, nbdiff, newtype, custattr[]}
 
@@ -239,9 +360,9 @@ function export_report(isCompact) {
                     'id':          myFilteredTable[i][RPT_COL_ID],
                     'type':        myFilteredTable[i][RPT_COL_TYPE],
                     'difflabel':   myFilteredTable[i][RPT_COL_DIFFLABEL],
-                    'diffcontent': "",
+                    'diffcontent': '',
                     'nbdiff':      1,
-                    'newtype':     "",
+                    'newtype':     '',
                     'custattr':    []
                 };
                 myCompactRow = myRow;
@@ -258,6 +379,7 @@ function export_report(isCompact) {
             // ---- Traitement spécifique selon le type de différence
             switch (myFilteredTable[i][RPT_COL_DIFFLABEL]) {
                 case DIFF_LABEL[DIFF_CONTENTCHANGED]:
+                    // ---- Conserver le HTML diff2html tel quel (rendu riche dans le rapport HTML)
                     myCompactRow.diffcontent = myFilteredTable[i][RPT_COL_DIFFCONTENT];
                     break;
 
@@ -290,177 +412,112 @@ function export_report(isCompact) {
         // ---- |    |      |            |              | Type             | Old | New  |
         // ---- (*) : colonnes présentes uniquement si des changements de ce type existent
 
-        const myCompactHeader = ["ID", "Type", "Diff Label", "Diff Content"];
+        const myCols   = ['5%', '12%', '15%', ''];  // ---- '' : Diff Content prend l'espace restant
+        const myLabels = ['ID', 'Type', 'Diff Label', 'Diff Content'];
+
         if (myTypeChange) {
-            myCompactHeader.push("Old Artifact Type");
+            myCols.push('12%');
+            myLabels.push('Old Artifact Type');
         }
         for (let i = 0; i < myCustAttrChangeList.length; i++) {
-            myCompactHeader.push(myCustAttrChangeList[i] + " (Old Value)");
-            myCompactHeader.push(myCustAttrChangeList[i] + " (New Value)");
+            myCols.push('10%', '10%');
+            myLabels.push(myCustAttrChangeList[i] + ' (Old)', myCustAttrChangeList[i] + ' (New)');
         }
 
-        myNumCols = myCompactHeader.length;
-        myAoa     = myMetaAoa.concat([myCompactHeader]);
+        myHeaderColgroup = myCols.map(function(w) {
+            return '<col' + (w ? ' style="width:' + w + '"' : '') + '>';
+        }).join('');
+        myHeaderThs = myLabels.map(function(t) { return '<th>' + rpt_escHtml(t) + '</th>'; }).join('');
 
-        // ---- Ajouter les lignes de données compactes
+        // ---- Génération des lignes de données compactes
         for (let i = 0; i < myCompactTable.length; i++) {
-            const myRow     = myCompactTable[i];
-            const myDataRow = [
-                myRow.id,
-                myRow.type,
-                rpt_stripHtml(myRow.difflabel),
-                rpt_stripHtml(myRow.diffcontent)
-            ];
+            const myRow       = myCompactTable[i];
+            const myPrimLabel = myRow.difflabel.split('\n')[0];
+            const myRowClass  = rpt_getDiffRowClass(myPrimLabel);
+            myLabelSet.add(myPrimLabel);
+
+            let myHtml = '<tr class="' + myRowClass + '" data-difflabel="' + rpt_escHtml(myPrimLabel) + '">';
+            myHtml += '<td>' + rpt_escHtml(myRow.id) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(myRow.type) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(myRow.difflabel).replace(/\n/g, '<br>') + '</td>';
+            // ---- Diff Content : HTML diff2html rendu directement (texte riche)
+            myHtml += '<td class="rpt-diffcontent">' + (myRow.diffcontent || '') + '</td>';
 
             if (myTypeChange) {
-                myDataRow.push(myRow.newtype);
+                myHtml += '<td>' + rpt_escHtml(myRow.newtype) + '</td>';
             }
 
-            // ---- Colonnes de valeurs pour chaque attribut modifié (colonnes par paires)
             for (let j = 0; j < myCustAttrChangeList.length; j++) {
                 const myAttr = myRow.custattr.find(a => a.attrname === myCustAttrChangeList[j]);
                 if (myAttr === undefined) {
-                    myDataRow.push("", "");
+                    myHtml += '<td></td><td></td>';
                 } else {
-                    myDataRow.push(rpt_stripHtml(myAttr.oldvalue), rpt_stripHtml(myAttr.newvalue));
+                    myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myAttr.oldvalue)) + '</td>';
+                    myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myAttr.newvalue)) + '</td>';
                 }
             }
 
-            myAoa.push(myDataRow);
+            myHtml += '</tr>';
+            myRowsHtml += myHtml;
         }
 
     } else {
-        console.log("$$$ Standard Export Diff Report to XLSX");
+        console.log("$$$ Standard Export Diff Report to HTML");
 
         // ---- Standard report - Structure de sortie
         // ---- +----+------+------------+-----------+-----------+-----------+----------------+
         // ---- | ID | Type | Diff Label | Attribute | Old Value | New Value | Diff Content   |
         // ---- +----+------+------------+-----------+-----------+-----------+----------------+
 
-        myNumCols = 7;
-        myAoa     = myMetaAoa.concat([[
-            "ID", "Type", "Diff Label", "Attribute", "Old Value", "New Value", "Diff Content"
-        ]]);
+        myHeaderColgroup = '<col style="width:5%"><col style="width:10%"><col style="width:13%">'
+                         + '<col style="width:10%"><col style="width:13%"><col style="width:13%"><col>';
+        myHeaderThs = '<th>ID</th><th>Type</th><th>Diff Label</th>'
+                    + '<th>Attribute</th><th>Old Value</th><th>New Value</th><th>Diff Content</th>';
 
         for (let i = 0; i < myFilteredTable.length; i++) {
-            myAoa.push([
-                myFilteredTable[i][RPT_COL_ID],
-                myFilteredTable[i][RPT_COL_TYPE],
-                myFilteredTable[i][RPT_COL_DIFFLABEL],
-                rpt_stripHtml(myFilteredTable[i][RPT_COL_ATTR]),
-                rpt_stripHtml(myFilteredTable[i][RPT_COL_OLDVAL]),
-                rpt_stripHtml(myFilteredTable[i][RPT_COL_NEWVAL]),
-                rpt_stripHtml(myFilteredTable[i][RPT_COL_DIFFCONTENT])
-            ]);
+            const myRow      = myFilteredTable[i];
+            const myDiffLabel = myRow[RPT_COL_DIFFLABEL];
+            const myRowClass  = rpt_getDiffRowClass(myDiffLabel);
+            myLabelSet.add(myDiffLabel);
+
+            let myHtml = '<tr class="' + myRowClass + '" data-difflabel="' + rpt_escHtml(myDiffLabel) + '">';
+            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_ID]) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_TYPE]) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_DIFFLABEL]) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_ATTR])) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_OLDVAL])) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_NEWVAL])) + '</td>';
+            // ---- Diff Content : HTML diff2html rendu directement (texte riche)
+            myHtml += '<td class="rpt-diffcontent">' + (myRow[RPT_COL_DIFFCONTENT] || '') + '</td>';
+            myHtml += '</tr>';
+            myRowsHtml += myHtml;
         }
     }
 
-    // ---- Créer la feuille xlsx à partir du tableau de données
-    const ws            = XLSX.utils.aoa_to_sheet(myAoa);
-    const myLastDataRow = myAoa.length - 1;
-    const myLastCol     = myNumCols - 1;
-
-    // ---- Ajuster !ref pour couvrir toutes les colonnes (y compris les cellules vides styalisées)
-    ws['!ref'] = XLSX.utils.encode_range({ r: 0, c: 0 }, { r: myLastDataRow, c: myLastCol });
-
-    // ---- Style : ligne de titre (ligne 0, toutes colonnes)
-    rpt_applyRangeStyle(ws, 0, 0, 0, myLastCol, rpt_makeCellStyle({
-        fillColor: RPT_FILL_HEADER,
-        fontColor: "FFFFFF",
-        fontSize:  14,
-        bold:      true,
-        hAlign:    "center",
-        vAlign:    "center"
-    }));
-
-    // ---- Style : bloc de métadonnées (lignes 1 à 5, fond bleu pâle)
-    const myMetaLabelStyle = rpt_makeCellStyle({ fillColor: RPT_FILL_META, bold: true,  hAlign: "left", vAlign: "center", wrap: false });
-    const myMetaValueStyle = rpt_makeCellStyle({ fillColor: RPT_FILL_META, bold: false, hAlign: "left", vAlign: "center", wrap: false });
-
-    for (let r = 1; r <= 5; r++) {
-        const myLabelAddr = XLSX.utils.encode_cell({ r: r, c: 0 });
-        if (ws[myLabelAddr]) ws[myLabelAddr].s = myMetaLabelStyle;
-
-        for (let c = 1; c <= myLastCol; c++) {
-            const myAddr = XLSX.utils.encode_cell({ r: r, c: c });
-            if (!ws[myAddr]) ws[myAddr] = { v: "", t: "s" };
-            ws[myAddr].s = myMetaValueStyle;
-        }
-    }
-
-    // ---- Style : ligne d'entête du tableau (ligne myHeaderRow, fond bleu nuit)
-    rpt_applyRangeStyle(ws, myHeaderRow, 0, myHeaderRow, myLastCol, rpt_makeCellStyle({
-        fillColor: RPT_FILL_HEADER,
-        fontColor: "FFFFFF",
-        fontSize:  11,
-        bold:      true,
-        hAlign:    "center",
-        vAlign:    "center"
-    }));
-
-    // ---- Style : lignes de données (couleur selon le type de différence)
-    for (let r = myDataStartRow; r <= myLastDataRow; r++) {
-        const myRowIdx = r - myDataStartRow;
-
-        // ---- Récupérer le label primaire pour déterminer la couleur de fond de la ligne
-        let myDiffLabel;
-        if (isCompact) {
-            myDiffLabel = myCompactTable[myRowIdx]
-                ? myCompactTable[myRowIdx].difflabel.split('\n')[0]
-                : "";
-        } else {
-            myDiffLabel = myFilteredTable[myRowIdx]
-                ? myFilteredTable[myRowIdx][RPT_COL_DIFFLABEL]
-                : "";
-        }
-
-        const myFill = rpt_getDiffFillColor(myDiffLabel);
-
-        rpt_applyRangeStyle(ws, r, 0, r, myLastCol, rpt_makeCellStyle({ fillColor: myFill }));
-
-        // ---- Colonne ID : centré et en gras pour faciliter la lecture
-        const myIdAddr = XLSX.utils.encode_cell({ r: r, c: 0 });
-        if (ws[myIdAddr]) {
-            ws[myIdAddr].s = rpt_makeCellStyle({ fillColor: myFill, bold: true, hAlign: "center", vAlign: "center" });
-        }
-    }
-
-    // ---- Fusion de la cellule de titre sur toute la largeur du tableau
-    ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: myLastCol } }];
-
-    // ---- Largeurs de colonnes (en nombre de caractères)
-    if (isCompact) {
-        const myCols = [{ wch: 8 }, { wch: 20 }, { wch: 28 }, { wch: 60 }];
-        if (myTypeChange) myCols.push({ wch: 25 });
-        for (let i = 0; i < myCustAttrChangeList.length; i++) {
-            myCols.push({ wch: 30 }, { wch: 30 });
-        }
-        ws['!cols'] = myCols;
-    } else {
-        ws['!cols'] = [{ wch: 8 }, { wch: 20 }, { wch: 28 }, { wch: 25 }, { wch: 30 }, { wch: 30 }, { wch: 60 }];
-    }
-
-    // ---- Ligne de titre plus haute pour la lisibilité
-    ws['!rows'] = [{ hpx: 34 }];
-
-    // ---- Figer les panneaux : titre + métadonnées + en-tête restent visibles au défilement
-    ws['!views'] = [{ state: 'frozen', ySplit: myHeaderRow + 1 }];
-
-    // ---- Filtre automatique sur la ligne d'en-tête
-    ws['!autofilter'] = {
-        ref: XLSX.utils.encode_range({ r: myHeaderRow, c: 0 }, { r: myHeaderRow, c: myLastCol })
+    // ---- Préparer les métadonnées du rapport
+    const myInfo = {
+        project:    g_Project.name,
+        newModule:  g_ConfNew.name  + ' / ' + g_ModuleNew.name,
+        oldModule:  g_ConfOld.name  + ' / ' + g_ModuleOld.name,
+        date:       myDate.toLocaleDateString('en-GB'),
+        count:      isCompact ? myCompactTable.length : myFilteredTable.length,
+        moduleName: g_ModuleNew.name
     };
 
-    // ---- Créer le classeur et y ajouter la feuille
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Diff Report");
+    // ---- Assembler et télécharger le rapport HTML autonome
+    const myHtml = rpt_buildHtml(
+        myInfo,
+        { colgroup: myHeaderColgroup, ths: myHeaderThs },
+        myRowsHtml,
+        [...myLabelSet],
+        rpt_buildCss(myDiff2htmlCss)
+    );
 
-    // ---- Exporter le classeur via data: URL (contourne le blocage CSP sur blob:)
-    rpt_downloadXlsx(wb, g_ModuleNew.name + '_diff_report');
+    rpt_downloadHtml(myHtml, g_ModuleNew.name + '_diff_report');
 }
 
 /**
- * Exporter le rapport de comparaison compact au format XLSX
+ * Exporter le rapport compact au format HTML
  */
 function exportCompact_report() {
     export_report(true);
