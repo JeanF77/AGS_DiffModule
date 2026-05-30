@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "diff-match-patch": "^1.0.5",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "jquery": "^4.0.0"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}

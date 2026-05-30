@@ -353,38 +353,139 @@ function _collectAttr($root, selector, attr) {
 // =============================================================================
 
 /**
+ * _extractDocumentSegments
+ *
+ * Walks the children of a parsed HTML root in document order and groups them
+ * into typed segments: "table", "list", or "text".  Consecutive non-table,
+ * non-list children are merged into a single text segment so that headings and
+ * paragraphs that surround a table remain associated with their natural position.
+ *
+ * This preserves the original document order (e.g. heading → table → paragraphs)
+ * so that _buildDiffHtmlWithTables can reassemble the diff in the same order
+ * rather than grouping all text first and all tables last.
+ *
+ * ERM rich-text content is often wrapped in one or more outer <div> containers
+ * before the actual paragraph/table siblings appear.  The function therefore
+ * first descends through any chain of single-child block wrappers (div, article,
+ * section, main) to reach the level where structural elements live as siblings,
+ * then walks that level in document order.
+ *
+ * @param  {jQuery} $root - Parsed DOM wrapper (from _parseHtml).
+ * @returns {Array<{type: string, $el: jQuery}>}
+ *   Each entry has:
+ *   - type  : "text" | "table" | "list"
+ *   - $el   : the jQuery element(s) for that segment
+ */
+function _extractDocumentSegments($root) {
+  // Descend through single-child block wrappers until we reach the level that
+  // contains the actual siblings (paragraphs, tables, lists, …).
+  // This handles ERM content wrapped in one or more outer <div> elements.
+  const BLOCK_WRAPPERS = new Set(["div", "article", "section", "main", "body"]);
+  let $effective = $root;
+  for (;;) {
+    const $ch = $effective.children();
+    if ($ch.length !== 1) break;
+    const tag = $ch.get(0).tagName.toLowerCase();
+    if (!BLOCK_WRAPPERS.has(tag)) break;
+    $effective = $ch.first();
+  }
+
+  const segments = [];
+  let $textBuffer = null;
+
+  $effective.children().each(function () {
+    const tag = this.tagName.toLowerCase();
+
+    if (tag === "table") {
+      if ($textBuffer) {
+        segments.push({ type: "text", $el: $textBuffer });
+        $textBuffer = null;
+      }
+      segments.push({ type: "table", $el: $(this) });
+
+    } else if (tag === "ul" || tag === "ol" || tag === "dl") {
+      if ($textBuffer) {
+        segments.push({ type: "text", $el: $textBuffer });
+        $textBuffer = null;
+      }
+      segments.push({ type: "list", $el: $(this) });
+
+    } else {
+      if (!$textBuffer) $textBuffer = $("<div>");
+      $textBuffer.append($(this).clone());
+    }
+  });
+
+  if ($textBuffer) {
+    segments.push({ type: "text", $el: $textBuffer });
+  }
+
+  return segments;
+}
+
+
+/**
+ * _extractTextFromTextSegment
+ *
+ * Extracts normalised plain text from a text segment element, explicitly
+ * excluding any tables or top-level lists that may be nested inside it.
+ *
+ * This is the defensive counterpart to _extractDocumentSegments: even if an
+ * edge-case HTML structure causes a table to end up inside a text buffer element
+ * (e.g. a <div> wrapping both a paragraph and a table that was not separated
+ * at the segmentation step), its cell text will not bleed into the text diff.
+ *
+ * @param  {jQuery} $el - A text-segment wrapper element.
+ * @returns {string}       Normalised plain text without table/list content.
+ */
+function _extractTextFromTextSegment($el) {
+  const $clone = $el.clone();
+  $clone.find("table").remove();
+  $clone.find("ul, ol, dl").filter(function () {
+    return $(this).closest("li").length === 0;
+  }).remove();
+  return _extractText($clone);
+}
+
+
+/**
  * _buildDiffHtmlWithTables
  *
- * Orchestrates the diff rendering by processing structured elements (tables,
- * lists) and plain text separately, then reassembling the result.
+ * Orchestrates the diff rendering by walking both DOM trees in document order
+ * and processing each segment (table, list, or text block) in the position it
+ * occupies in the source document.
+ *
+ * Structured elements (tables, lists) are paired by type and index across
+ * source and target.  Text segments are paired by their positional index among
+ * text-only segments.  Any structured or text segments present only in the
+ * target are appended at the end as fully-inserted content.
+ *
+ * This approach preserves the original document order (e.g. heading → table →
+ * paragraphs) instead of grouping all text first and all tables last.
  *
  * - Top-level <table> nodes  → visual cell-by-cell diff  (REQ-13)
  * - Top-level <ul>/<ol>/<dl> → visual item-by-item diff
- * - Remaining plain text      → word-level text diff      (REQ-08)
- *
- * "Top-level" means not nested inside a <td>, <th>, or <li> — those are
- * handled recursively as part of their parent structure.
+ * - Text segments             → word-level text diff      (REQ-08)
  *
  * @param  {jQuery} $src     - Parsed source DOM.
  * @param  {jQuery} $tgt     - Parsed target DOM.
- * @param  {string} textSrc  - Normalised source plain text.
- * @param  {string} textTgt  - Normalised target plain text.
+ * @param  {string} textSrc  - Normalised source plain text (used for short-circuit).
+ * @param  {string} textTgt  - Normalised target plain text (used for short-circuit).
  * @returns {string}           Complete diff HTML string.
  */
 function _buildDiffHtmlWithTables($src, $tgt, textSrc, textTgt) {
 
-  // ── Collect top-level tables ─────────────────────────────────────────────
-  const srcTables = $src.find("table").toArray();
-  const tgtTables = $tgt.find("table").toArray();
+  // ── Extract ordered segments from both sides ─────────────────────────────
+  const srcSegs = _extractDocumentSegments($src);
+  const tgtSegs = _extractDocumentSegments($tgt);
 
-  // ── Collect top-level lists (not nested inside a table cell or list item) ─
-  function _topLevelLists($root) {
-    return $root.find("ul, ol, dl").filter(function () {
-      return $(this).closest("li, td, th").length === 0;
-    }).toArray();
-  }
-  const srcLists = _topLevelLists($src);
-  const tgtLists = _topLevelLists($tgt);
+  // Collect structured elements by type for index-based pairing.
+  const srcTables   = srcSegs.filter(s => s.type === "table").map(s => s.$el);
+  const tgtTables   = tgtSegs.filter(s => s.type === "table").map(s => s.$el);
+  const srcLists    = srcSegs.filter(s => s.type === "list").map(s => s.$el);
+  const tgtLists    = tgtSegs.filter(s => s.type === "list").map(s => s.$el);
+  const srcTextSegs = srcSegs.filter(s => s.type === "text");
+  const tgtTextSegs = tgtSegs.filter(s => s.type === "text");
 
   // Short-circuit: no structured elements on either side → plain text diff.
   if (srcTables.length === 0 && tgtTables.length === 0 &&
@@ -392,41 +493,52 @@ function _buildDiffHtmlWithTables($src, $tgt, textSrc, textTgt) {
     return _buildDiffHtml(textSrc, textTgt);
   }
 
-  // ── Table diffs (paired by index) ────────────────────────────────────────
-  const tableCount = Math.max(srcTables.length, tgtTables.length);
-  const tableDiffs = [];
-  for (let i = 0; i < tableCount; i++) {
-    const $t1 = srcTables[i] ? $(srcTables[i]) : null;
-    const $t2 = tgtTables[i] ? $(tgtTables[i]) : null;
-    tableDiffs.push(_buildTableDiffHtml($t1, $t2));
-  }
-
-  // ── List diffs (paired by index) ─────────────────────────────────────────
-  const listCount = Math.max(srcLists.length, tgtLists.length);
-  const listDiffs = [];
-  for (let i = 0; i < listCount; i++) {
-    const $l1 = srcLists[i] ? $(srcLists[i]) : null;
-    const $l2 = tgtLists[i] ? $(tgtLists[i]) : null;
-    listDiffs.push(_buildListDiffHtml($l1, $l2));
-  }
-
-  // ── Plain-text diff for content outside tables and lists ─────────────────
-  const nonStructSrc = _extractTextExcludingTablesAndLists($src);
-  const nonStructTgt = _extractTextExcludingTablesAndLists($tgt);
-
-  let nonStructHtml = "";
-  if (nonStructSrc !== nonStructTgt) {
-    nonStructHtml = _buildDiffHtml(nonStructSrc, nonStructTgt);
-  } else if (nonStructSrc !== "") {
-    nonStructHtml =
-      `<div class="rte-diff-result">${_escapeHtml(nonStructSrc)}</div>`;
-  }
-
-  // ── Reassemble: plain text, then lists, then tables ──────────────────────
   const parts = [];
-  if (nonStructHtml) parts.push(nonStructHtml);
-  parts.push(...listDiffs);
-  parts.push(...tableDiffs);
+  let tableIdx = 0;
+  let listIdx  = 0;
+  let textIdx  = 0;
+
+  // ── Walk source segments in document order ───────────────────────────────
+  for (const seg of srcSegs) {
+    if (seg.type === "text") {
+      const srcText = _extractTextFromTextSegment(seg.$el);
+      const tgtSeg  = tgtTextSegs[textIdx] || null;
+      const tgtText = tgtSeg ? _extractTextFromTextSegment(tgtSeg.$el) : "";
+
+      if (srcText !== "" || tgtText !== "") {
+        if (srcText === tgtText) {
+          parts.push(`<div class="rte-diff-result">${_escapeHtml(srcText)}</div>`);
+        } else {
+          parts.push(_buildDiffHtml(srcText, tgtText));
+        }
+      }
+      textIdx++;
+
+    } else if (seg.type === "table") {
+      const $t2 = tgtTables[tableIdx] || null;
+      parts.push(_buildTableDiffHtml(seg.$el, $t2));
+      tableIdx++;
+
+    } else if (seg.type === "list") {
+      const $l2 = tgtLists[listIdx] || null;
+      parts.push(_buildListDiffHtml(seg.$el, $l2));
+      listIdx++;
+    }
+  }
+
+  // ── Append extra target elements absent from source ──────────────────────
+  for (let i = tableIdx; i < tgtTables.length; i++) {
+    parts.push(_buildTableDiffHtml(null, tgtTables[i]));
+  }
+  for (let i = listIdx; i < tgtLists.length; i++) {
+    parts.push(_buildListDiffHtml(null, tgtLists[i]));
+  }
+  for (let i = textIdx; i < tgtTextSegs.length; i++) {
+    const tgtText = _extractTextFromTextSegment(tgtTextSegs[i].$el);
+    if (tgtText !== "") {
+      parts.push(_buildDiffHtml("", tgtText));
+    }
+  }
 
   return parts.join("\n");
 }
@@ -591,28 +703,6 @@ function _buildDiffHtml(textSrc, textTgt) {
   return _diffsToHtml(diffs, wordArray);
 }
 
-
-/**
- * _extractTextExcludingTablesAndLists
- *
- * Extracts normalised plain text from a jQuery DOM tree, ignoring all
- * <table> elements and all top-level <ul>/<ol>/<dl> lists (i.e. lists not
- * nested inside a table cell or another list item).  Used to produce the
- * plain-text context that lives between structured elements.
- *
- * @param  {jQuery} $root - Parsed DOM wrapper.
- * @returns {string}        Normalised plain text without table/list content.
- */
-function _extractTextExcludingTablesAndLists($root) {
-  const $clone = $root.clone();
-  $clone.find("table").remove();
-  // After table removal, remove every remaining list that is not nested
-  // inside a list item (nested sub-lists are part of their parent item's text).
-  $clone.find("ul, ol, dl").filter(function () {
-    return $(this).closest("li").length === 0;
-  }).remove();
-  return _extractText($clone);
-}
 
 
 /**
