@@ -11,10 +11,10 @@
 */
 
 /* ------------------------------------------------------------------------------
-	---- Constantes
+   ---- Constantes
    --------------------------------------------------------------------------- */
 
-const DIFF_LABEL        = ["New Artifact",
+const DIFF_LABEL = ["New Artifact",
    "Artifact Deleted",
    "Artifact Type Has Changed",
    "Custom Attribut Has Changed",
@@ -27,143 +27,151 @@ const DIFF_LABEL        = ["New Artifact",
    "Tag Has Changed"
 ];
 
-const DIFF_NODIFF                = -1;
-const DIFF_NEWARTIFACT           = 0;
-const DIFF_DELARTIFACT           = 1; 
-const DIFF_ARTIFACTTYPECHANGED   = 2;
-const DIFF_CUSTATTRCHANGED       = 3;
-const DIFF_CONTENTCHANGED        = 4;
-const DIFF_IMAGECHANGED          = 5;
-const DIFF_IMAGENEW              = 6;
-const DIFF_IMAGEDEL              = 7;
-const DIFF_IMAGENOTFOUND_NEW     = 8;
-const DIFF_IMAGENOTFOUND_OLD     = 9;
-const DIFF_TAGCHANGED            = 10;
+const DIFF_NODIFF = -1;
+const DIFF_NEWARTIFACT = 0;
+const DIFF_DELARTIFACT = 1;
+const DIFF_ARTIFACTTYPECHANGED = 2;
+const DIFF_CUSTATTRCHANGED = 3;
+const DIFF_CONTENTCHANGED = 4;
+const DIFF_IMAGECHANGED = 5;
+const DIFF_IMAGENEW = 6;
+const DIFF_IMAGEDEL = 7;
+const DIFF_IMAGENOTFOUND_NEW = 8;
+const DIFF_IMAGENOTFOUND_OLD = 9;
+const DIFF_TAGCHANGED = 10;
 
-const CST_NOT_FOUND              = "Not_Found";
-const CST_MOD_REF                = "module_ref";
-const CST_MOD_TEST               = "module_test";
+const CST_NOT_FOUND = "Not_Found";
+const CST_MOD_REF = "module_ref";
+const CST_MOD_TEST = "module_test";
 
 /* ------------------------------------------------------------------------------
-	---- Classes
+   ---- Classes
    --------------------------------------------------------------------------- */
 
 class ClassDiffResult {       // ---- Resultat de comparaison
-   id = ""                    // ---- Identifiant de l'artefect en ecart
-   arttype = ""               // ---- Type d'artefact
-   diffcode = 0               // ---- Code du type d'ecart
-   difflabel = ""             // ---- Label du type d'ecart
-   attrname = undefined       // ---- Nom attribut modifie (optionnel)
-   newvalue = undefined       // ---- Nouvelle valeur (optionnel)
-   oldvalue = undefined       // ---- Ancienne valeur (optionnel)
-   content  = undefined       // ---- Difference du Primary Text (represente sous forme d'une image)
-   canvas   = undefined       // ---- Representation graphique de "content"
- 
+   static SYS_ATTR_CONTENT = "Primary Text";
+
+   constructor() {
+      this.id = ""                    // ---- Identifiant de l'artefect en ecart
+      this.arttype = ""               // ---- Type d'artefact
+      this.diffcode = 0               // ---- Code du type d'ecart
+      this.difflabel = ""             // ---- Label du type d'ecart
+      this.attrname = undefined       // ---- Nom attribut modifie (optionnel)
+      this.newvalue = undefined       // ---- Nouvelle valeur (optionnel)
+      this.oldvalue = undefined       // ---- Ancienne valeur (optionnel)
+      this.content = undefined        // ---- Difference du Primary Text (represente sous forme d'une image)
+      this.canvas = undefined         // ---- Representation graphique de "content"
+   }
+
    // ---- New artifact in the module
- 
-   set_diff_newartifact (id, type) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_NEWARTIFACT;
+
+   set_diff_newartifact(id, type, content) {
+      this.id = id;
+      this.arttype = type;
+      this.diffcode = DIFF_NEWARTIFACT;
       this.difflabel = DIFF_LABEL[this.diffcode];
+      this.attrname = ClassDiffResult.SYS_ATTR_CONTENT;
+      this.content = content;
    }
- 
+
    // ---- Artifact deleted from module
- 
-   set_diff_delartifact (id, type) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_DELARTIFACT;
+
+   set_diff_delartifact(id, type, content) {
+      this.id = id;
+      this.arttype = type;
+      this.diffcode = DIFF_DELARTIFACT;
       this.difflabel = DIFF_LABEL[this.diffcode];
+      this.attrname = ClassDiffResult.SYS_ATTR_CONTENT;
+      this.content = content;
    }
- 
+
    // ---- Artifact type has changed
- 
-   set_diff_artifacttypechanged (id, type, oldvalue) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_ARTIFACTTYPECHANGED;
+
+   set_diff_artifacttypechanged(id, type, oldvalue) {
+      this.id = id;
+      this.arttype = type;
+      this.diffcode = DIFF_ARTIFACTTYPECHANGED;
       this.difflabel = DIFF_LABEL[this.diffcode];
-      this.oldvalue  = oldvalue;
+      this.oldvalue = oldvalue;
    }
- 
+
    // ---- Artifact custom attribute has changed
- 
-   set_diff_attributevaluechanged (id, type, attrname, oldvalue, newvalue) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_CUSTATTRCHANGED;
+
+   set_diff_attributevaluechanged(id, type, attrname, oldvalue, newvalue) {
+      this.id = id;
+      this.arttype = type;
+      this.diffcode = DIFF_CUSTATTRCHANGED;
       this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname  = attrname;
-      this.oldvalue  = oldvalue;
-      this.newvalue  = newvalue;
+      this.attrname = attrname;
+      this.oldvalue = oldvalue;
+      this.newvalue = newvalue;
    }
 
    // ---- Artifact tag has changed
 
-   set_diff_tagchanged (id, type, oldvalue, newvalue) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_TAGCHANGED;
+   set_diff_tagchanged(id, type, oldvalue, newvalue) {
+      this.id = id;
+      this.arttype = type;
+      this.diffcode = DIFF_TAGCHANGED;
       this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname  = "Tags";
-      this.oldvalue  = oldvalue;
-      this.newvalue  = newvalue;
+      this.attrname = "Tags";
+      this.oldvalue = oldvalue;
+      this.newvalue = newvalue;
    }
 
    // ---- Artifact content has changed
- 
-   set_diff_contentchanged (id, type, attrname, content) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_CONTENTCHANGED;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname  = attrname;
-      this.content   = content;
-   }
- 
-   // ---- Embedded image has changed
- 
-   set_diff_imagechanged (id, type, diffcode) {
-      this.id      = id;
+
+   set_diff_contentchanged(id, type, content) {
+      this.id = id;
       this.arttype = type;
-       
+      this.diffcode = DIFF_CONTENTCHANGED;
+      this.difflabel = DIFF_LABEL[this.diffcode];
+      this.attrname = ClassDiffResult.SYS_ATTR_CONTENT;
+      this.content = content;
+   }
+
+   // ---- Embedded image has changed
+
+   set_diff_imagechanged(id, type, diffcode) {
+      this.id = id;
+      this.arttype = type;
+
       switch (diffcode) {
          case DIFF_IMAGECHANGED:
-            this.diffcode  = DIFF_IMAGECHANGED;
+            this.diffcode = DIFF_IMAGECHANGED;
             this.difflabel = DIFF_LABEL[this.diffcode];
             break;
          case DIFF_IMAGENOTFOUND_NEW:
-            this.diffcode  = DIFF_IMAGENOTFOUND_NEW;
+            this.diffcode = DIFF_IMAGENOTFOUND_NEW;
             this.difflabel = DIFF_LABEL[this.diffcode];
             break;
          case DIFF_IMAGENOTFOUND_OLD:
-            this.diffcode  = DIFF_IMAGENOTFOUND_OLD;
+            this.diffcode = DIFF_IMAGENOTFOUND_OLD;
             this.difflabel = DIFF_LABEL[this.diffcode];
-         break;
+            break;
          default:
             this.diffcode = DIFF_NODIFF;
       };
    }
- 
+
    // ---- New embedded image
- 
-   set_diff_imagenew (id, type, attrname) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_IMAGENEW;
+
+   set_diff_imagenew(id, type, attrname) {
+      this.id = id;
+      this.arttype = type;
+      this.diffcode = DIFF_IMAGENEW;
       this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname  = attrname;
+      this.attrname = attrname;
    }
- 
+
    // ---- Image deleted
- 
-   set_diff_imagedel (id, type, attrname) {
-      this.id        = id;
-      this.arttype   = type;
-      this.diffcode  = DIFF_IMAGEDEL;
+
+   set_diff_imagedel(id, type, attrname) {
+      this.id = id;
+      this.arttype = type;
+      this.diffcode = DIFF_IMAGEDEL;
       this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname  = attrname;
+      this.attrname = attrname;
    }
 }
 
@@ -184,13 +192,13 @@ function cmp_DiffModArtefact(modTest, modRef) {
    for (let myRefArtefact of modRef.artefact_list) {
       let myDiffInfo = new ClassDiffResult();
 
-      if (modTest.get_artefactById(myRefArtefact.id) === undefined) {
+      if (modTest.get_artefactById(myRefArtefact.get_id()) === undefined) {
          // ---- On detecte l'artefact en ecart (existe dans le module de reference, mais pas dans le module a tester)
 
          if (modRef.status === IS_NEW) {
-            myDiffInfo.set_diff_newartifact(myRefArtefact.id, myRefArtefact.type);
+            myDiffInfo.set_diff_newartifact(myRefArtefact.get_id(), myRefArtefact.get_type(), myRefArtefact.get_content());
          } else {
-            myDiffInfo.set_diff_delartifact(myRefArtefact.id, myRefArtefact.type);
+            myDiffInfo.set_diff_delartifact(myRefArtefact.get_id(), myRefArtefact.get_type(), myRefArtefact.get_content());
          }
 
          myDiffList.push(myDiffInfo);
@@ -199,62 +207,62 @@ function cmp_DiffModArtefact(modTest, modRef) {
 
    return myDiffList;
 }
- 
+
 /**
   * Comparer les attributs entre artefacts
   * @param {Object} artTest - Artefact dont on veut detecter les ecarts
   * @param {Object} artRef - Artefact de reference sur lequel on va boucler
   * @returns {Array} - Tableau d'objets de la classe "ClassDiffResult" (Taille tableau = 0, si pas d'ecart)
   */
- 
-function cmp_DiffAttr (artTest, artRef) {
+
+function cmp_DiffAttr(artTest, artRef) {
    let myDiffList = [];
- 
-    // ---- Iterer sur tous les custom attributs de l'artefact de reference
-    // ---- Detecter les cas suivants :
-    // ----     - attribut rempli dans la reference, mais pas dans le test
-    // ----     - attribut rempli dans la reference et le test (donc, faut comparer les valeurs)
- 
+
+   // ---- Iterer sur tous les custom attributs de l'artefact de reference
+   // ---- Detecter les cas suivants :
+   // ----     - attribut rempli dans la reference, mais pas dans le test
+   // ----     - attribut rempli dans la reference et le test (donc, faut comparer les valeurs)
+
    for (let myAttrRef of artRef.custattr_list) {
-      let myAttrTest = new ClassAttribute ();
-      let myDiffInfo = new ClassDiffResult ();
- 
+      let myAttrTest = new ClassAttribute();
+      let myDiffInfo = new ClassDiffResult();
+
       myAttrTest = artTest.get_attributeByName(myAttrRef.name);
- 
+
       if (myAttrTest === undefined) {
          // ---- L'attribut existe seulement dans la reference
- 
+
          myDiffInfo.set_diff_attributevaluechanged(artRef.id, artRef.type, myAttrRef.name, "", myAttrRef.value);
          myDiffList.push(myDiffInfo);
       } else {
          // ---- L'attribut existe dans la reference et le test, il faut donc evaluer l'ecart de valeur
          // ---- Si nombre de valeur est different, alors ecart, sinon faut comparer chaque valeur
- 
+
          let myValueDiff = myAttrRef.value.filter(x => myAttrTest.value.indexOf(x) === -1);
- 
+
          if ((myAttrTest.value.length != myAttrRef.value.length) || (myValueDiff.length > 0)) {
             myDiffInfo.set_diff_attributevaluechanged(artRef.id, artRef.type, myAttrRef.name, myAttrTest.value, myAttrRef.value);
             myDiffList.push(myDiffInfo);
          }
       }
    }
- 
-    // ---- Iterer sur tous les custom attributs de l'artefact de test
-    // ---- Detecter le cas suivant :
-    // ----     - attribut rempli dans le test, mais pas dans la reference
- 
+
+   // ---- Iterer sur tous les custom attributs de l'artefact de test
+   // ---- Detecter le cas suivant :
+   // ----     - attribut rempli dans le test, mais pas dans la reference
+
    for (let myAttrTest of artTest.custattr_list) {
-      let myDiffInfo = new ClassDiffResult ();
-      let myAttrRef  = artRef.get_attributeByName(myAttrTest.name);
- 
+      let myDiffInfo = new ClassDiffResult();
+      let myAttrRef = artRef.get_attributeByName(myAttrTest.name);
+
       if (myAttrRef === undefined) {
          // ---- L'attribut existe seulement dans le test
- 
+
          myDiffInfo.set_diff_attributevaluechanged(artTest.id, artTest.type, myAttrTest.name, myAttrTest.value, "");
          myDiffList.push(myDiffInfo);
       }
    }
- 
+
    return myDiffList;
 }
 
@@ -265,29 +273,29 @@ function cmp_DiffAttr (artTest, artRef) {
  * @returns {Array} - Tableau d'objets de la classe "ClassDiffResult" (Taille tableau = 0, si pas d'ecart)
  */
 
-function cmp_DiffTag (artTest, artRef) {
-   let myDiffInfo    = new ClassDiffResult ();
-   let myDiffList    = [];
-   let myTagRefList  = artRef.concat_tag ();;
-   let myTagTestList = artTest.concat_tag ();
+function cmp_DiffTag(artTest, artRef) {
+   let myDiffInfo = new ClassDiffResult();
+   let myDiffList = [];
+   let myTagRefList = artRef.concat_tag();;
+   let myTagTestList = artTest.concat_tag();
    let myTagModified = false;
- 
+
    // ---- Iterer sur tous les tags de l'artefact de reference
    // ---- Detecter les cas suivants :
    // ----     - tag rempli dans la reference, mais pas dans le test
- 
+
    for (let myTagRef of artRef.tag_list) {
-      if (! artTest.find_tag(myTagRef.value, myTagRef.scope)) {
+      if (!artTest.find_tag(myTagRef.value, myTagRef.scope)) {
          myTagModified = true;
       }
    }
- 
+
    // ---- Iterer sur tous les tags de l'artefact de test
    // ---- Detecter le cas suivant :
    // ----     - attribut rempli dans le test, mais pas dans la reference
- 
+
    for (let myTagTest of artTest.tag_list) {
-      if (! artRef.find_tag(myTagTest.value, myTagTest.scope)) {
+      if (!artRef.find_tag(myTagTest.value, myTagTest.scope)) {
          myTagModified = true;
       }
    }
@@ -295,10 +303,10 @@ function cmp_DiffTag (artTest, artRef) {
    // ---- Tag list is modified !
 
    if (myTagModified) {
-      myDiffInfo.set_diff_tagchanged (artTest.id, artTest.type, myTagTestList, myTagRefList);
+      myDiffInfo.set_diff_tagchanged(artTest.id, artTest.type, myTagTestList, myTagRefList);
       myDiffList.push(myDiffInfo);
    }
-   
+
    return myDiffList;
 }
 
@@ -308,7 +316,7 @@ function cmp_DiffTag (artTest, artRef) {
   * @param {Object} modRef - Module de reference sur lequel on va boucler
   * @returns {Array} - Tableau d'objets de la classe "ClassDiffResult" (Taille tableau = 0, si pas d'ecart)
   */
- 
+
 function cmp_DiffTypeArtefact(modTest, modRef) {
    let myDiffList = [];
 
@@ -326,33 +334,33 @@ function cmp_DiffTypeArtefact(modTest, modRef) {
 
    return myDiffList;
 }
- 
- /**
-  * Detecter les ecarts de custom attributs entre 2 modules
-  * @param {Object} modTest - Module dont on veut detecter les ecarts
-  * @param {Object} modRef - Module de reference sur lequel on va boucler
-  * @returns {Array} - Tableau d'objets de la classe "ClassDiffResult" (Taille tableau = 0, si pas d'ecart)
-  */
- 
-function cmp_DiffAttrArtefact (modTest, modRef) {
+
+/**
+ * Detecter les ecarts de custom attributs entre 2 modules
+ * @param {Object} modTest - Module dont on veut detecter les ecarts
+ * @param {Object} modRef - Module de reference sur lequel on va boucler
+ * @returns {Array} - Tableau d'objets de la classe "ClassDiffResult" (Taille tableau = 0, si pas d'ecart)
+ */
+
+function cmp_DiffAttrArtefact(modTest, modRef) {
    let myDiffList = [];
- 
+
    for (let myRefArtefact of modRef.artefact_list) {
       let myDiffAttrList = [];
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
- 
-       // ---- Pour les artefacts communs et de même type, dont la date de modification est differente :
-       // ----     - on compare les changements de custom attributs
- 
+
+      // ---- Pour les artefacts communs et de même type, dont la date de modification est differente :
+      // ----     - on compare les changements de custom attributs
+
       if (myTestArtefact !== undefined && myRefArtefact.type === myTestArtefact.type && myRefArtefact.modified !== myTestArtefact.modified) {
-         myDiffAttrList = cmp_DiffAttr (myTestArtefact, myRefArtefact);
-          
+         myDiffAttrList = cmp_DiffAttr(myTestArtefact, myRefArtefact);
+
          if (myDiffAttrList.length > 0) {
             myDiffList = myDiffList.concat(myDiffAttrList);
          }
       }
    }
- 
+
    return myDiffList;
 }
 
@@ -363,32 +371,32 @@ function cmp_DiffAttrArtefact (modTest, modRef) {
   * @returns {Array} - Tableau d'objets de la classe "ClassDiffResult" (Taille tableau = 0, si pas d'ecart)
   */
 
-function cmp_DiffTagArtefact (modTest, modRef) {
+function cmp_DiffTagArtefact(modTest, modRef) {
    let myDiffList = [];
- 
+
    for (let myRefArtefact of modRef.artefact_list) {
       let myDiffAttrList = [];
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
- 
+
       // ---- Pour les artefacts communs (un changement de tag de modifie pas la date de l'artefact)
       // ----     - on compare les changements de tags
- 
+
       if (myTestArtefact !== undefined) {
-         myDiffAttrList = cmp_DiffTag (myTestArtefact, myRefArtefact);
+         myDiffAttrList = cmp_DiffTag(myTestArtefact, myRefArtefact);
          myDiffList = myDiffList.concat(myDiffAttrList);
       }
    }
- 
+
    return myDiffList;
 }
- 
+
 /**
   * 
   * @param {*} headerContent - Header HTTP
   * @param {*} headerKey - Champ du header dont on souhaite retourner la valeur
   * @returns {String} - Vakeur du champ contenu dans le header HTTP (undefined, si champ n'existe pas)
   */
- 
+
 function get_httpHeaderInfo(headerContent, headerKey) {
    const regexp = new RegExp(headerKey.toLowerCase() + "\s*:\s*(.+)", "gmi");  // ---- Groupe n° 1 = valeur de la clef recherchée
 
@@ -403,14 +411,14 @@ function get_httpHeaderInfo(headerContent, headerKey) {
 
    return myKeyValue;
 }
- 
+
 /**
   * Lancer les requetes de recuperartion des Headers HPPT des images a comparer (Dans le Header HTTP se trouve la
   * date de derniere modification de l'image). Les requetes sont envoyees en parallele et chaque reponse doit
   * etre traitee individuellement.
   * @param {Array} diffImgList - Tableau des images a comparer
   */
- 
+
 function cmp_DiffImgArtefact(diffImgList) {
    let myRequest;
    let myImgInfo;
@@ -460,14 +468,14 @@ function cmp_DiffImgArtefact(diffImgList) {
       ajax_async_parm_request(myRequest, getImgHeader, getImgHeaderFailed, myImgInfo);
    }
 }
- 
+
 /**
   * Succes de la requete REST de recuperation du header d'une image
   * @param {Object} imgInfo - Caracteristiques de l'image a comparer
   * @param {Object} date - Donnees retournees par la requete REST
   * @param {Object} jqXHR - Objet jQuery XMLHttpRequest
   */
- 
+
 function getImgHeader(imgInfo, data, jqXHR) {
    let myStatus = jqXHR.status;
    let myHeader = jqXHR.getAllResponseHeaders();
@@ -487,13 +495,13 @@ function getImgHeader(imgInfo, data, jqXHR) {
 
    cmpImgEmbedded(imgInfo, myImgDate);
 }
- 
+
 /**
   * Requete REST en echec lors de la recuperation du header d'une image
   * @param {Object} imgInfo - Caracteristiques de l'image a comparer
   * @param {Object} jqXHR - Objet jQuery XMLHttpRequest 
   */
- 
+
 function getImgHeaderFailed(imgInfo, jqXHR) {
    let myStatus = jqXHR.status;
 
@@ -503,13 +511,13 @@ function getImgHeaderFailed(imgInfo, jqXHR) {
 
    cmpImgEmbedded(imgInfo, CST_NOT_FOUND);
 }
- 
+
 /**
   * Stocker les caracteristiques des images embarquees dans l'artefact et les comparer
   * @param {Object} imgInfo - Caracteristiques de l'image a comparer
   * @param {String} imgDate - Date de erniere modification de l'image
   */
- 
+
 function cmpImgEmbedded(imgInfo, imgDate) {
 
    // ---- Stocker la date de derniere modification de l'image
@@ -560,49 +568,33 @@ function cmpImgEmbedded(imgInfo, imgDate) {
       }
    }
 }
- 
+
 /**
   * Detecter les ecarts de contenu entre 2 modules
   * @param {Object} modTest - Module dont on veut detecter les ecarts
   * @param {Object} modRef - Module de reference sur lequel on va boucler
-  * @param {Array} imgDiffList - Liste des images a comparer
   * @returns - Tableau des artefacts en ecart (Taille tableau = 0, si pas d'ecart) - Index = Identifiant artefact en ecart | Contenu = Tableau des attributs en ecart
   */
 
-function cmp_DiffContentArtefact (modTest, modRef) {
+function cmp_DiffContentArtefact(modTest, modRef) {
    let myDiffList = [];
 
    for (let myRefArtefact of modRef.artefact_list) {
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
-      let myDiffResult;
-      let myNodeRefContent;
-      let myNodeTestContent;
-
-      // ---- Pour les artefacts communs, il faut :
-      // ----     - vérifier si le contenu du Primary Text a changé
-      // ----     - et pour chaque image trouvée dans un Primary Text, vérifier si elle n'a pas ete modifiee (car le changement d'une image
-      // ----       ne modifie pas son URL ni la date de modification de l'artefact !)
+      let myDiffContent;
 
       if (myTestArtefact != undefined) {
-         if (myRefArtefact.modified !== myTestArtefact.modified) {
-            // ---- Si la date de modification est differente, il est probable que le Primary Text ait ete modifie
+         if (myRefArtefact.get_modified() !== myTestArtefact.get_modified()) { // ---- Si la date de modification est differente, il est donc possible qu'il y ait des differences de contenu
+            if (myRefArtefact.get_content() !== myTestArtefact.get_content()) { // ---- Si le contenu est different, il faut donc faire une comparaison detaillee pour identifier les differences
 
-            if (myRefArtefact.content !== myTestArtefact.content) {
-               // ---- Si le code HTML du Primary Text est different, il est donc encore plus probable qu'il y ait des differences
+               mgt_Console(cmp_DiffContentArtefact.name + " : Artifact '" + myRefArtefact.id + "' has different content", CONSOLE_INFO);
 
-               console.log("$$$ Artifact Primary Text to compare : " + myRefArtefact.id);
+               myDiffContent = compare_RichTextContent(myRefArtefact.get_content(true), myTestArtefact.get_content(true));
 
-               // ---- Effectuer la comparaison et ne stocker que s'il existe un ecart
-
-               myNodeTestContent = new DOMParser().parseFromString(myTestArtefact.remove_embeddedImgURL(), 'text/xml');
-               myNodeRefContent = new DOMParser().parseFromString(myRefArtefact.remove_embeddedImgURL(), 'text/xml');
-
-               myDiffResult = diff_HtmlContent(myNodeTestContent, myNodeRefContent);
-
-               if (myDiffResult.length > 0) {
+               if (myDiffContent.isEqual === false && myDiffContent.diffHtml !== null) {
                   let myDiffInfo = new ClassDiffResult();
 
-                  myDiffInfo.set_diff_contentchanged(myRefArtefact.id, myRefArtefact.type, "Content", myDiffResult);
+                  myDiffInfo.set_diff_contentchanged(myRefArtefact.id, myRefArtefact.type, myDiffContent.diffHtml);
                   myDiffList.push(myDiffInfo);
                }
             }
@@ -613,56 +605,31 @@ function cmp_DiffContentArtefact (modTest, modRef) {
    return myDiffList;
 }
 
+/**
+ * Detect if embedded images, in artifact "Primary Text", has been added or removed and list images to compare
+ * @param {Object} modTest - Module dont on veut detecter les ecarts
+ * @param {Object} modRef - Module de reference sur lequel on va boucler
+ * @returns {Object} - Object with list of differences and list of embedded images
+ */
 
-function cmp_DiffContentArtefact_old (modTest, modRef, imgDiffList) {
-   let myDiffList = [];
+function cmp_DiffEmbeddeImg(modTest, modRef) {
+   let myRefImgList = [];
+   let myTestImgList = [];
+   let myFctReturnStr = {
+      'diffList': [],
+      'imgList': []
+   };
 
    for (let myRefArtefact of modRef.artefact_list) {
-      let myRefImgList = [];
-      let myTestImgList = [];
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
-      let myDiffResult;
-      let myNodeRefContent;
-      let myNodeTestContent;
 
-      // ---- Pour les artefacts communs, il faut :
-      // ----     - vérifier si le contenu du Primary Text a changé
-      // ----     - et pour chaque image trouvée dans un Primary Text, vérifier si elle n'a pas ete modifiee (car le changement d'une image
-      // ----       ne modifie pas son URL ni la date de modification de l'artefact !)
+      // ---- Identifier toutes les images contenues dans le Primary Text et voir si elles ont ete modifiees
+      // ---- Les differents cas de figure a prendre en compte :
+      // ----     - l'image existe dans l'artefact de reference et dans l'artefact de test, il daut donc detecter si elle a ete modifiee
+      // ----     - l'image existe seulement dans l'artefact de reference, c'est donc une nouvelle image
+      // ----     - l'image existe seulement dans l'artefact de test, c'est donc qu'elle a ete supprimee de l'artefact de reference
 
-      if (myTestArtefact != undefined) {
-         if (myRefArtefact.modified !== myTestArtefact.modified) {
-            // ---- Si la date de modification est differente, il est probable que le Primary Text ait ete modifie
-
-            if (myRefArtefact.content !== myTestArtefact.content) {
-               // ---- Si le code HTML du Primary Text est different, il est donc encore plus probable qu'il y ait des differences
-
-               console.log("$$$ Artifact Primary Text to compare : " + myRefArtefact.id);
-
-               // ---- Effectuer la comparaison et ne stocker que s'il existe un ecart
-
-               myNodeTestContent = new DOMParser().parseFromString(myTestArtefact.remove_embeddedImgURL(), 'text/xml');
-               myNodeRefContent = new DOMParser().parseFromString(myRefArtefact.remove_embeddedImgURL(), 'text/xml');
-
-               myDiffResult = diff_HtmlContent(myNodeTestContent, myNodeRefContent);
-
-               if (myDiffResult.length > 0) {
-                  let myDiffInfo = new ClassDiffResult();
-
-                  myDiffInfo.set_diff_contentchanged(myRefArtefact.id, myRefArtefact.type, "Content", myDiffResult);
-                  myDiffList.push(myDiffInfo);
-               }
-            }
-         }
-
-         // ---- Identifier toutes les images contenues dans le Primary Text et voir si elles ont ete modifiees
-         // ---- Les differents cas de figure a prendre en compte :
-         // ----     - l'image existe dans l'artefact de reference et dans l'artefact de test, il daut donc detecter si elle
-         // ----       a ete modifiee
-         // ----     - l'image existe seulement dans l'artefact de reference, c'est donc une nouvelle image
-         // ----     - l'image existe seulement dans l'artefact de test, c'est odnc qu'elle a ete suuprimee de l'artefact de
-         // ----       reference
-
+      if (myTestArtefact !== undefined) {
          myRefImgList = myRefArtefact.get_imageList();
          myTestImgList = myTestArtefact.get_imageList();
 
@@ -680,149 +647,30 @@ function cmp_DiffContentArtefact_old (modTest, modRef, imgDiffList) {
             if (myTestImgList[myId] !== undefined) { // ---- L'image existe dans les 2 versions de l'artefact
                // ---- On empile les caracteristiques des images qui seront comparees plus tard
 
-               console.log("$$$ Artifact '" + myRefArtefact.id + "' has same image '" + myId + "'");
+               mgt_Console("Artifact '" + myRefArtefact.id + "' has same image '" + myId + "'", CONSOLE_INFO);
 
                myImgDiff.refImgUri = myRefImgList[myId] + "&oslc_config.context=" + modRef.conf.url;
                myImgDiff.testImgUri = myTestImgList[myId] + "&oslc_config.context=" + modTest.conf.url;
 
-               imgDiffList.push(myImgDiff);
+               myFctReturnStr.imgList.push(myImgDiff);
             } else { // ---- Nouvelle image dans l'artefact de reference
                myDiffInfo.set_diff_imagenew(myRefArtefact.id, myRefArtefact.type, myRefArtefact.attrname);
-               myDiffList.push(myDiffInfo);
+               myFctReturnStr.diffList.push(myDiffInfo);
 
-               console.log("$$$ New image in '" + myRefArtefact.id + "'");
+               mgt_Console("New image in '" + myRefArtefact.id + "'", CONSOLE_INFO);
             }
          }
 
-         // ---- Images supprimees de l'artefact de reference
+         // ---- Images supprimees de l'artefact de referenceBen
 
          for (let myId in myTestImgList) {
             let myDiffInfo = new ClassDiffResult();
 
             if (myRefImgList[myId] === undefined) {
                myDiffInfo.set_diff_imagedel(myRefArtefact.id, myRefArtefact.type, myRefArtefact.attrname);
-               myDiffList.push(myDiffInfo);
-
-               console.log("$$$ Image deleted from '" + myRefArtefact.id + "'");
-            }
-         }
-      }
-   }
-
-   return myDiffList;
-}
-
-
-function cmp_DiffContentArtefact_new (modTest, modRef) {
-   let myDiffList = [];
-
-   for (let myRefArtefact of modRef.artefact_list) {
-      let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
-      let myDiffResult;
-      let myDiffHtml;
-
-      let Diff2HtmlCfg = {
-         matching: 'lines',
-         outputFormat: 'line-by-line',
-         synchronisedScroll: true,
-         highlight: true,
-         renderNothingWhenEmpty: false,
-         maxLineSizeInBlockForComparison: 1500
-      };
-
-      // ---- Pour les artefacts communs, il faut :
-      // ----     - vérifier si le contenu du Primary Text a changé
-
-      if (myTestArtefact !== undefined) {
-         if (myRefArtefact.modified !== myTestArtefact.modified && myRefArtefact.content !== myTestArtefact.content) {
-            let myDiffInfo = new ClassDiffResult ();
-
-            // ---- Si la date de modification est differente, alors il est probable que le Primary Text ait ete modifie
-
-            mgt_Console ('Artifact Primary Text to compare : ' + myRefArtefact.id, CONSOLE_INFO);
-            
-            // ---- Le résultat de la comparaison des 2 contenus est au format "Unified Diff" :
-            // ----     - "Diff" : produit le résultat
-            // ----     - "Diff2Html" : met en forme le résultat produit
-
-            myDiffResult = Diff.createTwoFilesPatch ("Old Cfg", "New Cfg", myTestArtefact.remove_embeddedImgURL (), myRefArtefact.remove_embeddedImgURL ());
-            myDiffHtml   = Diff2Html.html (myDiffResult, Diff2HtmlCfg);
-
-            myDiffInfo.set_diff_contentchanged(myRefArtefact.id, myRefArtefact.type, "Content", myDiffHtml);
-            myDiffList.push(myDiffInfo);
-         }
-      }
-   }
-
-   return myDiffList;
-}
-
-/**
- * Detect if embedded images, in artifact "Primary Text", has been added or removed and list images to compare
- * @param {Object} modTest - Module dont on veut detecter les ecarts
- * @param {Object} modRef - Module de reference sur lequel on va boucler
- * @returns {Object} - Object with list of differences and list of embedded images
- */
-
-function cmp_DiffEmbeddeImg (modTest, modRef) {
-   let myRefImgList   = [];
-   let myTestImgList  = [];
-   let myFctReturnStr = {
-      'diffList' : [],
-      'imgList'  : []
-   };
-
-   for (let myRefArtefact of modRef.artefact_list) {
-      let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
- 
-      // ---- Identifier toutes les images contenues dans le Primary Text et voir si elles ont ete modifiees
-      // ---- Les differents cas de figure a prendre en compte :
-      // ----     - l'image existe dans l'artefact de reference et dans l'artefact de test, il daut donc detecter si elle a ete modifiee
-      // ----     - l'image existe seulement dans l'artefact de reference, c'est donc une nouvelle image
-      // ----     - l'image existe seulement dans l'artefact de test, c'est donc qu'elle a ete supprimee de l'artefact de reference
-
-      if (myTestArtefact !== undefined) {
-         myRefImgList  = myRefArtefact.get_imageList ();
-         myTestImgList = myTestArtefact.get_imageList ();
-
-         for (let myId in myRefImgList) {
-            let myDiffInfo = new ClassDiffResult ();
-            let myImgDiff = {
-               'artId'       : myRefArtefact.id,
-               'artType'     : myRefArtefact.type,
-               'refImgUri'   : "",
-               'refImgDate'  : undefined,
-               'testImgUri'  : "",
-               'testImgDate' : undefined
-            };
- 
-            if (myTestImgList[myId] !== undefined) { // ---- L'image existe dans les 2 versions de l'artefact
-               // ---- On empile les caracteristiques des images qui seront comparees plus tard
- 
-               mgt_Console ("Artifact '" + myRefArtefact.id + "' has same image '" + myId + "'", CONSOLE_INFO);
- 
-               myImgDiff.refImgUri  = myRefImgList[myId] + "&oslc_config.context=" + modRef.conf.url;
-               myImgDiff.testImgUri = myTestImgList[myId] + "&oslc_config.context=" + modTest.conf.url;
-                
-               myFctReturnStr.imgList.push(myImgDiff);
-            } else { // ---- Nouvelle image dans l'artefact de reference
-               myDiffInfo.set_diff_imagenew(myRefArtefact.id, myRefArtefact.type,myRefArtefact.attrname);
                myFctReturnStr.diffList.push(myDiffInfo);
 
-               mgt_Console ("New image in '" + myRefArtefact.id + "'", CONSOLE_INFO);
-            }
-         }
- 
-         // ---- Images supprimees de l'artefact de referenceBen
- 
-         for (let myId in myTestImgList) {
-            let myDiffInfo = new ClassDiffResult ();
- 
-            if (myRefImgList[myId] === undefined) {
-               myDiffInfo.set_diff_imagedel(myRefArtefact.id, myRefArtefact.type, myRefArtefact.attrname);
-               myFctReturnStr.diffList.push(myDiffInfo);
- 
-               mgt_Console ("Image deleted from '" + myRefArtefact.id + "'", CONSOLE_INFO);
+               mgt_Console("Image deleted from '" + myRefArtefact.id + "'", CONSOLE_INFO);
             }
          }
       }
@@ -838,60 +686,60 @@ function cmp_DiffEmbeddeImg (modTest, modRef) {
   * 
   * @param {String} data - Donnees provenant de l'objet ayant appele la fonction 
   */
- 
-function start_compare () {
+
+function start_compare() {
    let myChangedArtifactList = [];
    let myFctReturnStr;
- 
+
    g_DiffList.splice(0);      // ---- Vider la table des resultats de comparaison
    g_DiffImgList.splice(0);   // ---- Vider la liste des images embarquees à comparer
    g_DiffImgCpt = 0;          // ---- Reinitialiser le compteur de comparaison d'images embarquees
- 
+
    // ---- Afficher l'indicateur de progession de la comparaison
- 
+
    $("#" + GUI_ITEM_newloadingcellstat).show();
- 
+
    // ---- Detecter les nouveaux artefacts
- 
-   myChangedArtifactList = cmp_DiffModArtefact (g_ModuleOld, g_ModuleNew);
+
+   myChangedArtifactList = cmp_DiffModArtefact(g_ModuleOld, g_ModuleNew);
    g_DiffList = g_DiffList.concat(myChangedArtifactList);
- 
+
    // ---- Détecter les artefacts supprimes
- 
-   myChangedArtifactList = cmp_DiffModArtefact (g_ModuleNew, g_ModuleOld);
+
+   myChangedArtifactList = cmp_DiffModArtefact(g_ModuleNew, g_ModuleOld);
    g_DiffList = g_DiffList.concat(myChangedArtifactList);
- 
+
    // ---- Parmi les artefacts communs, detecter les artefacts dont le type a ete modifie
- 
-   myChangedArtifactList = cmp_DiffTypeArtefact (g_ModuleOld, g_ModuleNew);
+
+   myChangedArtifactList = cmp_DiffTypeArtefact(g_ModuleOld, g_ModuleNew);
    g_DiffList = g_DiffList.concat(myChangedArtifactList);
- 
+
    // ---- Parmi les artefacts communs, detecter les artefacts dont les attributs "custom" ont ete modifies
- 
-   myChangedArtifactList = cmp_DiffAttrArtefact (g_ModuleOld, g_ModuleNew);
+
+   myChangedArtifactList = cmp_DiffAttrArtefact(g_ModuleOld, g_ModuleNew);
    g_DiffList = g_DiffList.concat(myChangedArtifactList);
 
    // ---- Parmi les artefacts communs, detecter les artefacts dont les tags ont ete modifies
- 
-   myChangedArtifactList = cmp_DiffTagArtefact (g_ModuleOld, g_ModuleNew);
+
+   myChangedArtifactList = cmp_DiffTagArtefact(g_ModuleOld, g_ModuleNew);
    g_DiffList = g_DiffList.concat(myChangedArtifactList);
 
    // ---- Parmi les artefacts communs, detecter les artefacts dont le "Primary Text" a ete modifie
- 
-   myChangedArtifactList = cmp_DiffContentArtefact (g_ModuleOld, g_ModuleNew);
+
+   myChangedArtifactList = cmp_DiffContentArtefact(g_ModuleOld, g_ModuleNew);
    g_DiffList = g_DiffList.concat(myChangedArtifactList);
 
    // ---- Analyser les images embarquées dans le "Primary Text"
 
-   myFctReturnStr = cmp_DiffEmbeddeImg (g_ModuleOld, g_ModuleNew);
-   g_DiffList     = g_DiffList.concat(myFctReturnStr.diffList);
-   g_DiffImgList  = myFctReturnStr.imgList;
+   myFctReturnStr = cmp_DiffEmbeddeImg(g_ModuleOld, g_ModuleNew);
+   g_DiffList = g_DiffList.concat(myFctReturnStr.diffList);
+   g_DiffImgList = myFctReturnStr.imgList;
 
    // ---- Lancer la comparaison des images contenues dans le "Primary Text" des artefacts
- 
+
    if (g_DiffImgList.length > 0) {
-      cmp_DiffImgArtefact (g_DiffImgList);
+      cmp_DiffImgArtefact(g_DiffImgList);
    } else {
-      gui_DisplayStat ();
+      gui_DisplayStat();
    }
 }

@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../ERM_Diff_Config"
 		}
 	]
 }

@@ -1,0 +1,47 @@
+Pour le projet "AGS_DiffModule", j'ai besoin de modifier la fonction d'export du rapport de comparaison.
+
+Cet export est assuré par la fonction "export_report" et permet de produire 2 formats :
+
+- un format "standard"
+- un format "compact"
+
+Je souhaite conserver ces 2 formats.
+
+Tu remarqueras que les données à exporter proviennent d'une table filtrée par "datatables" :
+
+myFilteredTable = g_DiffTable.DataTable().rows({ filter: 'applied' }).data().toArray();
+
+Ce principe doit absolument être conservé, car c'est une des options majeures de l'outil de comparaison !
+
+Les modidifications que je souhaite apporter sont les suivantes :
+
+- l'export du rapport, quelle que soit sa forme ("standard" ou "compact"), soit réalisé au format EXCEL
+- l'export ne soit pas bloqué par le navigateur, car je rencontre le message d'erreur suivant : Content-Security-Policy: The page’s settings blocked the loading of a resource (frame-src) at blob:https://elm703.raoulnet/19639563-4940-4e00-b57e-1e3c28889f9d because it violates the following directive: “default-src 'self' 'unsafe-eval' 'unsafe-inline' https://elm703.raoulnet”
+- l'export ait un peu plus de style, car sa forme actuelle est assez "brute"
+
+En ce qui concerne le style du rapport :
+
+- le rapport a pour vocation d'être diffusé en pièce jointe de spécifications techniques de systèmes complexes, donc je veux une forme qui soit compatible avec ce contexte
+- les relecteurs de ce rapport sont des ingénieurs ou des auditeurs techniques du domaine aéronautique
+- la langue anglaise doit être la langue par défaut du rapport exporté
+ 
+Quelle proposition de style compatible avec mes exigences peux-tu faire ?
+
+Tu vas modifier le code de la fonction "export_report", par conséquent je te demande :
+
+- respecter mes conventions de codage
+- de commenter le code que tu vas ajouter pour qu'il reste maintenable et compréhensible
+- si tu dois utiliser une librairie externe, celle-ci doit être "Open Source", vivante et maintenue
+
+De quelles autres informations as-tu besoin pour faire ces modifications ?
+
+
+
+Le style de l'export me convient parfaitement.
+
+Par contre la colonne "Diff Content" de l'export est la seule à pouvoir contenir du texte riche et je m'interroge sur la pertinence du format EXCEL :
+
+- Soit je continue avec le format EXCEL, mais dans ce cas la colonne "Diff Content" doit supporter du texte riche
+- Soir j'abandonne le format EXCEL au profit du format HTML pour garantir que "Diff Content" sera bien en texte riche
+
+Quelle proposition peux-tu me faire ?
