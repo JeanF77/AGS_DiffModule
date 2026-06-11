@@ -99,10 +99,15 @@ const COMPARE_MODE_LABEL = ["Local Conf"];
    ---- Classes
    --------------------------------------------------------------------------- */
 
-class ClassProject {           // ---- Caracteristiques d'un projet JAZZ
-   name = ""                   // ---- Nom du projet
-   url = ""                    // ---- URL du projet
-   id = ""                     // ---- Identifiant du projet
+class ClassProject { // ---- Caracteristiques d'un projet JAZZ
+   constructor() {
+      this.name = "";            // ---- Nom du projet
+      this.summary = null;       // ---- Sommaire du projet
+      this.description = null;   // ---- Description du projet
+      this.url = "";             // ---- URL du projet
+      this.id = "";              // ---- Identifiant du projet
+      this.modified = null;      // ---- Date de dernière modification du projet
+   }
 
    /**
     * Réinitialiser l'objet
@@ -110,8 +115,43 @@ class ClassProject {           // ---- Caracteristiques d'un projet JAZZ
 
    empty() {
       this.name = "";
+      this.summary = null;
+      this.description = null;
       this.url = "";
       this.id = "";
+      this.modified = null;
+   }
+
+   init(xml_data) { // ---- Init object
+      let mySelf = this;
+      let myPrjId = [];
+
+      mySelf.name = xml_data.attr(JP060_NAME); // ---- Projet Name
+
+      xml_data.children().each(function () {
+         switch ($(this).prop('nodeName')) {
+            case JP060_URL: // ---- Project URL
+               mySelf.url = $(this).text();
+               myPrjId = mySelf.url.match(/^https.+\/(.+)/);
+               mySelf.id = myPrjId[1];
+               break;
+
+            case JP060_DESCRIPTION: // ---- Project Description
+               mySelf.description = $(this).text();
+               break;
+
+            case JP060_SUMMARY: // ---- Project Summary
+               mySelf.summary = $(this).text();
+               break;
+
+            case JP060_MODIFIED: // ---- Project Modified Date
+               mySelf.modified = $(this).text();
+               break;
+
+            default:
+            // ---- Do nothing
+         };
+      });
    }
 }
 
@@ -739,17 +779,12 @@ function gui_BuildProjectBtn(data) {
    gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, ACTION_DISP_OFF);
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
 
-
    // ---- Decoder le contenu de la reponse REST
 
-   $(xmlData).find('jp06\\:project-area').each(function () {
+   $(xmlData).find(JP06_PROJECTAREAS).children().each(function () {
       let myPrj = new ClassProject();
-      let myPrjId = [];
 
-      myPrj.name = $(this).attr('jp06:name');              // ---- Nom du projet
-      myPrj.url = $(this).find('jp06\\:url').text();      // ---- URL du projet
-      myPrjId = myPrj.url.match(/^https.+\/(.+)/);      // ---- Identifiant du projet
-      myPrj.id = myPrjId[1];
+      myPrj.init($(this));
 
       // ---- Stocker caracteristiques du projet dans la liste globale
 

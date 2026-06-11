@@ -379,6 +379,8 @@ async function export_report(isCompact) {
             // ---- Traitement spécifique selon le type de différence
             switch (myFilteredTable[i][RPT_COL_DIFFLABEL]) {
                 case DIFF_LABEL[DIFF_CONTENTCHANGED]:
+                case DIFF_LABEL[DIFF_NEWARTIFACT]:
+                case DIFF_LABEL[DIFF_DELARTIFACT]:
                     // ---- Conserver le HTML diff2html tel quel (rendu riche dans le rapport HTML)
                     myCompactRow.diffcontent = myFilteredTable[i][RPT_COL_DIFFCONTENT];
                     break;
