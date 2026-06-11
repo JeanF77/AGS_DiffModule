@@ -14,13 +14,13 @@
    ---- Classes
    --------------------------------------------------------------------------- */
 
-class ClassProject { // ---- Caracteristiques d'un projet JAZZ
-   #name;          // ---- Nom du projet
-   #summary;       // ---- Sommaire du projet
-   #description;   // ---- Description du projet
-   #url;           // ---- URL du projet
-   #id;            // ---- Identifiant du projet
-   #modified;      // ---- Date de derniere modification du projet
+class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (projet, composant, ...)
+   #name;          // ---- Nom de la ressource
+   #summary;       // ---- Sommaire de la ressource
+   #description;   // ---- Description de la ressource
+   #url;           // ---- URL de la ressource
+   #id;            // ---- Identifiant de la ressource
+   #modified;      // ---- Date de derniere modification de la ressource
 
    constructor() {
       this.#name = null;
@@ -42,42 +42,6 @@ class ClassProject { // ---- Caracteristiques d'un projet JAZZ
       this.#url = null;
       this.#id = null;
       this.#modified = null;
-   }
-
-   /**
-    * Initialiser l'objet a partir d'un noeud XML "jp06:project-area"
-    * @param {Object} xml_data - Noeud jQuery du projet
-    */
-
-   init(xml_data) {
-      let myPrjId = [];
-
-      this.#name = xml_data.attr(JP060_NAME); // ---- Project Name
-
-      xml_data.children().each((index, node) => {
-         switch ($(node).prop('nodeName')) {
-            case JP060_URL: // ---- Project URL
-               this.#url = $(node).text();
-               myPrjId = this.#url.match(/^https.+\/(.+)/);
-               this.#id = myPrjId[1];
-               break;
-
-            case JP060_DESCRIPTION: // ---- Project Description
-               this.#description = $(node).text();
-               break;
-
-            case JP060_SUMMARY: // ---- Project Summary
-               this.#summary = $(node).text();
-               break;
-
-            case JP060_MODIFIED: // ---- Project Modified Date
-               this.#modified = $(node).text();
-               break;
-
-            default:
-            // ---- Do nothing
-         };
-      });
    }
 
    // ---- Getters
@@ -130,5 +94,81 @@ class ClassProject { // ---- Caracteristiques d'un projet JAZZ
 
    setModified(modified) {
       this.#modified = modified;
+   }
+}
+
+class ClassProject extends ClassJazzItem { // ---- Caracteristiques d'un projet JAZZ
+   /**
+    * Initialiser l'objet a partir d'un noeud XML "jp06:project-area"
+    * @param {Object} xml_data - Noeud jQuery du projet
+    */
+
+   init(xml_data) {
+      let myPrjId = [];
+
+      this.setName(xml_data.attr(JP060_NAME)); // ---- Project Name
+
+      xml_data.children().each((index, node) => {
+         switch ($(node).prop('nodeName')) {
+            case JP060_URL: // ---- Project URL
+               this.setUrl($(node).text());
+               myPrjId = this.getUrl().match(/^https.+\/(.+)/);
+               this.setId(myPrjId[1]);
+               break;
+
+            case JP060_DESCRIPTION: // ---- Project Description
+               this.setDescription($(node).text());
+               break;
+
+            case JP060_SUMMARY: // ---- Project Summary
+               this.setSummary($(node).text());
+               break;
+
+            case JP060_MODIFIED: // ---- Project Modified Date
+               this.setModified($(node).text());
+               break;
+
+            default:
+            // ---- Do nothing
+         };
+      });
+   }
+}
+
+class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un composant JAZZ
+   /**
+    * Initialiser l'objet a partir d'un noeud XML "jp06:project-area"
+    * @param {Object} xml_data - Noeud jQuery du composant
+    */
+
+   init(xml_data) {
+      let myCompId = [];
+
+      this.setName(xml_data.attr(JP060_NAME)); // ---- Component Name
+
+      xml_data.children().each((index, node) => {
+         switch ($(node).prop('nodeName')) {
+            case JP060_URL: // ---- Component URL
+               this.setUrl($(node).text());
+               myCompId = this.getUrl().match(/^https.+\/components\/(.+)/);
+               this.setId(myCompId[1]);
+               break;
+
+            case JP060_DESCRIPTION: // ---- Component Description
+               this.setDescription($(node).text());
+               break;
+
+            case JP060_SUMMARY: // ---- Component Summary
+               this.setSummary($(node).text());
+               break;
+
+            case JP060_MODIFIED: // ---- Component Modified Date
+               this.setModified($(node).text());
+               break;
+
+            default:
+            // ---- Do nothing
+         };
+      });
    }
 }

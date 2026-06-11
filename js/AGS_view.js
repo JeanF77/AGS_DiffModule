@@ -99,22 +99,6 @@ const COMPARE_MODE_LABEL = ["Local Conf"];
    ---- Classes
    --------------------------------------------------------------------------- */
 
-class ClassComponent {         // ---- Caracteristiques d'un composant JAZZ
-   name = ""                   // ---- Nom du composant
-   url = ""                    // ---- URL du composant
-   id = ""                     // ---- Identifiant du composant
-
-   /**
-    * Réinitialiser l'objet
-    */
-
-   empty() {
-      this.name = "";
-      this.url = "";
-      this.id = "";
-   }
-}
-
 class ClassConfiguration {     // ---- Caracteristiques d'une configuration JAZZ
    name = ""                   // ---- Nom de la configuration
    description = ""            // ---- Description de la configuration
@@ -847,14 +831,10 @@ function gui_BuildComponentBtn(data) {
 
    // ---- Decoder le contenu de la reponse REST
 
-   $(xmlData).find('jp06\\:project-area').each(function () {
+   $(xmlData).find(JP06_PROJECTAREA).each(function () {
       let myComp = new ClassComponent();
-      let myCompId = [];
 
-      myComp.name = $(this).attr('jp06:name');                       // ---- Nom du composant
-      myComp.url = $(this).find('jp06\\:url').text();               // ---- URL du composant
-      myCompId = myComp.url.match(/^https.+\/components\/(.+)/);  // ---- Identifiant du composant
-      myComp.id = myCompId[1];
+      myComp.init($(this));
 
       // ---- Stocker caracteristiques du projet dans la liste globale
 
@@ -863,10 +843,10 @@ function gui_BuildComponentBtn(data) {
 
    // ---- Trier les composants et construire le bouton
 
-   g_ComponentList.sort((a, b) => (a.name > b.name) ? 1 : -1);
+   g_ComponentList.sort((a, b) => (a.getName() > b.getName()) ? 1 : -1);
 
    for (let myComponent of g_ComponentList) {
-      myItem.push('<li id="' + myComponent.id + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + myComponent.name + '</a></li>');
+      myItem.push('<li id="' + myComponent.getId() + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + myComponent.getName() + '</a></li>');
    }
 
    // ---- Activer le bouton s'il existe des composants
@@ -891,13 +871,13 @@ function gui_SelectComponent(object) {
    // ---- Sauvegarder l'identifiant du composant selectionne
 
    for (let i = 0; i < g_ComponentList.length; i++) {
-      if (g_ComponentList[i].id == object.id) {
+      if (g_ComponentList[i].getId() == object.id) {
          g_Component = g_ComponentList[i];
          break;
       }
    }
 
-   gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + g_Component.name);
+   gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + g_Component.getName());
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_SUCCESS);
 
    // ---- Reinitialiser les items dependants
@@ -909,7 +889,7 @@ function gui_SelectComponent(object) {
    gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, IS_INPROGRESS);
    gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, IS_INPROGRESS);
 
-   BuildConfList(g_Component.id);
+   BuildConfList(g_Component.getId());
 }
 
 /**
@@ -1109,7 +1089,7 @@ function gui_SelectConf(object) {
       } else {
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_INPROGRESS);
-         BuildModuleList(g_Project.getUrl(), g_Component.url, g_ConfOld.url, IS_OLD);
+         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfOld.url, IS_OLD);
       }
    } else { // ---- New configuration
       g_ConfNew.set(g_ConfList, myConfId[2]);
@@ -1134,7 +1114,7 @@ function gui_SelectConf(object) {
       } else {
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_INPROGRESS);
-         BuildModuleList(g_Project.getUrl(), g_Component.url, g_ConfNew.url, IS_NEW);
+         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfNew.url, IS_NEW);
       }
    }
 }
