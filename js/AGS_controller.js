@@ -218,7 +218,7 @@ function BuildConfList (compId) {
  */
 
 function UpdateConfList (confObj) {
-   const REST_RM_GETCONF = RM_HOSTNAME + "/rm/cm/" + confObj.type + "/" + confObj.id;
+   const REST_RM_GETCONF = RM_HOSTNAME + "/rm/cm/" + confObj.getType() + "/" + confObj.getId();
 
    let myRequest = {
       'rest_method'  : "GET",
@@ -289,7 +289,7 @@ function BuildModuleList (prjURI, compURI, confURI, state) {
  */
 
 function load_oldTxtmodule (pos) {
-   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleOld.conf.url;
+   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleOld.conf.getUrl();
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 
@@ -347,7 +347,7 @@ function load_oldTxtmodule (pos) {
  */
 
 function load_newTxtmodule (pos) {
-   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleNew.conf.url;
+   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleNew.conf.getUrl();
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 
@@ -405,7 +405,7 @@ function load_newTxtmodule (pos) {
  */
 
 function load_OldModule () {
-   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.id + "&oslc_config.context=" + g_ModuleOld.conf.url;
+   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.id + "&oslc_config.context=" + g_ModuleOld.conf.getUrl();
 
    let myRequest = {
       'rest_method'  : "GET",
@@ -435,7 +435,7 @@ function load_OldModule () {
  */
 
 function load_NewModule () {
-   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.id + "&oslc_config.context=" + g_ModuleNew.conf.url;
+   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.id + "&oslc_config.context=" + g_ModuleNew.conf.getUrl();
 
    let myRequest = {
       'rest_method'  : "GET",

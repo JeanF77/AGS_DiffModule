@@ -649,8 +649,8 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
 
                mgt_Console("Artifact '" + myRefArtefact.id + "' has same image '" + myId + "'", CONSOLE_INFO);
 
-               myImgDiff.refImgUri = myRefImgList[myId] + "&oslc_config.context=" + modRef.conf.url;
-               myImgDiff.testImgUri = myTestImgList[myId] + "&oslc_config.context=" + modTest.conf.url;
+               myImgDiff.refImgUri = myRefImgList[myId] + "&oslc_config.context=" + modRef.conf.getUrl();
+               myImgDiff.testImgUri = myTestImgList[myId] + "&oslc_config.context=" + modTest.conf.getUrl();
 
                myFctReturnStr.imgList.push(myImgDiff);
             } else { // ---- Nouvelle image dans l'artefact de reference

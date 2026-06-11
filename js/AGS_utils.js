@@ -92,17 +92,17 @@ const CONSOLE_ERROR                          = "### ERROR : ";
    --------------------------------------------------------------------------- */
 
 /**
- * Compare property "name" from array of objects, ascendant sort
- * @param {String} a - "a.name" to compare
- * @param {String} b - "b.name" to compare
+ * Compare property "name" from array of objects (via getName()), ascendant sort
+ * @param {Object} a - object exposing getName()
+ * @param {Object} b - object exposing getName()
  * @returns - Compare status (1 or -1)
  */
 
 function compareName (a, b) {
 	// Use toUpperCase() to ignore character casing
- 
-	const nameA = a.name.toUpperCase();
-	const nameB = b.name.toUpperCase();
+
+	const nameA = a.getName().toUpperCase();
+	const nameB = b.getName().toUpperCase();
  
 	let comparison = 0;
  

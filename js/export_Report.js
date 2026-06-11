@@ -499,8 +499,8 @@ async function export_report(isCompact) {
     // ---- Préparer les métadonnées du rapport
     const myInfo = {
         project:    g_Project.getName(),
-        newModule:  g_ConfNew.name  + ' / ' + g_ModuleNew.name,
-        oldModule:  g_ConfOld.name  + ' / ' + g_ModuleOld.name,
+        newModule:  g_ConfNew.getName()  + ' / ' + g_ModuleNew.name,
+        oldModule:  g_ConfOld.getName()  + ' / ' + g_ModuleOld.name,
         date:       myDate.toLocaleDateString('en-GB'),
         count:      isCompact ? myCompactTable.length : myFilteredTable.length,
         moduleName: g_ModuleNew.name

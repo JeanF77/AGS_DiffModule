@@ -99,45 +99,6 @@ const COMPARE_MODE_LABEL = ["Local Conf"];
    ---- Classes
    --------------------------------------------------------------------------- */
 
-class ClassConfiguration {     // ---- Caracteristiques d'une configuration JAZZ
-   name = ""                   // ---- Nom de la configuration
-   description = ""            // ---- Description de la configuration
-   url = ""                    // ---- URL de la configuration
-   id = ""                     // ---- Identifiant de la configuration
-   type = ""                   // ---- Type de condiguration : stream ou baseline
-
-   /**
-    * Réinitialiser l'objet
-    */
-
-   empty() {
-      this.name = "";
-      this.description = "";
-      this.url = "";
-      this.id = "";
-      this.type = "";
-   }
-
-   /**
-    * Affecter une configuration a partir d'une liste
-    * @param {Array} confList - Table d'objets de type "Configuration"
-    * @param {String} confId - Identifiant de la configuration
-    */
-
-   set(confList, confId) {
-      for (let myConf of confList) {
-         if (confId === myConf.id) {
-            this.name = myConf.name;
-            this.description = myConf.description;
-            this.url = myConf.url;
-            this.id = myConf.id;
-            this.type = myConf.type;
-            break;
-         }
-      }
-   }
-}
-
 class ClassAttribute {         // ---- Caracteristiques d'un attribut
    name = ""                   // ---- Nom de l'attribut
    type = ""                   // ---- Type de l'attribut (URI du type)
@@ -967,11 +928,11 @@ function gui_BuildConfBtn(data) {
 
       // ---- A ce stade, nous n'avons pas encore le nom de la configuration
 
-      myConf.url = $(this).attr('rdf:resource');                     // ---- URL de la configuration
-      myConfId = myConf.url.match(/^https.+\/rm\/cm\/(.+)\/(.+)/); // ---- Extraire type et identifiant de configuration
-      myConf.type = myConfId[1];
-      myConf.id = myConfId[2];
-      myConf.name = myConf.id;
+      myConf.setUrl($(this).attr('rdf:resource'));                     // ---- URL de la configuration
+      myConfId = myConf.getUrl().match(/^https.+\/rm\/cm\/(.+)\/(.+)/); // ---- Extraire type et identifiant de configuration
+      myConf.setType(myConfId[1]);
+      myConf.setId(myConfId[2]);
+      myConf.setName(myConf.getId());
 
       // ---- Stocker caracteristiques du projet dans la liste globale
 
@@ -992,20 +953,20 @@ function gui_BuildConfBtn(data) {
       let myItem;
       let myConfIcon;
 
-      if (myConf.name != myConf.id) { // ---- Si Name = ID, il s'agit d'une configuration archivée pour laquelle la résolution n'a pu être faite
+      if (myConf.getName() != myConf.getId()) { // ---- Si Name = ID, il s'agit d'une configuration archivée pour laquelle la résolution n'a pu être faite
 
          // ---- Construire le bouton
 
-         if (myConf.type === "stream") {
+         if (myConf.getType() === "stream") {
             myConfIcon = '<img src="' + GUI_ICON_STREAM + '" alt="Stream"> ';
          } else {
             myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
          }
 
-         myItem = '<li id="_old' + myConf.id + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.name + '</a></li>';
+         myItem = '<li id="_old' + myConf.getId() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
          gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
 
-         myItem = '<li id="_new' + myConf.id + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.name + '</a></li>';
+         myItem = '<li id="_new' + myConf.getId() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
          gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
       }
    }
@@ -1046,10 +1007,10 @@ function gui_UpdateConfBtn(data) {
 
    // ---- Mettre à jour la liste des configurations
 
-   myConfIdx = g_ConfList.findIndex(conf => conf.id === myConfId)
+   myConfIdx = g_ConfList.findIndex(conf => conf.getId() === myConfId)
 
    if (myConfIdx > -1) {
-      g_ConfList[myConfIdx].name = myConfName;
+      g_ConfList[myConfIdx].setName(myConfName);
    }
 }
 
@@ -1069,13 +1030,13 @@ function gui_SelectConf(object) {
    if (myConfId[1] === 'old') { // ---- Old configuration
       g_ConfOld.set(g_ConfList, myConfId[2]);
 
-      if (g_ConfOld.type === "stream") {
+      if (g_ConfOld.getType() === "stream") {
          myConfIcon = '<img src="' + GUI_ICON_STREAM + '" alt="Stream"> ';
       } else {
          myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
       }
 
-      gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_SETLABEL, myConfIcon + g_ConfOld.name);
+      gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_SETLABEL, myConfIcon + g_ConfOld.getName());
 
       // ---- Reinitialiser les items dependants
 
@@ -1083,24 +1044,24 @@ function gui_SelectConf(object) {
 
       // ---- Etablir la liste des configurations (streams, baselines ...)
 
-      if (g_ConfOld.id === g_ConfNew.id) {
+      if (g_ConfOld.getId() === g_ConfNew.getId()) {
          // ---- Alerter si les 2 configurations sont identiques
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, IS_WARNING);
       } else {
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_INPROGRESS);
-         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfOld.url, IS_OLD);
+         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfOld.getUrl(), IS_OLD);
       }
    } else { // ---- New configuration
       g_ConfNew.set(g_ConfList, myConfId[2]);
 
-      if (g_ConfNew.type === "stream") {
+      if (g_ConfNew.getType() === "stream") {
          myConfIcon = '<img src="' + GUI_ICON_STREAM + '" alt="Stream"> ';
       } else {
          myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
       }
 
-      gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_SETLABEL, myConfIcon + g_ConfNew.name);
+      gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_SETLABEL, myConfIcon + g_ConfNew.getName());
 
       // ---- Reinitialiser les items dependants
 
@@ -1108,13 +1069,13 @@ function gui_SelectConf(object) {
 
       // ---- Etablir la liste des configurations (streams, baselines ...)
 
-      if (g_ConfOld.id === g_ConfNew.id) {
+      if (g_ConfOld.getId() === g_ConfNew.getId()) {
          // ---- Alerter si les 2 configurations sont identiques
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, IS_WARNING);
       } else {
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_INPROGRESS);
-         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfNew.url, IS_NEW);
+         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfNew.getUrl(), IS_NEW);
       }
    }
 }

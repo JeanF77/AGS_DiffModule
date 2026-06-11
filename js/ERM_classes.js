@@ -172,3 +172,52 @@ class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un compo
       });
    }
 }
+
+class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une configuration JAZZ
+   #type; // ---- Type de configuration : "stream" ou "baseline"
+
+   constructor() {
+      super();
+      this.#type = null;
+   }
+
+   /**
+    * Réinitialiser l'objet
+    */
+
+   empty() {
+      super.empty();
+      this.#type = null;
+   }
+
+   /**
+    * Affecter une configuration a partir d'une liste
+    * @param {Array} confList - Table d'objets de type "ClassConfiguration"
+    * @param {String} confId - Identifiant de la configuration
+    */
+
+   set(confList, confId) {
+      for (let myConf of confList) {
+         if (confId === myConf.getId()) {
+            this.setName(myConf.getName());
+            this.setDescription(myConf.getDescription());
+            this.setUrl(myConf.getUrl());
+            this.setId(myConf.getId());
+            this.setType(myConf.getType());
+            break;
+         }
+      }
+   }
+
+   // ---- Getters
+
+   getType() {
+      return this.#type;
+   }
+
+   // ---- Setters
+
+   setType(type) {
+      this.#type = type;
+   }
+}
