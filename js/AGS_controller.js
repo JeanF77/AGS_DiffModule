@@ -289,7 +289,7 @@ function BuildModuleList (prjURI, compURI, confURI, state) {
  */
 
 function load_oldTxtmodule (pos) {
-   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.id + "&projectURI=" + g_Project.id + "&oslc_config.context=" + g_ModuleOld.conf.url;
+   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleOld.conf.url;
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 
@@ -347,7 +347,7 @@ function load_oldTxtmodule (pos) {
  */
 
 function load_newTxtmodule (pos) {
-   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.id + "&projectURI=" + g_Project.id + "&oslc_config.context=" + g_ModuleNew.conf.url;
+   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleNew.conf.url;
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 

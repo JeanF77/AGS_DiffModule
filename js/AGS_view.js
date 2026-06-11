@@ -99,62 +99,6 @@ const COMPARE_MODE_LABEL = ["Local Conf"];
    ---- Classes
    --------------------------------------------------------------------------- */
 
-class ClassProject { // ---- Caracteristiques d'un projet JAZZ
-   constructor() {
-      this.name = "";            // ---- Nom du projet
-      this.summary = null;       // ---- Sommaire du projet
-      this.description = null;   // ---- Description du projet
-      this.url = "";             // ---- URL du projet
-      this.id = "";              // ---- Identifiant du projet
-      this.modified = null;      // ---- Date de dernière modification du projet
-   }
-
-   /**
-    * Réinitialiser l'objet
-    */
-
-   empty() {
-      this.name = "";
-      this.summary = null;
-      this.description = null;
-      this.url = "";
-      this.id = "";
-      this.modified = null;
-   }
-
-   init(xml_data) { // ---- Init object
-      let mySelf = this;
-      let myPrjId = [];
-
-      mySelf.name = xml_data.attr(JP060_NAME); // ---- Projet Name
-
-      xml_data.children().each(function () {
-         switch ($(this).prop('nodeName')) {
-            case JP060_URL: // ---- Project URL
-               mySelf.url = $(this).text();
-               myPrjId = mySelf.url.match(/^https.+\/(.+)/);
-               mySelf.id = myPrjId[1];
-               break;
-
-            case JP060_DESCRIPTION: // ---- Project Description
-               mySelf.description = $(this).text();
-               break;
-
-            case JP060_SUMMARY: // ---- Project Summary
-               mySelf.summary = $(this).text();
-               break;
-
-            case JP060_MODIFIED: // ---- Project Modified Date
-               mySelf.modified = $(this).text();
-               break;
-
-            default:
-            // ---- Do nothing
-         };
-      });
-   }
-}
-
 class ClassComponent {         // ---- Caracteristiques d'un composant JAZZ
    name = ""                   // ---- Nom du composant
    url = ""                    // ---- URL du composant
@@ -794,12 +738,12 @@ function gui_BuildProjectBtn(data) {
    // ---- Trier les projets et construire le bouton
 
    if (g_ProjectList.length === 1) { // ---- 1 seul element, donc rien a trier
-      myItem.push('<li id="' + g_ProjectList[0].id + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + g_ProjectList[0].name + '</a></li>');
+      myItem.push('<li id="' + g_ProjectList[0].getId() + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + g_ProjectList[0].getName() + '</a></li>');
    } else if (g_ProjectList.length > 1) {
-      g_ProjectList.sort((a, b) => (a.name > b.name) ? 1 : -1);
+      g_ProjectList.sort((a, b) => (a.getName() > b.getName()) ? 1 : -1);
 
       for (let i = 0; i < g_ProjectList.length; i++) {
-         myItem.push('<li id="' + g_ProjectList[i].id + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + g_ProjectList[i].name + '</a></li>');
+         myItem.push('<li id="' + g_ProjectList[i].getId() + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + g_ProjectList[i].getName() + '</a></li>');
       }
    }
 
@@ -820,13 +764,13 @@ function gui_SelectProject(object) {
    // ---- Sauvegarder l'identifiant du projet selectionne
 
    for (let i = 0; i < g_ProjectList.length; i++) {
-      if (g_ProjectList[i].id == object.id) {
+      if (g_ProjectList[i].getId() == object.id) {
          g_Project = g_ProjectList[i];
          break;
       }
    }
 
-   gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_SETLABEL, g_Project.name)
+   gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_SETLABEL, g_Project.getName())
    gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, IS_SUCCESS);
 
    // ---- Reinitialiser les items dependants
@@ -837,7 +781,7 @@ function gui_SelectProject(object) {
 
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_INPROGRESS);
 
-   BuildComponentList(g_Project.id);
+   BuildComponentList(g_Project.getId());
 }
 
 /**
@@ -1165,7 +1109,7 @@ function gui_SelectConf(object) {
       } else {
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_INPROGRESS);
-         BuildModuleList(g_Project.url, g_Component.url, g_ConfOld.url, IS_OLD);
+         BuildModuleList(g_Project.getUrl(), g_Component.url, g_ConfOld.url, IS_OLD);
       }
    } else { // ---- New configuration
       g_ConfNew.set(g_ConfList, myConfId[2]);
@@ -1190,7 +1134,7 @@ function gui_SelectConf(object) {
       } else {
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_INPROGRESS);
-         BuildModuleList(g_Project.url, g_Component.url, g_ConfNew.url, IS_NEW);
+         BuildModuleList(g_Project.getUrl(), g_Component.url, g_ConfNew.url, IS_NEW);
       }
    }
 }

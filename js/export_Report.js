@@ -498,7 +498,7 @@ async function export_report(isCompact) {
 
     // ---- Préparer les métadonnées du rapport
     const myInfo = {
-        project:    g_Project.name,
+        project:    g_Project.getName(),
         newModule:  g_ConfNew.name  + ' / ' + g_ModuleNew.name,
         oldModule:  g_ConfOld.name  + ' / ' + g_ModuleOld.name,
         date:       myDate.toLocaleDateString('en-GB'),
