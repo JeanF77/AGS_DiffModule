@@ -922,17 +922,10 @@ function gui_BuildConfBtn(data) {
    // ----    <rdfs:member rdf:resource="https://jazz:9443/rm/cm/stream/_9A_jMCr4EeuJ8b5wb92nYg"/>
    // ---- </rdf:Description>
 
-   $(xmlData).find('rdfs\\:member').each(function () {
+   $(xmlData).find(RDFS_MEMBER).each(function () {
       let myConf = new ClassConfiguration();
-      let myConfId = [];
 
-      // ---- A ce stade, nous n'avons pas encore le nom de la configuration
-
-      myConf.setUrl($(this).attr('rdf:resource'));                     // ---- URL de la configuration
-      myConfId = myConf.getUrl().match(/^https.+\/rm\/cm\/(.+)\/(.+)/); // ---- Extraire type et identifiant de configuration
-      myConf.setType(myConfId[1]);
-      myConf.setId(myConfId[2]);
-      myConf.setName(myConf.getId());
+      myConf.init($(this));
 
       // ---- Stocker caracteristiques du projet dans la liste globale
 

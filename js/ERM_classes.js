@@ -191,6 +191,22 @@ class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une 
    }
 
    /**
+    * Initialiser l'objet a partir d'un noeud XML "rdfs:member"
+    * @param {Object} xml_data - Noeud jQuery de la configuration
+    */
+
+   init(xml_data) {
+      let myConfId = [];
+
+      this.setUrl(xml_data.attr(RDF0_RESOURCE)); // ---- Configuration URL
+
+      myConfId = this.getUrl().match(/^https.+\/rm\/cm\/(.+)\/(.+)/); // ---- Extraire type et identifiant de configuration
+      this.setType(myConfId[1]);
+      this.setId(myConfId[2]);
+      this.setName(this.getId()); // ---- A ce stade, nous n'avons pas encore le nom de la configuration
+   }
+
+   /**
     * Affecter une configuration a partir d'une liste
     * @param {Array} confList - Table d'objets de type "ClassConfiguration"
     * @param {String} confId - Identifiant de la configuration
