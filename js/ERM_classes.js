@@ -370,22 +370,22 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
             myArtefact = new ClassArtefact();
             pushArtefact = true;
 
-            myArtefact.id = myArtefactId;
-            myArtefact.uri = $(this).find('rrm\\:about').first().text();
-            myArtefact.format = $(this).find('rrm\\:format').first().text();
-            myArtefact.bookorder = myArtefactOrder;
+            myArtefact.setId(myArtefactId);
+            myArtefact.setUri($(this).find('rrm\\:about').first().text());
+            myArtefact.setFormat($(this).find('rrm\\:format').first().text());
+            myArtefact.setBookorder(myArtefactOrder);
          }
 
-         myArtefact.modified = $(this).find('rrm\\:collaboration').find('rrm\\:modified').text();
-         myArtefact.content = $(this).find('ds\\:content').find('text\\:text').find('text\\:richTextBody').find('div').html();
+         myArtefact.setModified($(this).find('rrm\\:collaboration').find('rrm\\:modified').text());
+         myArtefact.setContent($(this).find('ds\\:content').find('text\\:text').find('text\\:richTextBody').find('div').html());
 
          myXmlObj = $(this).find('rrm\\:collaboration').find('rrm\\:attributes').find('attribute\\:objectType');
-         myArtefact.type = $(myXmlObj).attr('attribute:name');
+         myArtefact.setType($(myXmlObj).attr('attribute:name'));
 
-         if (myArtefact.type in mySelf.#artefacttype_list) { // ---- Le type d'artefact est dans la liste : incrementer son compteur
-            mySelf.#artefacttype_list[myArtefact.type]++;
+         if (myArtefact.getType() in mySelf.#artefacttype_list) { // ---- Le type d'artefact est dans la liste : incrementer son compteur
+            mySelf.#artefacttype_list[myArtefact.getType()]++;
          } else { // ---- Le type d'artefact n'est dans la liste : empiler le type et initialiser son compteur
-            mySelf.#artefacttype_list[myArtefact.type] = 1;
+            mySelf.#artefacttype_list[myArtefact.getType()] = 1;
          }
 
          // ---- Boucler sur tous les Custom Attributs de l'artefact et recuperer les caracteristiques
@@ -404,7 +404,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 
                myCustAttribute.value.push($(this).attr('attribute:value'));
 
-               myArtefact.custattr_list.push(myCustAttribute);
+               myArtefact.getCustattrList().push(myCustAttribute);
             } else {
                // ---- L'attribut est une enumeration
 
@@ -415,7 +415,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 
                   myCustAttribute.value.push($(this).attr('attribute:literalName'));
 
-                  myArtefact.custattr_list.push(myCustAttribute);
+                  myArtefact.getCustattrList().push(myCustAttribute);
                } else {
                   // ---- Il est connu de l'artefact, donc on empile seulement sa valeur
 
@@ -446,7 +446,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 
             // ---- DNG s'assure qu'il n'y ait pas de doublon de tags
 
-            myArtefact.tag_list.push(myTag);
+            myArtefact.getTagList().push(myTag);
          });
 
          // ---- Stocker l'artefact dans l'objet
@@ -498,10 +498,10 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
       $(xmlData).find('rrm\\:contextBinding').each(function () { // ---- Boucler sur chaque artefact
          let myArtefact = new ClassArtefact();
 
-         myArtefact.id = $(this).find('rrm\\:identifier').first().text();
-         myArtefact.uri = $(this).find('rrm\\:about').first().text();
-         myArtefact.format = $(this).find('rrm\\:format').first().text();
-         myArtefact.bookorder = $(this).find('rrm\\:bookOrder').first().text();
+         myArtefact.setId($(this).find('rrm\\:identifier').first().text());
+         myArtefact.setUri($(this).find('rrm\\:about').first().text());
+         myArtefact.setFormat($(this).find('rrm\\:format').first().text());
+         myArtefact.setBookorder($(this).find('rrm\\:bookOrder').first().text());
 
          // ---- Store artefact short representation
 
@@ -518,9 +518,9 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 
    get_artefactById(id, order) {
       if (order !== undefined) {
-         return this.#artefact_list.find(artefact => artefact.id === id && artefact.bookorder === order);
+         return this.#artefact_list.find(artefact => artefact.getId() === id && artefact.getBookorder() === order);
       } else {
-         return this.#artefact_list.find(artefact => artefact.id === id);
+         return this.#artefact_list.find(artefact => artefact.getId() === id);
       }
    }
 
@@ -594,5 +594,278 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 
    setConf(conf) {
       this.#conf = conf;
+   }
+}
+
+class ClassArtefact { // ---- Caracteristiques d'un artefact
+   #id;              // ---- Identifiant artefact
+   #uri;             // ---- URI artefact
+   #format;          // ---- Format de l'artefact
+   #modified;        // ---- Date de modification
+   #content;         // ---- Contenu ("Contents")
+   #type;            // ---- Type artefact
+   #bookorder;       // ---- Position in module hierarchy
+   #custattr_list;   // ---- Liste des attributs (liste d'objets de la classe "ClassAttribute")
+   #tag_list;        // ---- Liste des tags (Tag Value + Tag Scope)
+   #joinedfile_list; // ---- Liste des pieces jointes de l'artefact (images, autres fichiers ...)
+
+   constructor() {
+      this.#id = null;
+      this.#uri = null;
+      this.#format = null;
+      this.#modified = null;
+      this.#content = null;
+      this.#type = null;
+      this.#bookorder = null;
+      this.#custattr_list = [];
+      this.#tag_list = [];
+      this.#joinedfile_list = [];
+   }
+
+   // ---- Getters
+
+   getId() {
+      return this.#id;
+   }
+
+   getUri() {
+      return this.#uri;
+   }
+
+   getFormat() {
+      return this.#format;
+   }
+
+   getModified() {
+      return this.#modified;
+   }
+
+   /**
+    * Get the content of the artifact, with the possibility to clean the content for a more relevant comparison
+    * between source and target artifacts (we keep only the text and basic formatting (paragraphs, lists, tables)
+    * and we remove all the other HTML tags and attributes that are not relevant for the content comparison)
+    * @param {Boolean} cleaned - Clean the content (optional, default = false)
+    * @returns {String} - Artifact content
+    */
+
+   getContent(cleaned = false) {
+      if (!cleaned) {
+         return this.#content;
+      } else {
+         const $wrapper = $('<div>').html(this.#content); // ---- We wrap the content in a div to be able to manipulate it with jQuery
+         const $innerDiv = $wrapper.find('div[xmlns]');
+
+         if ($innerDiv.length === 0) { // ---- No inner div with xmlns found, we consider that the content is not wrapped in a div with xmlns and we clean the content from all HTML tags except paragraphs, lists and tables
+            return $wrapper.find('div').last().html().trim();
+         }
+
+         return "<html><body><div>" + $innerDiv.html().trim() + "</div></body></html>";
+      }
+   }
+
+   getType() {
+      return this.#type;
+   }
+
+   getBookorder() {
+      return this.#bookorder;
+   }
+
+   getCustattrList() {
+      return this.#custattr_list;
+   }
+
+   getTagList() {
+      return this.#tag_list;
+   }
+
+   getJoinedfileList() {
+      return this.#joinedfile_list;
+   }
+
+   // ---- Setters
+
+   setId(id) {
+      this.#id = id;
+   }
+
+   setUri(uri) {
+      this.#uri = uri;
+   }
+
+   setFormat(format) {
+      this.#format = format;
+   }
+
+   setModified(modified) {
+      this.#modified = modified;
+   }
+
+   setContent(content) {
+      this.#content = content;
+   }
+
+   setType(type) {
+      this.#type = type;
+   }
+
+   setBookorder(bookorder) {
+      this.#bookorder = bookorder;
+   }
+
+   /**
+    * Rechercher un attribut par son nom
+    * @param {String} name - Nom de l'artefact
+    * @returns {Object} - Objet de type "ClassAttribute"
+    */
+
+   get_attributeByName(name) {
+      return this.#custattr_list.find(attribute => attribute.name === name);
+   }
+
+   /**
+   * Get images embedded in artifact content
+   * @returns - Array with images embedded in artifact content (If size = 0, no image) - Index = Image URI | Content = Image URL
+   */
+
+   get_imageList() {
+      let myImgList = [];
+      let myMatch = [];
+
+      // ---- Expression reguliere initiale : voir si on conserve ou bien si on continue avec la nouvelle qui semble + simple et performante
+      // ---- const regexp  = /<img\s+[^>]*?src=("|')([^"']+)\1/gmi; // ---- Groupe n° 2 = URI de l'image
+
+      // ---- Extraire le contenu des balises <img ... />
+
+      const regexp = /<img[^>]+src=("|')([^"']+)("|')[^>]*>/gmi; // ---- Groupe n° 2 = URI de l'image
+
+      while ((myMatch = regexp.exec(this.#content)) !== null) {
+
+         // ---- /\ : élargir la recherche à d'autre type de ressources embarquees (autres que images) ?
+
+         const regexp2 = /https.+wrappedResources\/(.+)\?.+/g; // ---- Groupe n° 1 = Identifiant de l'image
+
+         let myImgId;
+         let myMatch2 = [];
+
+         // ---- This is necessary to avoid infinite loops with zero-width matches
+
+         if (myMatch.index === regexp.lastIndex) {
+            regexp.lastIndex++;
+         }
+
+         myMatch2 = regexp2.exec(myMatch[2]);
+
+         if (myMatch2 !== null) {
+            myImgId = myMatch2[1];
+            myImgList[myImgId] = myMatch[2];
+         }
+      }
+
+      return myImgList;
+   }
+
+   /**
+   * Remove <img ... /> tag from artifact content
+   * @returns {String} - Modified content
+   */
+
+   remove_embeddedImgURL() {
+      const regexp = /<img[^>]+src=("|')([^"']+)("|')[^>]*>/gmi; // ---- Groupe n° 0 = balise complete | Groupe n° 2 = URI de l'image
+
+      let myNewContent = this.#content;
+      let myMatch;
+
+      while ((myMatch = regexp.exec(this.#content)) !== null) {
+         if (myMatch.index === regexp.lastIndex) {
+            regexp.lastIndex++;
+         }
+
+         // ---- Dans le code HTML, supprimer toute reference à des images externes
+
+         myNewContent = myNewContent.replace(myMatch[0], '<b>--- EMBEDDED IMAGE ---</b>');
+      }
+
+      return myNewContent;
+   }
+
+   /**
+    * Verifier l'existence d'un tag
+    * @param {String} value - Tag value
+    * @param {String} scope - Tag scope (public or shared), optional
+    * @returns - True if tag exists, otherwise false
+    */
+
+   find_tag(value, scope) {
+      let myTag = this.#tag_list.find(tag => tag.value === value);
+
+      if (myTag !== undefined) { // ---- Tag value exists
+         if (scope !== undefined) { // ---- If scope available, check it
+            return ((myTag.scope === scope) ? true : false);
+         } else {
+            return true;
+         }
+      } else {
+         return false;
+      }
+   }
+
+   /**
+    * Concat tags applied on artefact
+    * @returns {String} - List of tags
+    */
+
+   concat_tag() {
+      let myTagList = "";
+      let myTagFmt;
+
+      for (let myTag of this.#tag_list) {
+         myTagFmt = myTag.value + "(" + myTag.scope + ")";
+
+         if (myTagList.length > 0) {
+            myTagList = myTagList + ";" + myTagFmt;
+         } else {
+            myTagList = myTagFmt;
+         }
+      }
+
+      return myTagList;
+   }
+
+   /**
+    * Initialiser l'objet à partir de données provenant d'une structure reqIF
+    * @param {Array of ReqIFArtefact} reqifArtefact - Artefact à convertir
+    * @param {Array of ReqIFArtefact} reqifArtefactList - Liste des artefacts
+    * @param {Array of ReqIFArtefactType} reqifArtefactTypeList - Liste des type d'artefacts
+    * @param {Array of ReqIFDataType} reqifDataTypeList - Liste des types de données
+    */
+
+   get_datareqif(reqifArtefact, reqifArtefactList, reqifArtefactTypeList, reqifDataTypeList) {
+      let myReqifArtefact;
+      let myReqifType;
+
+      // ---- Identifier le type d'artefact
+
+      myReqifArtefact = reqifArtefactList.find(artifact => artifact.id === reqifArtefact);
+      myReqifType = reqifArtefactTypeList.find(type => type.id === myReqifArtefact.typeid);
+
+      this.setType(myReqifType.name);
+
+      // ---- Liste des attributs
+
+      for (let myAttribute of myReqifType.attrlist) {
+         switch (myAttribute.name) {
+            case REQIF_REQIF_FOREIGNID:
+
+               break;
+
+            case REQIF_REQIF_FOREIGNCREATEDON:
+
+               break;
+
+            default: // ---- Custom Attributes
+         }
+      }
+
    }
 }
