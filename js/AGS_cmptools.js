@@ -227,21 +227,21 @@ function cmp_DiffAttr(artTest, artRef) {
       let myAttrTest = new ClassAttribute();
       let myDiffInfo = new ClassDiffResult();
 
-      myAttrTest = artTest.get_attributeByName(myAttrRef.name);
+      myAttrTest = artTest.get_attributeByName(myAttrRef.getName());
 
       if (myAttrTest === undefined) {
          // ---- L'attribut existe seulement dans la reference
 
-         myDiffInfo.set_diff_attributevaluechanged(artRef.getId(), artRef.getType(), myAttrRef.name, "", myAttrRef.value);
+         myDiffInfo.set_diff_attributevaluechanged(artRef.getId(), artRef.getType(), myAttrRef.getName(), "", myAttrRef.getValue());
          myDiffList.push(myDiffInfo);
       } else {
          // ---- L'attribut existe dans la reference et le test, il faut donc evaluer l'ecart de valeur
          // ---- Si nombre de valeur est different, alors ecart, sinon faut comparer chaque valeur
 
-         let myValueDiff = myAttrRef.value.filter(x => myAttrTest.value.indexOf(x) === -1);
+         let myValueDiff = myAttrRef.getValue().filter(x => myAttrTest.getValue().indexOf(x) === -1);
 
-         if ((myAttrTest.value.length != myAttrRef.value.length) || (myValueDiff.length > 0)) {
-            myDiffInfo.set_diff_attributevaluechanged(artRef.getId(), artRef.getType(), myAttrRef.name, myAttrTest.value, myAttrRef.value);
+         if ((myAttrTest.getValue().length != myAttrRef.getValue().length) || (myValueDiff.length > 0)) {
+            myDiffInfo.set_diff_attributevaluechanged(artRef.getId(), artRef.getType(), myAttrRef.getName(), myAttrTest.getValue(), myAttrRef.getValue());
             myDiffList.push(myDiffInfo);
          }
       }
@@ -253,12 +253,12 @@ function cmp_DiffAttr(artTest, artRef) {
 
    for (let myAttrTest of artTest.getCustattrList()) {
       let myDiffInfo = new ClassDiffResult();
-      let myAttrRef = artRef.get_attributeByName(myAttrTest.name);
+      let myAttrRef = artRef.get_attributeByName(myAttrTest.getName());
 
       if (myAttrRef === undefined) {
          // ---- L'attribut existe seulement dans le test
 
-         myDiffInfo.set_diff_attributevaluechanged(artTest.getId(), artTest.getType(), myAttrTest.name, myAttrTest.value, "");
+         myDiffInfo.set_diff_attributevaluechanged(artTest.getId(), artTest.getType(), myAttrTest.getName(), myAttrTest.getValue(), "");
          myDiffList.push(myDiffInfo);
       }
    }

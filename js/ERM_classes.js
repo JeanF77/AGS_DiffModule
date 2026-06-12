@@ -394,40 +394,40 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
             let myCustAttribute = new ClassAttribute();
             let myEnumCustAttribute = new ClassAttribute();
 
-            myCustAttribute.name = $(this).attr('attribute:name');
-            myCustAttribute.type = $(this).attr('attribute:datatype');
-            myCustAttribute.isenum = $(this).attr('attribute:isEnumeration');
-            myCustAttribute.ismultivalue = $(this).attr('attribute:isMultiValued');
+            myCustAttribute.setName($(this).attr('attribute:name'));
+            myCustAttribute.setType($(this).attr('attribute:datatype'));
+            myCustAttribute.setIsenum($(this).attr('attribute:isEnumeration'));
+            myCustAttribute.setIsmultivalue($(this).attr('attribute:isMultiValued'));
 
-            if (myCustAttribute.isenum === undefined || myCustAttribute.isenum === 'false') {
+            if (myCustAttribute.getIsenum() === undefined || myCustAttribute.getIsenum() === 'false') {
                // ---- L'attribut n'est pas une enumeration
 
-               myCustAttribute.value.push($(this).attr('attribute:value'));
+               myCustAttribute.getValue().push($(this).attr('attribute:value'));
 
                myArtefact.getCustattrList().push(myCustAttribute);
             } else {
                // ---- L'attribut est une enumeration
 
-               myEnumCustAttribute = myArtefact.get_attributeByName(myCustAttribute.name);
+               myEnumCustAttribute = myArtefact.get_attributeByName(myCustAttribute.getName());
 
                if (myEnumCustAttribute === undefined) {
                   // ---- Il n'est pas encore connu de l'artefact, on peut donc l'ajouter
 
-                  myCustAttribute.value.push($(this).attr('attribute:literalName'));
+                  myCustAttribute.getValue().push($(this).attr('attribute:literalName'));
 
                   myArtefact.getCustattrList().push(myCustAttribute);
                } else {
                   // ---- Il est connu de l'artefact, donc on empile seulement sa valeur
 
-                  myEnumCustAttribute.value.push($(this).attr('attribute:literalName'));
-                  myEnumCustAttribute.value.sort();
+                  myEnumCustAttribute.getValue().push($(this).attr('attribute:literalName'));
+                  myEnumCustAttribute.getValue().sort();
                }
             }
 
             // ---- Empiler le nom du Custom Attribut, s'il n'existe pas dans la liste globale
 
-            if (mySelf.#attributecust_list.indexOf(myCustAttribute.name) < 0) {
-               mySelf.#attributecust_list.push(myCustAttribute.name);
+            if (mySelf.#attributecust_list.indexOf(myCustAttribute.getName()) < 0) {
+               mySelf.#attributecust_list.push(myCustAttribute.getName());
             }
          });
 
@@ -720,7 +720,7 @@ class ClassArtefact { // ---- Caracteristiques d'un artefact
     */
 
    get_attributeByName(name) {
-      return this.#custattr_list.find(attribute => attribute.name === name);
+      return this.#custattr_list.find(attribute => attribute.getName() === name);
    }
 
    /**
@@ -867,5 +867,119 @@ class ClassArtefact { // ---- Caracteristiques d'un artefact
          }
       }
 
+   }
+}
+
+class ClassAttribute { // ---- Caracteristiques d'un attribut
+   #name;          // ---- Nom de l'attribut
+   #type;          // ---- Type de l'attribut (URI du type)
+   #isenum;        // ---- Est une enumeration
+   #ismultivalue;  // ---- Est multivalue
+   #value;         // ---- Tableau des valeurs possibles de l'attribut
+
+   constructor() {
+      this.#name = null;
+      this.#type = null;
+      this.#isenum = null;
+      this.#ismultivalue = null;
+      this.#value = [];
+   }
+
+   // ---- Getters
+
+   getName() {
+      return this.#name;
+   }
+
+   getType() {
+      return this.#type;
+   }
+
+   getIsenum() {
+      return this.#isenum;
+   }
+
+   getIsmultivalue() {
+      return this.#ismultivalue;
+   }
+
+   getValue() {
+      return this.#value;
+   }
+
+   // ---- Setters
+
+   setName(name) {
+      this.#name = name;
+   }
+
+   setType(type) {
+      this.#type = type;
+   }
+
+   setIsenum(isenum) {
+      this.#isenum = isenum;
+   }
+
+   setIsmultivalue(ismultivalue) {
+      this.#ismultivalue = ismultivalue;
+   }
+}
+
+class ClassJoinedFile { // ---- Caracteristiques d'une piece jointe a un artefact
+   #id;       // ---- Identifiant de la piece jointe
+   #uri;      // ---- URI de la piece jointe
+   #type;     // ---- Type de piece jointe (image, autres fichiers ...)
+   #modified; // ---- Date de modification
+
+   constructor() {
+      this.#id = null;
+      this.#uri = null;
+      this.#type = null;
+      this.#modified = null;
+   }
+
+   // ---- Getters
+
+   getId() {
+      return this.#id;
+   }
+
+   getUri() {
+      return this.#uri;
+   }
+
+   getType() {
+      return this.#type;
+   }
+
+   getModified() {
+      return this.#modified;
+   }
+
+   // ---- Setters
+
+   setId(id) {
+      this.#id = id;
+   }
+
+   setUri(uri) {
+      this.#uri = uri;
+   }
+
+   setType(type) {
+      this.#type = type;
+   }
+
+   setModified(modified) {
+      this.#modified = modified;
+   }
+
+   set(uri) {
+
+      // ---- Le type et l'id de la piece jointe seront etablis a partir de l'URI qui transporte les informations associees
+
+      // ---- this.setId(...) = expression reguliere a partir de l'uri
+      // ---- this.setType(...) =
    }
 }
