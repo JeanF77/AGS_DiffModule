@@ -289,7 +289,7 @@ function BuildModuleList (prjURI, compURI, confURI, state) {
  */
 
 function load_oldTxtmodule (pos) {
-   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleOld.conf.getUrl();
+   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.getId() + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 
@@ -310,18 +310,18 @@ function load_oldTxtmodule (pos) {
 
    // ---- Chargement du module
 
-   console.log ("$$$ Load modules (old) '" + g_ModuleOld.id + "'\n");
+   console.log ("$$$ Load modules (old) '" + g_ModuleOld.getId() + "'\n");
    
-   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.pagepos, g_ModuleOld.artefactCount ());
+   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPagepos(), g_ModuleOld.artefactCount ());
 
    $.when (ajax_async_request (myRequest, g_ModuleOld.get_data.bind(g_ModuleOld), gui_FailedOldTableStat, null)).then(function () {
 
       // ---- Si la reponse est paginee, il faut de nouveau faire une requete pour recuperer la page suivante
 
-      if (g_ModuleOld.pagepos == (PAGE_SIZE * g_ModuleOld.nbpage)) {
-         load_oldTxtmodule (g_ModuleOld.pagepos);
+      if (g_ModuleOld.getPagepos() == (PAGE_SIZE * g_ModuleOld.getNbpage())) {
+         load_oldTxtmodule (g_ModuleOld.getPagepos());
 
-         console.log ("$$$ Old - Get new page : '" + g_ModuleOld.pagepos + "'\n");
+         console.log ("$$$ Old - Get new page : '" + g_ModuleOld.getPagepos() + "'\n");
       } else {
          if (g_ModuleOld.artefactCount() > 0) { // ---- Le module s'est charge correctement
             gui_BuildTableStat (GUI_ITEM_oldstatdiv, g_ModuleOld);
@@ -336,7 +336,7 @@ function load_oldTxtmodule (pos) {
             gui_mgtAlert (GUI_ITEM_ALERT_ROOT, IS_ERROR, "Old Module is empty !");
          }
 
-         console.log ("$$$ Old - Number of pages read : '" + g_ModuleOld.nbpage + "'\n");
+         console.log ("$$$ Old - Number of pages read : '" + g_ModuleOld.getNbpage() + "'\n");
       }
    });
 }
@@ -347,7 +347,7 @@ function load_oldTxtmodule (pos) {
  */
 
 function load_newTxtmodule (pos) {
-   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.id + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleNew.conf.getUrl();
+   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.getId() + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 
@@ -368,18 +368,18 @@ function load_newTxtmodule (pos) {
 
    // ---- Chargement du module
 
-   console.log ("$$$ Load modules (new) '" + g_ModuleNew.id + "'\n");
+   console.log ("$$$ Load modules (new) '" + g_ModuleNew.getId() + "'\n");
    
-   gui_InitTableStat (GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.pagepos, g_ModuleNew.artefactCount ());
+   gui_InitTableStat (GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPagepos(), g_ModuleNew.artefactCount ());
 
    $.when (ajax_async_request (myRequest, g_ModuleNew.get_data.bind(g_ModuleNew), gui_FailedNewTableStat, null)).then(function () {
 
       // ---- Si la reponse est paginee, il faut de nouveau faire une requete pour recuperer la suite
 
-      if (g_ModuleNew.pagepos == (PAGE_SIZE * g_ModuleNew.nbpage)) {
-         load_newTxtmodule (g_ModuleNew.pagepos);
+      if (g_ModuleNew.getPagepos() == (PAGE_SIZE * g_ModuleNew.getNbpage())) {
+         load_newTxtmodule (g_ModuleNew.getPagepos());
 
-         console.log ("$$$ New - Get new page : '" + g_ModuleNew.pagepos + "'\n");
+         console.log ("$$$ New - Get new page : '" + g_ModuleNew.getPagepos() + "'\n");
       } else {
          if (g_ModuleNew.artefactCount() > 0) { // ---- Le module s'est charge correctement
             gui_BuildTableStat (GUI_ITEM_newstatdiv, g_ModuleNew);
@@ -394,7 +394,7 @@ function load_newTxtmodule (pos) {
             gui_mgtAlert (GUI_ITEM_ALERT_ROOT, IS_ERROR, "New Module is empty !");
          }
 
-         console.log ("$$$ New - Number of pages read : '" + g_ModuleNew.nbpage + "'\n");
+         console.log ("$$$ New - Number of pages read : '" + g_ModuleNew.getNbpage() + "'\n");
       }
    });
 }
@@ -405,7 +405,7 @@ function load_newTxtmodule (pos) {
  */
 
 function load_OldModule () {
-   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.id + "&oslc_config.context=" + g_ModuleOld.conf.getUrl();
+   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.getId() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
 
    let myRequest = {
       'rest_method'  : "GET",
@@ -418,9 +418,9 @@ function load_OldModule () {
 
    g_ModuleOld.empty_artifact ();
 
-   mgt_Console ("Load module structure (old) : " + g_ModuleOld.id, CONSOLE_INFO);
+   mgt_Console ("Load module structure (old) : " + g_ModuleOld.getId(), CONSOLE_INFO);
 
-   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.pagepos);
+   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPagepos());
 
    // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
 
@@ -435,7 +435,7 @@ function load_OldModule () {
  */
 
 function load_NewModule () {
-   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.id + "&oslc_config.context=" + g_ModuleNew.conf.getUrl();
+   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.getId() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
 
    let myRequest = {
       'rest_method'  : "GET",
@@ -448,9 +448,9 @@ function load_NewModule () {
 
    g_ModuleNew.empty_artifact ();
 
-   mgt_Console ("Load module structure (new) : " + g_ModuleNew.id, CONSOLE_INFO);
+   mgt_Console ("Load module structure (new) : " + g_ModuleNew.getId(), CONSOLE_INFO);
 
-   gui_InitTableStat (GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.pagepos);
+   gui_InitTableStat (GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPagepos());
 
    // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
 

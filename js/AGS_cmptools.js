@@ -189,13 +189,13 @@ class ClassDiffResult {       // ---- Resultat de comparaison
 function cmp_DiffModArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.artefact_list) {
+   for (let myRefArtefact of modRef.getArtefactList()) {
       let myDiffInfo = new ClassDiffResult();
 
       if (modTest.get_artefactById(myRefArtefact.get_id()) === undefined) {
          // ---- On detecte l'artefact en ecart (existe dans le module de reference, mais pas dans le module a tester)
 
-         if (modRef.status === IS_NEW) {
+         if (modRef.getStatus() === IS_NEW) {
             myDiffInfo.set_diff_newartifact(myRefArtefact.get_id(), myRefArtefact.get_type(), myRefArtefact.get_content());
          } else {
             myDiffInfo.set_diff_delartifact(myRefArtefact.get_id(), myRefArtefact.get_type(), myRefArtefact.get_content());
@@ -320,7 +320,7 @@ function cmp_DiffTag(artTest, artRef) {
 function cmp_DiffTypeArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.artefact_list) {
+   for (let myRefArtefact of modRef.getArtefactList()) {
       let myDiffInfo = new ClassDiffResult();
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
 
@@ -345,7 +345,7 @@ function cmp_DiffTypeArtefact(modTest, modRef) {
 function cmp_DiffAttrArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.artefact_list) {
+   for (let myRefArtefact of modRef.getArtefactList()) {
       let myDiffAttrList = [];
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
 
@@ -374,7 +374,7 @@ function cmp_DiffAttrArtefact(modTest, modRef) {
 function cmp_DiffTagArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.artefact_list) {
+   for (let myRefArtefact of modRef.getArtefactList()) {
       let myDiffAttrList = [];
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
 
@@ -579,7 +579,7 @@ function cmpImgEmbedded(imgInfo, imgDate) {
 function cmp_DiffContentArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.artefact_list) {
+   for (let myRefArtefact of modRef.getArtefactList()) {
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
       let myDiffContent;
 
@@ -620,7 +620,7 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
       'imgList': []
    };
 
-   for (let myRefArtefact of modRef.artefact_list) {
+   for (let myRefArtefact of modRef.getArtefactList()) {
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.id);
 
       // ---- Identifier toutes les images contenues dans le Primary Text et voir si elles ont ete modifiees
@@ -649,8 +649,8 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
 
                mgt_Console("Artifact '" + myRefArtefact.id + "' has same image '" + myId + "'", CONSOLE_INFO);
 
-               myImgDiff.refImgUri = myRefImgList[myId] + "&oslc_config.context=" + modRef.conf.getUrl();
-               myImgDiff.testImgUri = myTestImgList[myId] + "&oslc_config.context=" + modTest.conf.getUrl();
+               myImgDiff.refImgUri = myRefImgList[myId] + "&oslc_config.context=" + modRef.getConf().getUrl();
+               myImgDiff.testImgUri = myTestImgList[myId] + "&oslc_config.context=" + modTest.getConf().getUrl();
 
                myFctReturnStr.imgList.push(myImgDiff);
             } else { // ---- Nouvelle image dans l'artefact de reference

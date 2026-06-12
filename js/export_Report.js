@@ -499,11 +499,11 @@ async function export_report(isCompact) {
     // ---- Préparer les métadonnées du rapport
     const myInfo = {
         project:    g_Project.getName(),
-        newModule:  g_ConfNew.getName()  + ' / ' + g_ModuleNew.name,
-        oldModule:  g_ConfOld.getName()  + ' / ' + g_ModuleOld.name,
+        newModule:  g_ConfNew.getName()  + ' / ' + g_ModuleNew.getName(),
+        oldModule:  g_ConfOld.getName()  + ' / ' + g_ModuleOld.getName(),
         date:       myDate.toLocaleDateString('en-GB'),
         count:      isCompact ? myCompactTable.length : myFilteredTable.length,
-        moduleName: g_ModuleNew.name
+        moduleName: g_ModuleNew.getName()
     };
 
     // ---- Assembler et télécharger le rapport HTML autonome
@@ -515,7 +515,7 @@ async function export_report(isCompact) {
         rpt_buildCss(myDiff2htmlCss)
     );
 
-    rpt_downloadHtml(myHtml, g_ModuleNew.name + '_diff_report');
+    rpt_downloadHtml(myHtml, g_ModuleNew.getName() + '_diff_report');
 }
 
 /**

@@ -328,291 +328,6 @@ class ClassJoinedFile {        // ---- Caracteristiques d'une piece jointe a un 
 
 }
 
-class ClassModule {            // ---- Caracteristiques d'un module JAZZ
-   name = ""                   // ---- Nom du module
-   url = ""                    // ---- URL du module
-   id = ""                     // ---- Identifiant du module (identifiant interne "rm")
-   iddng = 0                   // ---- Identifiant du module (identifiant externe visible dans les vues)
-   modified = ""               // ---- Date de dernière modification
-   status = ""                 // ---- Status du module ("New" ou "Old"), defini a la creation de l'objet
-   format = ""                 // ---- Format "Collection" ou "Module"
-   artefact_list = []          // ---- Liste des artefacts (liste d'objets de la classe "ClassArtefact")
-   attributecust_list = []      // ---- Liste de tous les "Custom Attributes" detectes dans le module
-   artefacttype_list = []      // ---- Liste des tous les types d'artefacts et leur nombre - Index = type d'artefact / Contenu = nombre
-   nbpage = 0                  // ---- Nombre de pages du module
-   pagepos = 0                 // ---- Position de pagination
-   conf = undefined            // ---- Configuration du module (objet de la classe "ClassConfiguration")
-
-   constructor(modStatus) {
-      if (modStatus != undefined) {
-         this.status = modStatus;
-      }
-   }
-
-   /**
-    * Réinitialiser totalement l'objet
-    */
-
-   empty() {
-      this.name = "";
-      this.url = "";
-      this.id = "";
-      this.iddng = 0;
-      this.modified = "";
-      this.nbpage = 0;
-      this.pagepos = 0;
-      this.conf = undefined;
-
-      this.empty_artifact();
-   }
-
-   /**
-    * Vider le contenu de l'objet (artefacts, types d'artefacts ...)
-    */
-
-   empty_artifact() {
-      this.nbpage = 0;
-      this.pagepos = 0;
-
-      this.artefact_list.splice(0);
-      this.attributecust_list.splice(0);
-
-      for (let myArtefactType in this.artefacttype_list) {
-         this.artefacttype_list[myArtefactType] = 0;
-      }
-   }
-
-   /**
-    * Affecter un module a partir d'une liste
-    * @param {Array} modList - Table d'objets de type "Module"
-    * @param {String} modId - Identifiant du module
-    * @param {Object} confObj - Objet de type "ClassConfiguration" correspondant a la configuration du module (optionnel)
-    */
-
-   set(modList, modId, confObj) {
-      for (let myMod of modList) {
-         if (modId === myMod.id) {
-            this.name = myMod.name;
-            this.url = myMod.url;
-            this.id = myMod.id;
-            this.iddng = myMod.iddng;
-            this.modified = myMod.modified;
-            break;
-         }
-      }
-
-      if (confObj !== undefined) {
-         this.conf = confObj;
-      }
-   }
-
-   /**
-    * Analyser la structure XML d'un module et la stocker
-    * @param {String} data - XML Structure
-    */
-
-   get_data(data) {
-      let mySelf = this;
-      let xmlData = $.parseXML(data);
-      let myHref;
-      let myPos = [];
-
-      this.nbpage++;
-
-      // ---- Recuperer les informations de pagination (si la recuperation du module est paginee)
-
-      myHref = $(xmlData).find('ds\\:dataSource').attr('href');
-
-      if (myHref != undefined) {
-         myHref = decodeURIComponent(myHref);
-         myPos = myHref.match(/^https.+(&pos=([0-9]+)).*/);
-
-         this.pagepos = myPos[2];
-      }
-
-      // ---- Decoder le contenu de la reponse REST
-
-      $(xmlData).find('ds\\:artifact').each(function () { // ---- Boucler sur chaque artefact
-         let myXmlObj;
-         let myArtefactId = $(this).find('rrm\\:identifier').first().text();
-         let myArtefactOrder = $(this).find('ds\\:moduleContext').find('rrm\\:contextBinding').find('rrm\\:bookOrder').first().text();
-         let myArtefact;
-         let pushArtefact = false;
-
-         // ---- 2 modes de fonctionnements sont admis :
-         // ----     - la structure du module a été préchargée, et dans ce cas il faut se contenter de retrouver l'ID de l'artefact
-         // ----       et compléter les caractéristiques de celui-ci
-         // ----     - si la structure est incomplète, l'artefact sera alors ajoutée à la liste des artefacts constituants le module
-
-         myArtefact = mySelf.get_artefactById(myArtefactId, myArtefactOrder);
-
-         if (myArtefact === undefined) { // ---- Artefact introuvable dans la structure préchargée
-            myArtefact = new ClassArtefact();
-            pushArtefact = true;
-
-            myArtefact.id = myArtefactId;
-            myArtefact.uri = $(this).find('rrm\\:about').first().text();
-            myArtefact.format = $(this).find('rrm\\:format').first().text();
-            myArtefact.bookorder = myArtefactOrder;
-         }
-
-         myArtefact.modified = $(this).find('rrm\\:collaboration').find('rrm\\:modified').text();
-         myArtefact.content = $(this).find('ds\\:content').find('text\\:text').find('text\\:richTextBody').find('div').html();
-
-         myXmlObj = $(this).find('rrm\\:collaboration').find('rrm\\:attributes').find('attribute\\:objectType');
-         myArtefact.type = $(myXmlObj).attr('attribute:name');
-
-         if (myArtefact.type in mySelf.artefacttype_list) { // ---- Le type d'artefact est dans la liste : incrementer son compteur
-            mySelf.artefacttype_list[myArtefact.type]++;
-         } else { // ---- Le type d'artefact n'est dans la liste : empiler le type et initialiser son compteur
-            mySelf.artefacttype_list[myArtefact.type] = 1;
-         }
-
-         // ---- Boucler sur tous les Custom Attributs de l'artefact et recuperer les caracteristiques
-
-         $(myXmlObj).find('attribute\\:customAttribute').each(function () {
-            let myCustAttribute = new ClassAttribute();
-            let myEnumCustAttribute = new ClassAttribute();
-
-            myCustAttribute.name = $(this).attr('attribute:name');
-            myCustAttribute.type = $(this).attr('attribute:datatype');
-            myCustAttribute.isenum = $(this).attr('attribute:isEnumeration');
-            myCustAttribute.ismultivalue = $(this).attr('attribute:isMultiValued');
-
-            if (myCustAttribute.isenum === undefined || myCustAttribute.isenum === 'false') {
-               // ---- L'attribut n'est pas une enumeration
-
-               myCustAttribute.value.push($(this).attr('attribute:value'));
-
-               myArtefact.custattr_list.push(myCustAttribute);
-            } else {
-               // ---- L'attribut est une enumeration
-
-               myEnumCustAttribute = myArtefact.get_attributeByName(myCustAttribute.name);
-
-               if (myEnumCustAttribute === undefined) {
-                  // ---- Il n'est pas encore connu de l'artefact, on peut donc l'ajouter
-
-                  myCustAttribute.value.push($(this).attr('attribute:literalName'));
-
-                  myArtefact.custattr_list.push(myCustAttribute);
-               } else {
-                  // ---- Il est connu de l'artefact, donc on empile seulement sa valeur
-
-                  myEnumCustAttribute.value.push($(this).attr('attribute:literalName'));
-                  myEnumCustAttribute.value.sort();
-               }
-            }
-
-            // ---- Empiler le nom du Custom Attribut, s'il n'existe pas dans la liste globale
-
-            if (mySelf.attributecust_list.indexOf(myCustAttribute.name) < 0) {
-               mySelf.attributecust_list.push(myCustAttribute.name);
-            }
-         });
-
-         // ---- Boucler sur tous les tags
-
-         myXmlObj = $(this).find('rrm\\:collaboration').find('rrm\\:tags');
-
-         $(myXmlObj).find('rrm\\:tag').each(function () {
-            let myTag = {
-               value: "",
-               scope: ""
-            };
-
-            myTag.value = $(this).find('rrm\\:title').first().text();
-            myTag.scope = $(this).find('rrm\\:scope').first().text();
-
-            // ---- DNG s'assure qu'il n'y ait pas de doublon de tags
-
-            myArtefact.tag_list.push(myTag);
-         });
-
-         // ---- Stocker l'artefact dans l'objet
-
-         if (pushArtefact) {
-            mySelf.artefact_list.push(myArtefact);
-         }
-      });
-   }
-
-   /**
-    * Initialiser l'objet à partir de données provenant d'une structure reqIF
-    * @param {Object ReqIFModule} reqifModule - Structure du module
-    * @param {Array of ReqIFArtefact} reqifArtifactList - Liste des artefacts
-    * @param {Array of ReqIFArtefactType} reqifArtifactTypeList - Liste des type d'artefacts
-    * @param {Array of ReqIFDataType} reqifDataTypeList - Liste des types de données
-    */
-
-   get_datareqif(reqifModule, reqifArtifactList, reqifArtifactTypeList, reqifDataTypeList) {
-
-      // ---- Modules characteristics
-
-      this.name = reqifModule.name;
-      this.iddng = reqifModule.get_attrvaluebyname(REQIF_REQIF_FOREIGNID, reqifArtifactTypeList, reqifDataTypeList);
-      this.modified = reqifModule.get_attrvaluebyname(REQIF_REQIF_FOREIGNMODIFIEDON, reqifArtifactTypeList, reqifDataTypeList);
-
-      // ---- Artifacts characteristics
-
-      for (let myReqifArtifact of reqifModule.artefactlist) {
-         let myArtifact = new ClassArtefact();
-
-         myArtifact.get_datareqif(myReqifArtifact, reqifArtifactList, reqifArtifactTypeList, reqifDataTypeList);
-
-         this.artefact_list.push(myArtifact);
-      }
-   }
-
-   /**
-    * Analyser la structure XML représentant la structure du module
-    * @param {String} data - XLM Structure
-    */
-
-   get_structure(data) {
-      let mySelf = this;
-      let xmlData = $.parseXML(data);
-
-      // ---- Decoder le contenu de la reponse REST
-
-      $(xmlData).find('rrm\\:contextBinding').each(function () { // ---- Boucler sur chaque artefact
-         let myArtefact = new ClassArtefact();
-
-         myArtefact.id = $(this).find('rrm\\:identifier').first().text();
-         myArtefact.uri = $(this).find('rrm\\:about').first().text();
-         myArtefact.format = $(this).find('rrm\\:format').first().text();
-         myArtefact.bookorder = $(this).find('rrm\\:bookOrder').first().text();
-
-         // ---- Store artefact short representation
-
-         mySelf.artefact_list.push(myArtefact);
-      });
-   }
-
-   /**
-    * Rechercher un artefact par son identifiant
-    * @param {String} id - Identifiant de l'artefact
-    * @param {String} order - Ordre de l'artefact (Book Order)
-    * @returns {Object} - Objet artefact 
-    */
-
-   get_artefactById(id, order) {
-      if (order !== undefined) {
-         return this.artefact_list.find(artefact => artefact.id === id && artefact.bookorder === order);
-      } else {
-         return this.artefact_list.find(artefact => artefact.id === id);
-      }
-   }
-
-   /**
-    * Compter le nombre d'artefact dans le module
-    */
-
-   artefactCount() {
-      return this.artefact_list.length;
-   }
-}
-
 /* ------------------------------------------------------------------------------
    ---- Variables globales
    --------------------------------------------------------------------------- */
@@ -1179,17 +894,17 @@ function gui_BuildModuleBtn(data, moduleList, moduleObj, btnName, loadInd) {
       let myCollection;
 
       myCollection = $(this).find('oslc_rm\\:RequirementCollection');
-      myModule.url = myCollection.attr('rdf:about');                   // ---- URL du module
-      myModuleId = myModule.url.match(/^https.+\/resources\/(.+)/);
+      myModule.setUrl(myCollection.attr('rdf:about'));                   // ---- URL du module
+      myModuleId = myModule.getUrl().match(/^https.+\/resources\/(.+)/);
 
       // ---- Peut ne pas "matcher" car une forme de reponse peut etre : <oslc_rm:RequirementCollection rdf:about="https://jazz/rm/materializedviews/_gR5ioTC4EeuHlq5APHMxmg">
 
       if (myModuleId != null) {
-         myModule.id = myModuleId[1];                                   // ---- Identifiant du module
-         myModule.name = myCollection.find('dcterms\\:title').text();      // ---- Nom du module
-         myModule.modified = myCollection.find('dcterms\\:modified').text();   // ---- Date de modification du module
-         myModule.modified = new Date(myModule.modified);
-         myModule.iddng = myCollection.find('dcterms\\:identifier').text(); // ---- IDentifiant externe du module
+         myModule.setId(myModuleId[1]);                                   // ---- Identifiant du module
+         myModule.setName(myCollection.find('dcterms\\:title').text());      // ---- Nom du module
+         myModule.setModified(myCollection.find('dcterms\\:modified').text());   // ---- Date de modification du module
+         myModule.setModified(new Date(myModule.getModified()));
+         myModule.setIddng(myCollection.find('dcterms\\:identifier').text()); // ---- IDentifiant externe du module
 
          // ---- Stocker caracteristiques du projet dans la liste globale
 
@@ -1199,14 +914,14 @@ function gui_BuildModuleBtn(data, moduleList, moduleObj, btnName, loadInd) {
 
    // ---- Trier les modules et construire le bouton
 
-   if (moduleList.length === 0 && moduleObj.status === IS_OLD) { // ---- Module List is empty, display warning
+   if (moduleList.length === 0 && moduleObj.getStatus() === IS_OLD) { // ---- Module List is empty, display warning
       gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "Warning : Old Module List is empty !")
 
       // ---- Hide progess and display error indicator
 
       gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_ERROR);
       gui_mgtButtonDrop(btnName, ACTION_ACTIVE_OFF);
-   } else if (moduleList.length === 0 && moduleObj.status !== IS_OLD) {
+   } else if (moduleList.length === 0 && moduleObj.getStatus() !== IS_OLD) {
       gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "Warning : New Module List is empty !")
 
       // ---- Hide progess and display error indicator
@@ -1214,13 +929,13 @@ function gui_BuildModuleBtn(data, moduleList, moduleObj, btnName, loadInd) {
       gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_ERROR);
       gui_mgtButtonDrop(btnName, ACTION_ACTIVE_OFF);
    } else {
-      moduleList.sort((a, b) => (a.name > b.name) ? 1 : -1);
+      moduleList.sort(compareName);
 
       for (let myModule of moduleList) {
-         if (moduleObj.status === IS_OLD) {
-            myItem = '<li id="_old' + myModule.id + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.name + '</a></li>';
+         if (moduleObj.getStatus() === IS_OLD) {
+            myItem = '<li id="_old' + myModule.getId() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
          } else {
-            myItem = '<li id="_new' + myModule.id + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.name + '</a></li>';
+            myItem = '<li id="_new' + myModule.getId() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
          }
 
          gui_mgtButtonDrop(btnName, ACTION_APPENDCONTENT, myItem);
@@ -1245,12 +960,12 @@ function gui_SelectModule(object) {
    if (myModuleId[1] === 'old') { // ---- Old module
       g_ModuleOld.set(g_ModuleOldList, myModuleId[2], g_ConfOld);
 
-      gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="Old Module"> ' + g_ModuleOld.name);
+      gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="Old Module"> ' + g_ModuleOld.getName());
       gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_SUCCESS);
    } else { // ---- New module
       g_ModuleNew.set(g_ModuleNewList, myModuleId[2], g_ConfNew);
 
-      gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="New Module"> ' + g_ModuleNew.name);
+      gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="New Module"> ' + g_ModuleNew.getName());
       gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_SUCCESS);
    }
 
@@ -1258,13 +973,13 @@ function gui_SelectModule(object) {
 
    switch (g_CompareMode) {
       case COMPARE_MODE_LOCALLOCAL:
-         if (g_ModuleOld.id !== "" && g_ModuleNew.id !== "") {
+         if (g_ModuleOld.getId() !== null && g_ModuleNew.getId() !== null) {
             gui_mgtButtonDrop(GUI_ITEM_LOADMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
          }
          break;
 
       case COMPARE_MODE_LOCALREQIF:
-         if (g_ModuleOld.id !== "") {
+         if (g_ModuleOld.getId() !== null) {
             gui_mgtButtonDrop(GUI_ITEM_LOADMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
          }
          break;
@@ -1417,19 +1132,19 @@ function gui_BuildTableStat(divstat, objModule) {
    // ---- Entete de table, nom des modules, nombre d'artefacts
 
    $("#" + divstat).append($('<tbody>'));
-   $("#" + divstat).append($('<tr><td>Module Name : <b>' + objModule.name + '</b><br>Module ID : <b>' + objModule.iddng + '</b></td></tr>'));
-   $("#" + divstat).append($('<tr><td>Module Modified : <b>' + objModule.modified + '</b></td></tr>'));
+   $("#" + divstat).append($('<tr><td>Module Name : <b>' + objModule.getName() + '</b><br>Module ID : <b>' + objModule.getIddng() + '</b></td></tr>'));
+   $("#" + divstat).append($('<tr><td>Module Modified : <b>' + objModule.getModified() + '</b></td></tr>'));
    $("#" + divstat).append($('<tr><td>Nb Artifacts : <b>' + objModule.artefactCount() + '</b></td>/tr>'));
 
    // ---- Types d'artefacts
 
-   for (myArtefactType in objModule.artefacttype_list) {
-      if (objModule.artefacttype_list[myArtefactType] > 0) {
+   for (myArtefactType in objModule.getArtefacttypeList()) {
+      if (objModule.getArtefacttypeList()[myArtefactType] > 0) {
          if (myHtmlCode !== "") {
             myHtmlCode += "<br>";
          }
 
-         myHtmlCode += myArtefactType + " : <b>" + objModule.artefacttype_list[myArtefactType] + "</b>";
+         myHtmlCode += myArtefactType + " : <b>" + objModule.getArtefacttypeList()[myArtefactType] + "</b>";
       }
    }
 
@@ -1437,7 +1152,7 @@ function gui_BuildTableStat(divstat, objModule) {
 
    // ---- Ajouter une ligne à la table, dont une cellule sera modifiable
 
-   if (objModule.status === IS_NEW) {
+   if (objModule.getStatus() === IS_NEW) {
       $("#" + divstat).append($('<tr><td><div id="' + GUI_ITEM_newcellstat + '"></div></td></tr>'));
    }
 
