@@ -140,45 +140,21 @@ var g_CompareMode = COMPARE_MODE_LOCALLOCAL; // ---- Default Compare Mode
 /* ---- Project -------------------------------------------------------------- */
 
 /**
- * Construire le contenu du bouton de sélection d'un projet si reponse REST = OK
- * @param {String} data - Reponse REST contenant la liste des projets sous forme de structure XML
+ * Build the content of the "Project" button if REST response = OK
+ * @param {Array} projectList - Project list to fill with the REST response
  */
 
-function gui_BuildProjectBtn(data) {
-   let xmlData = $.parseXML(data);
-   let myItem = [];
-
-   g_Project.empty();
-   g_ProjectList.splice(0);
+function gui_BuildProjectBtn(projectList) {
+   let buttonContent = [];
 
    gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, ACTION_DISP_OFF);
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
 
-   // ---- Decoder le contenu de la reponse REST
-
-   $(xmlData).find(JP06_PROJECTAREAS).children().each(function () {
-      let myPrj = new ClassProject();
-
-      myPrj.init($(this));
-
-      // ---- Stocker caracteristiques du projet dans la liste globale
-
-      g_ProjectList.push(myPrj);
-   });
-
-   // ---- Trier les projets et construire le bouton
-
-   if (g_ProjectList.length === 1) { // ---- 1 seul element, donc rien a trier
-      myItem.push('<li id="' + g_ProjectList[0].getId() + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + g_ProjectList[0].getName() + '</a></li>');
-   } else if (g_ProjectList.length > 1) {
-      g_ProjectList.sort((a, b) => (a.getName() > b.getName()) ? 1 : -1);
-
-      for (let i = 0; i < g_ProjectList.length; i++) {
-         myItem.push('<li id="' + g_ProjectList[i].getId() + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + g_ProjectList[i].getName() + '</a></li>');
-      }
+   for (let i = 0; i < projectList.length; i++) {
+      buttonContent.push('<li id="' + projectList[i].getId() + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + projectList[i].getName() + '</a></li>');
    }
 
-   gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_SETCONTENT, myItem);
+   gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_SETCONTENT, buttonContent);
 
    // ---- Activer le bouton 
 
@@ -194,12 +170,7 @@ function gui_SelectProject(object) {
 
    // ---- Sauvegarder l'identifiant du projet selectionne
 
-   for (let i = 0; i < g_ProjectList.length; i++) {
-      if (g_ProjectList[i].getId() == object.id) {
-         g_Project = g_ProjectList[i];
-         break;
-      }
-   }
+   g_Project = g_ProjectList.find(myProject => myProject.getId() == object.id);
 
    gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_SETLABEL, g_Project.getName())
    gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, IS_SUCCESS);
@@ -212,7 +183,7 @@ function gui_SelectProject(object) {
 
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_INPROGRESS);
 
-   BuildComponentList(g_Project.getId());
+   get_ComponentList(g_Project);
 }
 
 /**
@@ -237,73 +208,36 @@ function gui_InitProjectBtn() {
    gui_InitComponentBtn();
 }
 
-/**
- * Afficher un indicateur de probleme de chargement du bouton
- */
-
-function gui_FailProjectBtn() {
-
-   // ---- Desactiver le bouton
-
-   gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_ACTIVE_OFF);
-
-   // ---- Indiquer que le chargement du bouton a echoue
-
-   gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, IS_ERROR);
-   gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_ERROR, "<strong>ERROR : </strong> Projects list not loaded !");
-
-   // ---- Reinitialiser les items dependants
-
-   gui_InitComponentBtn();
-}
-
 /* ---- Component ------------------------------------------------------------ */
 
 /**
  * Construire le contenu du bouton de sélection d'un composant si reponse REST = OK
- * @param {String} data - Reponse REST contenant la liste des composants sous forme de structure XML
+ * @param {ClassProject} project - The ClassProject object for which to build the component button
  */
 
-function gui_BuildComponentBtn(data) {
-   let xmlData = $.parseXML(data);
-   let myItem = [];
+function gui_BuildComponentBtn(project) {
+   let buttonContent = [];
 
    // ---- Reinitialiser les information relatives aux composants
 
    g_Component.empty();
-   g_ComponentList.splice(0);
 
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, ACTION_DISP_OFF);
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
 
-   // ---- Decoder le contenu de la reponse REST
-
-   $(xmlData).find(JP06_PROJECTAREA).each(function () {
-      let myComp = new ClassComponent();
-
-      myComp.init($(this));
-
-      // ---- Stocker caracteristiques du projet dans la liste globale
-
-      g_ComponentList.push(myComp);
-   });
-
-   // ---- Trier les composants et construire le bouton
-
-   g_ComponentList.sort((a, b) => (a.getName() > b.getName()) ? 1 : -1);
-
-   for (let myComponent of g_ComponentList) {
-      myItem.push('<li id="' + myComponent.getId() + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + myComponent.getName() + '</a></li>');
-   }
-
    // ---- Activer le bouton s'il existe des composants
 
-   if (g_ComponentList.length > 0) {
-      gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETCONTENT, myItem);
+   if (project.get_componentList().length > 0) {
+      for (let myComponent of project.get_componentList()) {
+         buttonContent.push('<li id="' + myComponent.getId() + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + myComponent.getName() + '</a></li>');
+      }
+
+      gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETCONTENT, buttonContent);
       gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_ACTIVE_ON);
    } else {
       gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_ACTIVE_OFF);
       gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_WARNING);
+
       gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "<strong>WARNING : </strong> No component found in the selected project !")
    }
 }
@@ -317,12 +251,7 @@ function gui_SelectComponent(object) {
 
    // ---- Sauvegarder l'identifiant du composant selectionne
 
-   for (let i = 0; i < g_ComponentList.length; i++) {
-      if (g_ComponentList[i].getId() == object.id) {
-         g_Component = g_ComponentList[i];
-         break;
-      }
-   }
+   g_Component = g_Project.get_componentList().find(myComponent => myComponent.getId() == object.id);
 
    gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + g_Component.getName());
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_SUCCESS);
@@ -356,26 +285,6 @@ function gui_InitComponentBtn() {
    g_Component.empty();
 
    // ---- Ses dependances
-
-   gui_InitConfBtn();
-}
-
-/**
- * Afficher un indicateur de probleme de chargement du bouton
- */
-
-function gui_FailComponentBtn() {
-
-   // ---- Desactiver le bouton
-
-   gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_ACTIVE_OFF);
-
-   // ---- Indiquer que le chargement du bouton a echoue
-
-   gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_ERROR);
-   gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_ERROR, "<strong>ERROR : </strong> Components list not loaded !");
-
-   // ---- Reinitialiser les items dependants
 
    gui_InitConfBtn();
 }
@@ -1289,7 +1198,7 @@ function gui_selectCompareMode(object) {
 
          gui_InitProjectBtn();
          gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, IS_INPROGRESS);
-         BuildProjectList();
+         get_ProjectList(g_ProjectList);
 
          mgt_Console('Locacl Conf vs Local Conf', CONSOLE_INFO);
          break;
@@ -1305,7 +1214,7 @@ function gui_selectCompareMode(object) {
          /* ---- Future implementation 
             ---- gui_InitProjectBtn ();
             ---- gui_mgtIndicator (GUI_ITEM_PROJECTIND_ROOT, IS_INPROGRESS);
-            ---- BuildProjectList ();
+            ---- get_ProjectList (g_ProjectList);
          */
 
          gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "<strong>WARNING</strong> : Not yet implemented !");
@@ -1389,5 +1298,6 @@ function view_init() {
 
    gui_InitProjectBtn();
    gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, IS_INPROGRESS);
-   BuildProjectList();
+
+   get_ProjectList(g_ProjectList);
 }

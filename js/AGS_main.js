@@ -14,6 +14,8 @@
    ---- Constantes
    --------------------------------------------------------------------------- */
 
+const REST_QUEUE_SIZE = 5;
+
 const WIDGET_PREF_RM_HOSTNAME = "JAZZ_RMHOSTNAME";
 
 // const RM_HOSTNAME_STATIC       = "https://jazzrm-dev.snm.snecma:9443";
@@ -29,6 +31,8 @@ const RM_HOSTNAME_STATIC = "https://elm703.raoulnet";
    --------------------------------------------------------------------------- */
 
 var RM_HOSTNAME;           // ---- Nom d'hote du serveur RM
+
+var queueManager = new QueueManager(REST_QUEUE_SIZE, null);
 
 /* ------------------------------------------------------------------------------
    ---- Core Fonctions

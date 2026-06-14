@@ -98,6 +98,26 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
 }
 
 class ClassProject extends ClassJazzItem { // ---- Caracteristiques d'un projet JAZZ
+   // ---- Private field
+   #componentList = [];
+
+   empty() {
+      super.empty();
+      this.#componentList.splice(0);
+   }
+
+   get_componentList() {
+      return this.#componentList;
+   }
+
+   reset_componentList() {
+      this.#componentList.splice(0);
+   }
+
+   add_component(component) {
+      this.#componentList.push(component);
+   }
+
    /**
     * Initialiser l'objet a partir d'un noeud XML "jp06:project-area"
     * @param {Object} xml_data - Noeud jQuery du projet
@@ -136,6 +156,27 @@ class ClassProject extends ClassJazzItem { // ---- Caracteristiques d'un projet 
 }
 
 class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un composant JAZZ
+
+   // ---- Private field
+   #configurationList = [];
+
+   empty() {
+      super.empty();
+      this.#configurationList.splice(0);
+   }
+
+   get_configurationList() {
+      return this.#configurationList;
+   }
+
+   reset_configurationList() {
+      this.#configurationList.splice(0);
+   }
+
+   add_configuration(configuration) {
+      this.#configurationList.push(configuration);
+   }
+
    /**
     * Initialiser l'objet a partir d'un noeud XML "jp06:project-area"
     * @param {Object} xml_data - Noeud jQuery du composant
@@ -175,7 +216,7 @@ class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un compo
 
 class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une configuration JAZZ
    #type; // ---- Type de configuration : "stream" ou "baseline"
-   
+
    constructor() {
       super();
       this.#type = null;
