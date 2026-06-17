@@ -19,15 +19,15 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
    #summary;       // ---- Sommaire de la ressource
    #description;   // ---- Description de la ressource
    #url;           // ---- URL de la ressource
-   #id;            // ---- Identifiant de la ressource
+   #identifier;    // ---- Identifiant de la ressource
    #modified;      // ---- Date de derniere modification de la ressource
 
-   constructor() {
+   constructor(url = null) {
       this.#name = null;
       this.#summary = null;
       this.#description = null;
-      this.#url = null;
-      this.#id = null;
+      this.#url = url;
+      this.#identifier = null;
       this.#modified = null;
    }
 
@@ -40,7 +40,7 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
       this.#summary = null;
       this.#description = null;
       this.#url = null;
-      this.#id = null;
+      this.#identifier = null;
       this.#modified = null;
    }
 
@@ -62,8 +62,20 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
       return this.#url;
    }
 
-   getId() {
-      return this.#id;
+   /**
+    * Obtenir le nom d'hote (origine + contexte) a partir de l'URL : https://host/context/rest/of/the/url -> https://host/context
+    * @returns {String} - Nom d'hote
+    */
+
+   getHostname() {
+      const myURL = new URL(this.#url);
+      const myContext = myURL.pathname.split('/')[1];
+
+      return myURL.origin + "/" + myContext;
+   }
+
+   getIdentifier() {
+      return this.#identifier;
    }
 
    getModified() {
@@ -88,8 +100,8 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
       this.#url = url;
    }
 
-   setId(id) {
-      this.#id = id;
+   setIdentifier(id) {
+      this.#identifier = id;
    }
 
    setModified(modified) {
@@ -133,7 +145,7 @@ class ClassProject extends ClassJazzItem { // ---- Caracteristiques d'un projet 
             case JP060_URL: // ---- Project URL
                this.setUrl($(node).text());
                myPrjId = this.getUrl().match(/^https.+\/(.+)/);
-               this.setId(myPrjId[1]);
+               this.setIdentifier(myPrjId[1]);
                break;
 
             case JP060_DESCRIPTION: // ---- Project Description
@@ -192,7 +204,7 @@ class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un compo
             case JP060_URL: // ---- Component URL
                this.setUrl($(node).text());
                myCompId = this.getUrl().match(/^https.+\/components\/(.+)/);
-               this.setId(myCompId[1]);
+               this.setIdentifier(myCompId[1]);
                break;
 
             case JP060_DESCRIPTION: // ---- Component Description
@@ -214,12 +226,92 @@ class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un compo
    }
 }
 
-class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une configuration JAZZ
-   #type; // ---- Type de configuration : "stream" ou "baseline"
+class ERM_BaseConfiguration extends ClassJazzItem {
+
+   // ---- Private field
+   #type = []; // ---- Type de configuration : "stream" ou "baseline"
+   #created = null;
+   #creator = null;
+
+   /**
+    * @param {string|null} url - Optional URL forwarded to ERM_Config constructor.
+    */
+
+   constructor(url = null) {
+      super(url);
+   }
+
+   // ---- Protected setters — prefixed with _set_ to signal internal/subclass use only.
+   //      Not meant to be called from outside the class hierarchy.
+
+   _set_type(value) {
+      this.#type.push(value);
+   }
+
+   _set_creator(value) {
+      this.#creator = value;
+   }
+
+   _set_created(value) {
+      this.#created = value;
+   }
+
+   // ---- Public getters
+
+   get_type() {
+      return this.#type;
+   }
+
+   get_creator() {
+      return this.#creator;
+   }
+
+   get_created() {
+      return this.#created;
+   }
+
+   init(xml_data) { // ---- Init an ERM Configuration with an XML Node from ERM API
+      const XML_FINDREQ = OSLCCONFIG_CONFIGURATION + ", " + OSLCCONFIG_CONFIGURATION2 + ", " + OSLCCONFIG_BASELINE + ", " + OSLCCONFIG_STREAM;
+
+      let mySelf = this;
+
+      mySelf.setUrl($(xml_data).find(XML_FINDREQ).attr(RDF0_ABOUT));
+
+      $(xml_data).find(XML_FINDREQ).children().each(function () {
+         switch ($(this).prop('nodeName')) {
+            case DCTERMS0_IDENTIFIER:
+               mySelf.setIdentifier($(this).text());
+               break;
+            case DCTERMS0_TITLE:
+               mySelf.setName($(this).text());
+               break;
+            case DCTERMS0_DESCRIPTION:
+               mySelf.setDescription($(this).text());
+               break;
+            case DCTERMS0_CREATED:
+               mySelf.#created = $(this).text();
+               break;
+            case RDF0_TYPE:
+               mySelf.#type.push($(this).attr(RDF0_RESOURCE));
+               break;
+            case DCTERMS0_CREATOR:
+               mySelf.#creator = $(this).attr(RDF0_RESOURCE);
+               break;
+            default:
+            // ---- Do nothing for the moment
+         }
+      });
+   }
+}
+
+class ERM_Configuration extends ERM_BaseConfiguration { // ---- Caracteristiques d'une configuration JAZZ
+   #changesetsListUrl; // ---- URL de la liste des changesets de la configuration
+   #changesetsList;    // ---- Liste des changesets de la configuration (liste d'objets de type "ClassChangeset")
 
    constructor() {
       super();
-      this.#type = null;
+      this.#changesetsListUrl = null;
+      this.#changesetsList = [];
    }
 
    /**
@@ -228,7 +320,8 @@ class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une 
 
    empty() {
       super.empty();
-      this.#type = null;
+      this.#changesetsListUrl = null;
+      this.#changesetsList.splice(0);
    }
 
    /**
@@ -237,14 +330,14 @@ class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une 
     */
 
    init(xml_data) {
-      let myConfId = [];
+      const XML_FINDREQ = OSLCCONFIG_CONFIGURATION + ", " + OSLCCONFIG_CONFIGURATION2 + ", " + OSLCCONFIG_BASELINE + ", " + OSLCCONFIG_STREAM;
 
-      this.setUrl(xml_data.attr(RDF0_RESOURCE)); // ---- Configuration URL
+      super.init(xml_data);
 
-      myConfId = this.getUrl().match(/^https.+\/rm\/cm\/(.+)\/(.+)/); // ---- Extraire type et identifiant de configuration
-      this.setType(myConfId[1]);
-      this.setId(myConfId[2]);
-      this.setName(this.getId()); // ---- A ce stade, nous n'avons pas encore le nom de la configuration
+      const myNode = $(xml_data).find(XML_FINDREQ).children(J0_CHANGESETS);
+      const url = myNode.attr(RDF0_RESOURCE);
+
+      if (url) this._set_changesetsListUrl(url);
    }
 
    /**
@@ -255,11 +348,11 @@ class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une 
 
    set(confList, confId) {
       for (let myConf of confList) {
-         if (confId === myConf.getId()) {
+         if (confId === myConf.getIdentifier()) {
             this.setName(myConf.getName());
             this.setDescription(myConf.getDescription());
             this.setUrl(myConf.getUrl());
-            this.setId(myConf.getId());
+            this.setIdentifier(myConf.getIdentifier());
             this.setType(myConf.getType());
             break;
          }
@@ -268,19 +361,34 @@ class ClassConfiguration extends ClassJazzItem { // ---- Caracteristiques d'une 
 
    // ---- Getters
 
-   getType() {
-      return this.#type;
-   }
-
    getChangesets() {
       return this.getUrl() + '/changesets'; // ---- URL de la liste des changesets de la configuration
    }
 
+   getChangesetsListUrl() {
+      return this.#changesetsListUrl;
+   }
+
+   getChangesetsList() {
+      return this.#changesetsList;
+   }
+
    // ---- Setters
 
-   setType(type) {
-      this.#type = type;
+   setChangesetsListUrl(url) {
+      this.#changesetsListUrl = url;
    }
+
+   resetChangesetsList() {
+      this.#changesetsList.splice(0);
+   }
+
+   add_changeset(changeset) {
+      this.#changesetsList.push(changeset);
+   }
+
+}
+class ClassChangeset extends ERM_Configuration { // ---- Caracteristiques d'un changeset JAZZ
 }
 
 class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module JAZZ
@@ -352,10 +460,10 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 
    set(modList, modId, confObj) {
       for (let myMod of modList) {
-         if (modId === myMod.getId()) {
+         if (modId === myMod.getIdentifier()) {
             this.setName(myMod.getName());
             this.setUrl(myMod.getUrl());
-            this.setId(myMod.getId());
+            this.setIdentifier(myMod.getIdentifier());
             this.setIddng(myMod.getIddng());
             this.setModified(myMod.getModified());
             break;

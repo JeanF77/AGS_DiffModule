@@ -108,8 +108,8 @@ var g_Project = new ClassProject();      // ---- Projet selectionne
 var g_ComponentList = [];                       // ---- Liste des composants DNG
 var g_Component = new ClassComponent();    // ---- Composant selectionne
 var g_ConfList = [];                       // ---- Liste des configurations d'un composant
-var g_ConfOld = new ClassConfiguration() // ---- Configuration Old selectionnee
-var g_ConfNew = new ClassConfiguration() // ---- Configuration New selectionnee
+var g_ConfOld = new ERM_Configuration() // ---- Configuration Old selectionnee
+var g_ConfNew = new ERM_Configuration() // ---- Configuration New selectionnee
 var g_ModuleOldList = [];                       // ---- Liste des modules de la configuration Old
 var g_ModuleOld = new ClassModule(IS_OLD); // ---- Module Old selectionne
 var g_ModuleNewList = [];                       // ---- Liste des modules de la configuration New
@@ -151,7 +151,7 @@ function gui_BuildProjectBtn(projectList) {
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
 
    for (let i = 0; i < projectList.length; i++) {
-      buttonContent.push('<li id="' + projectList[i].getId() + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + projectList[i].getName() + '</a></li>');
+      buttonContent.push('<li id="' + projectList[i].getIdentifier() + '" onclick="gui_SelectProject (this)"><a class="dropdown-item">' + projectList[i].getName() + '</a></li>');
    }
 
    gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_SETCONTENT, buttonContent);
@@ -170,7 +170,7 @@ function gui_SelectProject(object) {
 
    // ---- Sauvegarder l'identifiant du projet selectionne
 
-   g_Project = g_ProjectList.find(myProject => myProject.getId() == object.id);
+   g_Project = g_ProjectList.find(myProject => myProject.getIdentifier() == object.id);
 
    gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_SETLABEL, g_Project.getName())
    gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, IS_SUCCESS);
@@ -229,7 +229,7 @@ function gui_BuildComponentBtn(project) {
 
    if (project.get_componentList().length > 0) {
       for (let myComponent of project.get_componentList()) {
-         buttonContent.push('<li id="' + myComponent.getId() + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + myComponent.getName() + '</a></li>');
+         buttonContent.push('<li id="' + myComponent.getIdentifier() + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + myComponent.getName() + '</a></li>');
       }
 
       gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETCONTENT, buttonContent);
@@ -251,7 +251,7 @@ function gui_SelectComponent(object) {
 
    // ---- Sauvegarder l'identifiant du composant selectionne
 
-   g_Component = g_Project.get_componentList().find(myComponent => myComponent.getId() == object.id);
+   g_Component = g_Project.get_componentList().find(myComponent => myComponent.getIdentifier() == object.id);
 
    gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + g_Component.getName());
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_SUCCESS);
@@ -265,7 +265,7 @@ function gui_SelectComponent(object) {
    gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, IS_INPROGRESS);
    gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, IS_INPROGRESS);
 
-   BuildConfList(g_Component.getId());
+   get_ConfigurationList(g_Component);
 }
 
 /**
@@ -303,45 +303,20 @@ function gui_BuildConfBtn(data) {
 
    g_ConfOld.empty();
    g_ConfNew.empty();
-   g_ConfList.splice(0);
 
    gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
    gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
 
-   // ---- Decoder le contenu de la reponse REST
-   // ----
-   // ---- <rdf:Description rdf:about="https://jazz:9443/rm/cm/component/_9AiQMCr4EeuJ8b5wb92nYg/configurations">
-   // ----    <rdfs:member rdf:resource="https://jazz:9443/rm/cm/stream/_IgZwUCr6EeuJ8b5wb92nYg"/>
-   // ----    <rdfs:member rdf:resource="https://jazz:9443/rm/cm/baseline/_4ETxUCr5EeuJ8b5wb92nYg"/>
-   // ----    <rdfs:member rdf:resource="https://jazz:9443/rm/cm/stream/_9A_jMCr4EeuJ8b5wb92nYg"/>
-   // ---- </rdf:Description>
-
-   $(xmlData).find(RDFS_MEMBER).each(function () {
-      let myConf = new ClassConfiguration();
-
-      myConf.init($(this));
-
-      // ---- Stocker caracteristiques du projet dans la liste globale
-
-      g_ConfList.push(myConf);
-   });
-
-   // ---- Mise à jour de la liste des configurations (recherche du nom réel de chaque configuration)
-
-   for (let myConf of g_ConfList) {
-      UpdateConfList(myConf);
-   }
-
    // ---- Trier la liste des configurations et construire le bouton
 
-   g_ConfList.sort(compareName);
+   /* g_ConfList.sort(compareName);
 
    for (let myConf of g_ConfList) {
       let myItem;
       let myConfIcon;
 
-      if (myConf.getName() != myConf.getId()) { // ---- Si Name = ID, il s'agit d'une configuration archivée pour laquelle la résolution n'a pu être faite
+      if (myConf.getName() != myConf.getIdentifier()) { // ---- Si Name = ID, il s'agit d'une configuration archivée pour laquelle la résolution n'a pu être faite
 
          // ---- Construire le bouton
 
@@ -351,13 +326,13 @@ function gui_BuildConfBtn(data) {
             myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
          }
 
-         myItem = '<li id="_old' + myConf.getId() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
+         myItem = '<li id="_old' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
          gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
 
-         myItem = '<li id="_new' + myConf.getId() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
+         myItem = '<li id="_new' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
          gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
       }
-   }
+   } */
 
    // ---- Activer le bouton 
 
@@ -395,7 +370,7 @@ function gui_UpdateConfBtn(data) {
 
    // ---- Mettre à jour la liste des configurations
 
-   myConfIdx = g_ConfList.findIndex(conf => conf.getId() === myConfId)
+   myConfIdx = g_ConfList.findIndex(conf => conf.getIdentifier() === myConfId)
 
    if (myConfIdx > -1) {
       g_ConfList[myConfIdx].setName(myConfName);
@@ -432,7 +407,7 @@ function gui_SelectConf(object) {
 
       // ---- Etablir la liste des configurations (streams, baselines ...)
 
-      if (g_ConfOld.getId() === g_ConfNew.getId()) {
+      if (g_ConfOld.getIdentifier() === g_ConfNew.getIdentifier()) {
          // ---- Alerter si les 2 configurations sont identiques
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, IS_WARNING);
       } else {
@@ -457,7 +432,7 @@ function gui_SelectConf(object) {
 
       // ---- Etablir la liste des configurations (streams, baselines ...)
 
-      if (g_ConfOld.getId() === g_ConfNew.getId()) {
+      if (g_ConfOld.getIdentifier() === g_ConfNew.getIdentifier()) {
          // ---- Alerter si les 2 configurations sont identiques
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, IS_WARNING);
       } else {
@@ -580,7 +555,7 @@ function gui_BuildModuleBtn(data, moduleList, moduleObj, btnName, loadInd) {
       // ---- Peut ne pas "matcher" car une forme de reponse peut etre : <oslc_rm:RequirementCollection rdf:about="https://jazz/rm/materializedviews/_gR5ioTC4EeuHlq5APHMxmg">
 
       if (myModuleId != null) {
-         myModule.setId(myModuleId[1]);                                   // ---- Identifiant du module
+         myModule.setIdentifier(myModuleId[1]);                                   // ---- Identifiant du module
          myModule.setName(myCollection.find('dcterms\\:title').text());      // ---- Nom du module
          myModule.setModified(myCollection.find('dcterms\\:modified').text());   // ---- Date de modification du module
          myModule.setModified(new Date(myModule.getModified()));
@@ -613,9 +588,9 @@ function gui_BuildModuleBtn(data, moduleList, moduleObj, btnName, loadInd) {
 
       for (let myModule of moduleList) {
          if (moduleObj.getStatus() === IS_OLD) {
-            myItem = '<li id="_old' + myModule.getId() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
+            myItem = '<li id="_old' + myModule.getIdentifier() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
          } else {
-            myItem = '<li id="_new' + myModule.getId() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
+            myItem = '<li id="_new' + myModule.getIdentifier() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
          }
 
          gui_mgtButtonDrop(btnName, ACTION_APPENDCONTENT, myItem);
@@ -653,13 +628,13 @@ function gui_SelectModule(object) {
 
    switch (g_CompareMode) {
       case COMPARE_MODE_LOCALLOCAL:
-         if (g_ModuleOld.getId() !== null && g_ModuleNew.getId() !== null) {
+         if (g_ModuleOld.getIdentifier() !== null && g_ModuleNew.getIdentifier() !== null) {
             gui_mgtButtonDrop(GUI_ITEM_LOADMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
          }
          break;
 
       case COMPARE_MODE_LOCALREQIF:
-         if (g_ModuleOld.getId() !== null) {
+         if (g_ModuleOld.getIdentifier() !== null) {
             gui_mgtButtonDrop(GUI_ITEM_LOADMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
          }
          break;

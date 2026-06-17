@@ -100,7 +100,7 @@ function fail_get_ProjectList() {
  */
 
 function get_ComponentList(project) {
-   const REST_RM_GETCOMPONENTLIST = RM_HOSTNAME + "/rm/rm-projects/" + project.getId() + "/components";
+   const REST_RM_GETCOMPONENTLIST = RM_HOSTNAME + "/rm/rm-projects/" + project.getIdentifier() + "/components";
 
    project.reset_componentList(); // ---- Clear the componentList before filling it with the REST response
 
@@ -173,7 +173,7 @@ function fail_get_ComponentList() {
  */
 
 function get_ConfigurationList(component) {
-   const REST_RM_GETCONFLIST = RM_HOSTNAME + "/rm/cm/component/" + component.getId() + "/configurations";
+   const REST_RM_GETCONFLIST = RM_HOSTNAME + "/rm/cm/component/" + component.getIdentifier() + "/configurations";
 
    component.reset_configurationList(); // ---- Clear the configurationList before filling it with the REST response
 
@@ -245,6 +245,31 @@ function fail_get_ConfigurationList(component) {
 
 function success_getConfiguration(component, data) {
    let xmlData = $.parseXML(data);
+   let myConfiguration = new ERM_Configuration($(xmlData).find(RDF_DESCRIPTION).attr(RDF0_ABOUT));
+
+   myConfiguration.init(xmlData);
+
+   component.add_configuration(myConfiguration);
+
+   // ---- Get changesets details for the configuration
+
+   if (myConfiguration.getChangesetsListUrl()) {
+      let myRESTRequest = {
+         'method': "GET",
+         'rest_url': myConfiguration.getChangesetsListUrl(),
+         'successCallback': success_getChangesets,
+         'successArg': myConfiguration,
+         'errorCallback': failed_getChangesets,
+         'errorArg': myConfiguration,
+         'timeout': 30000
+      };
+
+      queueManager.addToQueue(myRESTRequest);
+   }
+
+   mgt_Console(success_getConfiguration.name + " - Successfully retrieved configuration: " + myConfiguration.getName() + " for component: " + component.getName(), CONSOLE_INFO);
+
+   // ---- To do : add a function to decode the configuration details and fill the component's configuration list
 }
 
 /**
@@ -254,54 +279,27 @@ function success_getConfiguration(component, data) {
  */
 
 function failed_getConfiguration(component, httpCode) { // --- Error Callback for get_Configuration
-    if (httpCode != 404) {
-        mgt_Console(failed_getConfiguration.name + " - Can not get configuration for component : " + component.getName() + " - " + httpCode, CONSOLE_ERROR);
-    } else {
-        mgt_Console(failed_getConfiguration.name + " - Archived configuration found for component : " + component.getName(), CONSOLE_WARNING);
-    }
+   if (httpCode != 404) {
+      mgt_Console(failed_getConfiguration.name + " - Can not get configuration for component : " + component.getName() + " - " + httpCode, CONSOLE_ERROR);
+   } else {
+      mgt_Console(failed_getConfiguration.name + " - Archived configuration found for component : " + component.getName(), CONSOLE_WARNING);
+   }
+}
+
+function success_getChangesets(configuration, data) {
+   let xmlData = $.parseXML(data);
+}
+
+/**
+ * Error callback for get_Changesets function
+ * @param {ERM_Configuration} configuration - The configuration object for which to get changesets
+ * @param {Number} httpCode - The HTTP response code from the REST request
+ */
+function failed_getChangesets(configuration, httpCode) {
+   mgt_Console(failed_getChangesets.name + " - Can not get changesets for configuration : " + configuration.get_name() + " - " + httpCode, CONSOLE_ERROR);
 }
 
 /* --------------------------------------------------------------------------- */
-
-/**
- * Construire les "Dropdown Button" contenant la liste des configurations (Old et New)
- * @param {String} compId - Identifiant du composant
- */
-
-function BuildConfList(compId) {
-   const REST_RM_GETCONFLIST = RM_HOSTNAME + "/rm/cm/component/" + compId + "/configurations";
-
-   let myRESTRequest = {
-      'method': "GET",
-      'rest_url': REST_RM_GETCONFLIST,
-      'successCallback': gui_BuildConfBtn,
-      'errorCallback': gui_FailConfBtn,
-      'timeout': 30000 // ---- [SEC] Prevent indefinite blocking of the request queue
-   };
-
-   queueManager.addToQueue(myRESTRequest);
-}
-
-/**
- * Mettre à jour les "Dropdown Button" contenant la liste des configurations (Old et New)
- * @param {String} confId - URI de la configuration
- * @param {String} confObj - Objet de type ClassConfiguration
- */
-
-function UpdateConfList(confObj) {
-   const REST_RM_GETCONF = RM_HOSTNAME + "/rm/cm/" + confObj.getType() + "/" + confObj.getId();
-
-   let myRESTRequest = {
-      'method': "GET",
-      'rest_url': REST_RM_GETCONF,
-      'successCallback': gui_UpdateConfBtn,
-      'errorCallback': gui_FailConfBtn,
-      'async': false,
-      'timeout': 30000 // ---- [SEC] Prevent indefinite blocking of the request queue
-   };
-
-   queueManager.addToQueue(myRESTRequest);
-}
 
 /**
  * Construire le "Dropdown Button" contenant la liste des modules pour une configuration donnee

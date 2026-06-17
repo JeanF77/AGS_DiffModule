@@ -91,6 +91,9 @@ const OSLC0_INSTANCESHAPE           = OSLC_INSTANCESHAPE.replace ("\\:",":");
 const OWL_SAMEAS                    = "owl\\:sameAs";
 const OWL0_SAMEAS                   = OWL_SAMEAS.replace ("\\:",":");
 
+const J0_CHANGESETS                 = "j.0\\:changesets";
+const J00_CHANGESETS                = J0_CHANGESETS.replace("\\:", ":");
+
 const JP06_ARCHIVED                 = "jp06\\:archived";
 const JP060_ARCHIVED                = JP06_ARCHIVED.replace ("\\:",":");
 const JP06_DESCRIPTION              = "jp06\\:description";

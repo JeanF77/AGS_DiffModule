@@ -25,7 +25,7 @@
  */
 
 function load_oldTxtmodule (pos) {
-   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.getId() + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
+   const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.getIdentifier() + "&projectURI=" + g_Project.getIdentifier() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 
@@ -46,7 +46,7 @@ function load_oldTxtmodule (pos) {
 
    // ---- Chargement du module
 
-   console.log ("$$$ Load modules (old) '" + g_ModuleOld.getId() + "'\n");
+   console.log ("$$$ Load modules (old) '" + g_ModuleOld.getIdentifier() + "'\n");
    
    gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPagepos(), g_ModuleOld.artefactCount ());
 
@@ -83,7 +83,7 @@ function load_oldTxtmodule (pos) {
  */
 
 function load_newTxtmodule (pos) {
-   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.getId() + "&projectURI=" + g_Project.getId() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
+   const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.getIdentifier() + "&projectURI=" + g_Project.getIdentifier() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
 
    let myPaging = "&scoped=true&size="+ PAGE_SIZE + "&pos=";
 
@@ -104,7 +104,7 @@ function load_newTxtmodule (pos) {
 
    // ---- Chargement du module
 
-   console.log ("$$$ Load modules (new) '" + g_ModuleNew.getId() + "'\n");
+   console.log ("$$$ Load modules (new) '" + g_ModuleNew.getIdentifier() + "'\n");
    
    gui_InitTableStat (GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPagepos(), g_ModuleNew.artefactCount ());
 
@@ -141,7 +141,7 @@ function load_newTxtmodule (pos) {
  */
 
 function load_OldModule () {
-   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.getId() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
+   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.getIdentifier() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
 
    let myRequest = {
       'rest_method'  : "GET",
@@ -154,7 +154,7 @@ function load_OldModule () {
 
    g_ModuleOld.empty_artifact ();
 
-   mgt_Console ("Load module structure (old) : " + g_ModuleOld.getId(), CONSOLE_INFO);
+   mgt_Console ("Load module structure (old) : " + g_ModuleOld.getIdentifier(), CONSOLE_INFO);
 
    gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPagepos());
 
@@ -171,7 +171,7 @@ function load_OldModule () {
  */
 
 function load_NewModule () {
-   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.getId() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
+   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.getIdentifier() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
 
    let myRequest = {
       'rest_method'  : "GET",
@@ -184,7 +184,7 @@ function load_NewModule () {
 
    g_ModuleNew.empty_artifact ();
 
-   mgt_Console ("Load module structure (new) : " + g_ModuleNew.getId(), CONSOLE_INFO);
+   mgt_Console ("Load module structure (new) : " + g_ModuleNew.getIdentifier(), CONSOLE_INFO);
 
    gui_InitTableStat (GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPagepos());
 
