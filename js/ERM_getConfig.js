@@ -135,7 +135,7 @@ function success_get_ComponentList(project, data) {
 
    // ---- Sort the component list by component name
 
-   project.get_componentList().sort(function (a, b) {
+   project.getComponentList().sort(function (a, b) {
       return a.getName().localeCompare(b.getName());
    });
 
@@ -286,8 +286,24 @@ function failed_getConfiguration(component, httpCode) { // --- Error Callback fo
    }
 }
 
+/**
+ * Success callback for get_Changesets function
+ * @param {ERM_Configuration} configuration - The configuration object for which to get changesets
+ * @param {String} data - The REST response data
+ */
+
 function success_getChangesets(configuration, data) {
    let xmlData = $.parseXML(data);
+
+   $(xmlData).find(LDP_DIRECTCONTAINER).children(RDFS_MEMBER).each(function () {
+      let myChangeset = new ERM_Configuration();
+
+      myChangeset.init($(this));
+
+      configuration.setChangesetsList(myChangeset);
+   });
+
+   mgt_Console(success_getChangesets.name + " - Successfully retrieved changesets for configuration: " + configuration.getName(), CONSOLE_INFO);
 }
 
 /**
@@ -296,7 +312,7 @@ function success_getChangesets(configuration, data) {
  * @param {Number} httpCode - The HTTP response code from the REST request
  */
 function failed_getChangesets(configuration, httpCode) {
-   mgt_Console(failed_getChangesets.name + " - Can not get changesets for configuration : " + configuration.get_name() + " - " + httpCode, CONSOLE_ERROR);
+   mgt_Console(failed_getChangesets.name + " - Can not get changesets for configuration : " + configuration.getName() + " - " + httpCode, CONSOLE_ERROR);
 }
 
 /* --------------------------------------------------------------------------- */

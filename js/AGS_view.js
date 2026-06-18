@@ -227,8 +227,8 @@ function gui_BuildComponentBtn(project) {
 
    // ---- Activer le bouton s'il existe des composants
 
-   if (project.get_componentList().length > 0) {
-      for (let myComponent of project.get_componentList()) {
+   if (project.getComponentList().length > 0) {
+      for (let myComponent of project.getComponentList()) {
          buttonContent.push('<li id="' + myComponent.getIdentifier() + '" onclick="gui_SelectComponent (this)"><a class="dropdown-item"><img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + myComponent.getName() + '</a></li>');
       }
 
@@ -251,7 +251,7 @@ function gui_SelectComponent(object) {
 
    // ---- Sauvegarder l'identifiant du composant selectionne
 
-   g_Component = g_Project.get_componentList().find(myComponent => myComponent.getIdentifier() == object.id);
+   g_Component = g_Project.getComponentList().find(myComponent => myComponent.getIdentifier() == object.id);
 
    gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_COMPONENT + '" alt="Component"> ' + g_Component.getName());
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_SUCCESS);

@@ -118,7 +118,7 @@ class ClassProject extends ClassJazzItem { // ---- Caracteristiques d'un projet 
       this.#componentList.splice(0);
    }
 
-   get_componentList() {
+   getComponentList() {
       return this.#componentList;
    }
 
@@ -177,7 +177,7 @@ class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un compo
       this.#configurationList.splice(0);
    }
 
-   get_configurationList() {
+   getConfigurationList() {
       return this.#configurationList;
    }
 
@@ -226,12 +226,15 @@ class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un compo
    }
 }
 
-class ERM_BaseConfiguration extends ClassJazzItem {
+class ERM_Configuration extends ClassJazzItem {
 
    // ---- Private field
-   #type = []; // ---- Type de configuration : "stream" ou "baseline"
+   #type = [];                // ---- Type de configuration : "stream", "baseline" ou "changeset"
    #created = null;
    #creator = null;
+   #changesetsListUrl = null; // ---- URL de la liste des changesets de la configuration
+   #changesetsList = [];      // ---- Liste des changesets de la configuration
+   #overrides = null;         // ---- Liste des overrides de la configuration
 
    /**
     * @param {string|null} url - Optional URL forwarded to ERM_Config constructor.
@@ -241,37 +244,60 @@ class ERM_BaseConfiguration extends ClassJazzItem {
       super(url);
    }
 
-   // ---- Protected setters — prefixed with _set_ to signal internal/subclass use only.
-   //      Not meant to be called from outside the class hierarchy.
+   // ---- Setters
 
-   _set_type(value) {
+   setType(value) {
       this.#type.push(value);
    }
 
-   _set_creator(value) {
+   setCreator(value) {
       this.#creator = value;
    }
 
-   _set_created(value) {
+   setCreated(value) {
       this.#created = value;
    }
 
-   // ---- Public getters
+   setChangesetsListUrl(value) {
+      this.#changesetsListUrl = value;
+   }
 
-   get_type() {
+   setChangesetsList(value) {
+      this.#changesetsList.push(value);
+   }
+
+   setOverrides(value) {
+      this.#overrides = value;
+   }
+
+   // ---- Getters
+
+   getType() {
       return this.#type;
    }
 
-   get_creator() {
+   getCreator() {
       return this.#creator;
    }
 
-   get_created() {
+   getCreated() {
       return this.#created;
    }
 
+   getChangesetsListUrl() {
+      return this.#changesetsListUrl;
+   }
+
+   getChangesetsList() {
+      return this.#changesetsList;
+   }
+
+   getOverrides() {
+      return this.#overrides;
+   }
+
    init(xml_data) { // ---- Init an ERM Configuration with an XML Node from ERM API
-      const XML_FINDREQ = OSLCCONFIG_CONFIGURATION + ", " + OSLCCONFIG_CONFIGURATION2 + ", " + OSLCCONFIG_BASELINE + ", " + OSLCCONFIG_STREAM;
+      const XML_FINDREQ = OSLCCONFIG_CONFIGURATION + ", " + OSLCCONFIG_CONFIGURATION2 + ", " + OSLCCONFIG_BASELINE + ", " + OSLCCONFIG_STREAM + ", " + OSLCCONFIG_CHANGESET; // ---- Configuration represented in a "Configuration" or "Baseline" or "Stream" or "ChangeSet" node
 
       let mySelf = this;
 
@@ -297,98 +323,17 @@ class ERM_BaseConfiguration extends ClassJazzItem {
             case DCTERMS0_CREATOR:
                mySelf.#creator = $(this).attr(RDF0_RESOURCE);
                break;
+            case J00_CHANGESETS:
+               mySelf.#changesetsListUrl = $(this).attr(RDF0_RESOURCE);
+               break;
+            case OSLCCONFIG0_OVERRIDES:
+               mySelf.#overrides = $(this).attr(RDF0_RESOURCE);
+               break;
             default:
             // ---- Do nothing for the moment
          }
       });
    }
-}
-
-class ERM_Configuration extends ERM_BaseConfiguration { // ---- Caracteristiques d'une configuration JAZZ
-   #changesetsListUrl; // ---- URL de la liste des changesets de la configuration
-   #changesetsList;    // ---- Liste des changesets de la configuration (liste d'objets de type "ClassChangeset")
-
-   constructor() {
-      super();
-      this.#changesetsListUrl = null;
-      this.#changesetsList = [];
-   }
-
-   /**
-    * Réinitialiser l'objet
-    */
-
-   empty() {
-      super.empty();
-      this.#changesetsListUrl = null;
-      this.#changesetsList.splice(0);
-   }
-
-   /**
-    * Initialiser l'objet a partir d'un noeud XML "rdfs:member"
-    * @param {Object} xml_data - Noeud jQuery de la configuration
-    */
-
-   init(xml_data) {
-      const XML_FINDREQ = OSLCCONFIG_CONFIGURATION + ", " + OSLCCONFIG_CONFIGURATION2 + ", " + OSLCCONFIG_BASELINE + ", " + OSLCCONFIG_STREAM;
-
-      super.init(xml_data);
-
-      const myNode = $(xml_data).find(XML_FINDREQ).children(J0_CHANGESETS);
-      const url = myNode.attr(RDF0_RESOURCE);
-
-      if (url) this._set_changesetsListUrl(url);
-   }
-
-   /**
-    * Affecter une configuration a partir d'une liste
-    * @param {Array} confList - Table d'objets de type "ClassConfiguration"
-    * @param {String} confId - Identifiant de la configuration
-    */
-
-   set(confList, confId) {
-      for (let myConf of confList) {
-         if (confId === myConf.getIdentifier()) {
-            this.setName(myConf.getName());
-            this.setDescription(myConf.getDescription());
-            this.setUrl(myConf.getUrl());
-            this.setIdentifier(myConf.getIdentifier());
-            this.setType(myConf.getType());
-            break;
-         }
-      }
-   }
-
-   // ---- Getters
-
-   getChangesets() {
-      return this.getUrl() + '/changesets'; // ---- URL de la liste des changesets de la configuration
-   }
-
-   getChangesetsListUrl() {
-      return this.#changesetsListUrl;
-   }
-
-   getChangesetsList() {
-      return this.#changesetsList;
-   }
-
-   // ---- Setters
-
-   setChangesetsListUrl(url) {
-      this.#changesetsListUrl = url;
-   }
-
-   resetChangesetsList() {
-      this.#changesetsList.splice(0);
-   }
-
-   add_changeset(changeset) {
-      this.#changesetsList.push(changeset);
-   }
-
-}
-class ClassChangeset extends ERM_Configuration { // ---- Caracteristiques d'un changeset JAZZ
 }
 
 class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module JAZZ
