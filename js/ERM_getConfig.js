@@ -78,18 +78,8 @@ function success_get_ProjectList(projectList, data) {
 function fail_get_ProjectList() {
    mgt_Console(fail_get_ProjectList.name + " - Can not get the project area configuration list from ERM", CONSOLE_ERROR);
 
-   // ---- Project list not loaded, disable the project dropdown button
-
-   gui_mgtButtonDrop(GUI_ITEM_PROJECT_BTN_ROOT, ACTION_ACTIVE_OFF);
-
-   // ---- Display error message in the alert box
-
    gui_mgtIndicator(GUI_ITEM_PROJECTIND_ROOT, IS_ERROR);
-   gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_ERROR, "<strong>ERROR : </strong> Projects list not loaded !");
-
-   // ---- Initialize the component dropdown button to be disabled
-
-   gui_InitComponentBtn();
+   gui_FatalError("<strong>ERROR : </strong> Projects list not loaded !");
 }
 
 /* --------------------------------------------------------------------------- */
@@ -151,18 +141,8 @@ function success_get_ComponentList(project, data) {
 function fail_get_ComponentList() {
    mgt_Console(fail_get_ComponentList.name + " - Can not get the component list from ERM", CONSOLE_ERROR);
 
-   // ---- Component list not loaded, disable the component dropdown button
-
-   gui_mgtButtonDrop(GUI_ITEM_COMPONENT_BTN_ROOT, ACTION_ACTIVE_OFF);
-
-   // ---- Display error message in the alert box
-
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, IS_ERROR);
-   gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_ERROR, "<strong>ERROR : </strong> Components list not loaded !");
-
-   // ---- Initialize the configuration dropdown button to be disabled
-
-   gui_InitConfBtn();
+   gui_FatalError("<strong>ERROR : </strong> Components list not loaded !");
 }
 
 /* --------------------------------------------------------------------------- */
@@ -232,9 +212,7 @@ function success_get_ConfigurationList(component, data) {
 function fail_get_ConfigurationList(component) {
    mgt_Console(fail_get_ConfigurationList.name + " - Can not get the configuration list for component '" + component.getName() + "'", CONSOLE_ERROR);
 
-   // ---- Configuration list not loaded, disable the configuration dropdown button
-
-   // ---- To do : add a gui_mgtButtonDrop function to disable the configuration dropdown button
+   gui_FatalError("<strong>ERROR : </strong> Configurations list not loaded for component '" + component.getName() + "' !");
 }
 
 /**
@@ -279,9 +257,11 @@ function success_getConfiguration(component, data) {
  */
 
 function failed_getConfiguration(component, httpCode) { // --- Error Callback for get_Configuration
-   if (httpCode != 404) {
+   if (httpCode != 404) { // ---- If the error is not a 404 Not Found, then it is a real error
       mgt_Console(failed_getConfiguration.name + " - Can not get configuration for component : " + component.getName() + " - " + httpCode, CONSOLE_ERROR);
-   } else {
+
+      gui_FatalError("<strong>ERROR : </strong> Can not get configuration for component : '" + component.getName() + "' !");
+   } else { // ---- 404 Not Found : This means that the component has no configuration (yet) or that the configuration is archived
       mgt_Console(failed_getConfiguration.name + " - Archived configuration found for component : " + component.getName(), CONSOLE_WARNING);
    }
 }
@@ -313,6 +293,8 @@ function success_getChangesets(configuration, data) {
  */
 function failed_getChangesets(configuration, httpCode) {
    mgt_Console(failed_getChangesets.name + " - Can not get changesets for configuration : " + configuration.getName() + " - " + httpCode, CONSOLE_ERROR);
+
+   gui_FatalError("<strong>ERROR : </strong> Changesets not loaded for configuration '" + configuration.getName() + "' !");
 }
 
 /* --------------------------------------------------------------------------- */

@@ -255,6 +255,19 @@ function gui_mgtButtonDrop (guiRoot, action, content) {
 }
 
 /**
+ * Handle a fatal error : display it in the alert banner and lock down the whole GUI
+ * @param {String} message - HTML or text content describing the error
+ */
+
+function gui_FatalError (message) {
+   gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_ERROR, message);
+
+   for (let myBtnRoot of GUI_ALL_BTN_ROOT) {
+      gui_mgtButtonDrop(myBtnRoot, ACTION_ACTIVE_OFF);
+   }
+}
+
+/**
  * "Alert Box" management
  * @param {*} guiRoot - GUI Object root name
  * @param {*} action - Action/Status (IS_SUCCESS, IS_WARNING, IS_ERROR, ACTION_DISP_OFF)
