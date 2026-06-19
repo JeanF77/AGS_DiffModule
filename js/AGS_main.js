@@ -33,6 +33,7 @@ const RM_HOSTNAME_STATIC = "https://elm703.raoulnet";
 var RM_HOSTNAME;           // ---- Nom d'hote du serveur RM
 
 var queueManager = new QueueManager(REST_QUEUE_SIZE, null);
+var queueManagerConfig = new QueueManager(REST_QUEUE_SIZE, gui_BuildConfBtn);
 
 /* ------------------------------------------------------------------------------
    ---- Core Fonctions

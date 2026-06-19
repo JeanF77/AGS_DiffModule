@@ -47,10 +47,14 @@ const DCTERMS_CREATOR               = "dcterms\\:creator";
 const DCTERMS0_CREATOR              = DCTERMS_CREATOR.replace ("\\:",":");
 const DCTERMS_CREATED               = "dcterms\\:created";
 const DCTERMS0_CREATED              = DCTERMS_CREATED.replace ("\\:",":");
+const DCTERMS_CONTRIBUTOR           = "dcterms\\:contributor";
+const DCTERMS0_CONTRIBUTOR          = DCTERMS_CONTRIBUTOR.replace ("\\:",":");
 const DCTERMS_DESCRIPTION           = "dcterms\\:description";
 const DCTERMS0_DESCRIPTION          = DCTERMS_DESCRIPTION.replace ("\\:",":");
 const DCTERMS_IDENTIFIER            = "dcterms\\:identifier";
 const DCTERMS0_IDENTIFIER           = DCTERMS_IDENTIFIER.replace ("\\:",":");
+const DCTERMS_MODIFIED              = "dcterms\\:modified";
+const DCTERMS0_MODIFIED             = DCTERMS_MODIFIED.replace ("\\:",":");
 const DCTERMS_TITLE                 = "dcterms\\:title";
 const DCTERMS0_TITLE                = DCTERMS_TITLE.replace ("\\:",":");
 
@@ -90,6 +94,9 @@ const OSLC0_INSTANCESHAPE           = OSLC_INSTANCESHAPE.replace ("\\:",":");
 
 const OWL_SAMEAS                    = "owl\\:sameAs";
 const OWL0_SAMEAS                   = OWL_SAMEAS.replace ("\\:",":");
+
+const PUBLIC_RM10_WRAPPEDRESCONTENTTYPE   = "public_rm_10\\:wrappedResourceContentType";
+const PUBLIC0_RM10_WRAPPEDRESCONTENTTYPE  = PUBLIC_RM10_WRAPPEDRESCONTENTTYPE.replace ("\\:",":");
 
 const J0_CHANGESETS                 = "j\\.0\\:changesets";
 const J00_CHANGESETS                = J0_CHANGESETS.replace("\\.", ".").replace("\\:", ":");

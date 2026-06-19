@@ -21,6 +21,10 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
    #url;           // ---- URL de la ressource
    #identifier;    // ---- Identifiant de la ressource
    #modified;      // ---- Date de derniere modification de la ressource
+   #created;       // ---- Date de creation de la ressource
+   #creator;       // ---- Createur de la ressource
+   #contributor;   // ---- Contributeur de la ressource
+   #type;          // ---- Type de la ressource (projet, composant, configuration, ...)
 
    constructor(url = null) {
       this.#name = null;
@@ -29,6 +33,10 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
       this.#url = url;
       this.#identifier = null;
       this.#modified = null;
+      this.#created = null;
+      this.#creator = null;
+      this.#contributor = null;
+      this.#type = null;
    }
 
    /**
@@ -42,6 +50,10 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
       this.#url = null;
       this.#identifier = null;
       this.#modified = null;
+      this.#created = null;
+      this.#creator = null;
+      this.#contributor = null;
+      this.#type = null;
    }
 
    // ---- Getters
@@ -60,6 +72,22 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
 
    getUrl() {
       return this.#url;
+   }
+
+   getCreated() {
+      return this.#created;
+   }
+
+   getCreator() {
+      return this.#creator;
+   }
+
+   getContributor() {
+      return this.#contributor;
+   }
+
+   getType() {
+      return this.#type;
    }
 
    /**
@@ -106,6 +134,22 @@ class ClassJazzItem { // ---- Caracteristiques communes a une ressource JAZZ (pr
 
    setModified(modified) {
       this.#modified = modified;
+   }
+
+   setCreated(created) {
+      this.#created = created;
+   }
+
+   setCreator(creator) {
+      this.#creator = creator;
+   }
+
+   setContributor(contributor) {
+      this.#contributor = contributor;
+   }
+
+   setType(type) {
+      this.#type = type;
    }
 }
 
@@ -229,9 +273,6 @@ class ClassComponent extends ClassJazzItem { // ---- Caracteristiques d'un compo
 class ERM_Configuration extends ClassJazzItem {
 
    // ---- Private field
-   #type = [];                // ---- Type de configuration : "stream", "baseline" ou "changeset"
-   #created = null;
-   #creator = null;
    #changesetsListUrl = null; // ---- URL de la liste des changesets de la configuration
    #changesetsList = [];      // ---- Liste des changesets de la configuration
    #overrides = null;         // ---- Liste des overrides de la configuration
@@ -246,18 +287,6 @@ class ERM_Configuration extends ClassJazzItem {
 
    // ---- Setters
 
-   setType(value) {
-      this.#type.push(value);
-   }
-
-   setCreator(value) {
-      this.#creator = value;
-   }
-
-   setCreated(value) {
-      this.#created = value;
-   }
-
    setChangesetsListUrl(value) {
       this.#changesetsListUrl = value;
    }
@@ -271,18 +300,6 @@ class ERM_Configuration extends ClassJazzItem {
    }
 
    // ---- Getters
-
-   getType() {
-      return this.#type;
-   }
-
-   getCreator() {
-      return this.#creator;
-   }
-
-   getCreated() {
-      return this.#created;
-   }
 
    getChangesetsListUrl() {
       return this.#changesetsListUrl;
@@ -303,6 +320,15 @@ class ERM_Configuration extends ClassJazzItem {
 
       mySelf.setUrl($(xml_data).find(XML_FINDREQ).attr(RDF0_ABOUT));
 
+      // ---- Determine the type of configuration from the URL (changeset, stream, or baseline)
+
+      const myTypeMatch = mySelf.getUrl().match(/\/cm\/(changeset|stream|baseline)\//);
+      if (myTypeMatch) {
+         mySelf.setType(myTypeMatch[1]);
+      }
+
+      // ---- Parse the XML data to extract configuration details and set them in the object
+
       $(xml_data).find(XML_FINDREQ).children().each(function () {
          switch ($(this).prop('nodeName')) {
             case DCTERMS0_IDENTIFIER:
@@ -315,13 +341,10 @@ class ERM_Configuration extends ClassJazzItem {
                mySelf.setDescription($(this).text());
                break;
             case DCTERMS0_CREATED:
-               mySelf.#created = $(this).text();
-               break;
-            case RDF0_TYPE:
-               mySelf.#type.push($(this).attr(RDF0_RESOURCE));
+               mySelf.setCreated($(this).text());
                break;
             case DCTERMS0_CREATOR:
-               mySelf.#creator = $(this).attr(RDF0_RESOURCE);
+               mySelf.setCreator($(this).attr(RDF0_RESOURCE));
                break;
             case J00_CHANGESETS:
                mySelf.#changesetsListUrl = $(this).attr(RDF0_RESOURCE);
@@ -329,6 +352,57 @@ class ERM_Configuration extends ClassJazzItem {
             case OSLCCONFIG0_OVERRIDES:
                mySelf.#overrides = $(this).attr(RDF0_RESOURCE);
                break;
+            default:
+            // ---- Do nothing for the moment
+         }
+      });
+   }
+}
+
+class ERM_wrappedResources extends ClassJazzItem {
+   // ---- Private field
+   #contenttype = null; // ---- URL de la liste des changesets de la configuration
+
+   constructor(url = null) {
+      super(url);
+   }
+
+   setContentType(type) {
+      this.#contenttype = type;
+   }
+
+   getContenType() {
+      return this.#contenttype;
+   }
+
+   init(xml_data) { // ---- Init an ERM Configuration with an XML Node from ERM API
+      let mySelf = this;
+
+      $(xml_data).find(RDF_DESCRIPTION).children().each(function () {
+         switch ($(this).prop('nodeName')) {
+            case DCTERMS0_IDENTIFIER:
+               mySelf.setIdentifier($(this).text());
+               break;
+            case DCTERMS0_TITLE:
+               mySelf.setName($(this).text());
+               break;
+            case DCTERMS0_DESCRIPTION:
+               mySelf.setDescription($(this).text());
+               break;
+            case DCTERMS0_CREATED:
+               mySelf.setCreated($(this).text());
+               break;
+            case DCTERMS0_CREATOR:
+               mySelf.setCreator($(this).attr(RDF0_RESOURCE));
+               break;
+            case DCTERMS0_MODIFIED:
+               mySelf.setModified($(this).attr(RDF0_RESOURCE));
+               break;
+            case DCTERMS0_CONTRIBUTOR:
+               mySelf.setContributor($(this).attr(RDF0_RESOURCE));
+               break;
+            case PUBLIC0_RM10_WRAPPEDRESCONTENTTYPE:
+               mySelf.#contenttype = ($(this).text());
             default:
             // ---- Do nothing for the moment
          }

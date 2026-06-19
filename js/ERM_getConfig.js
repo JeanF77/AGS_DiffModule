@@ -149,7 +149,7 @@ function fail_get_ComponentList() {
 
 /**
  * Get the ERM configuration list for a given component
- * @param {ClassComponent) component - The ClassComponent object for which to get the configuration list
+ * @param {ClassComponent} component - The ClassComponent object for which to get the configuration list
  */
 
 function get_ConfigurationList(component) {
@@ -200,7 +200,7 @@ function success_get_ConfigurationList(component, data) {
          'timeout': 30000
       };
 
-      queueManager.addToQueue(myRESTRequest);
+      queueManagerConfig.addToQueue(myRESTRequest);
    });
 }
 
@@ -242,7 +242,7 @@ function success_getConfiguration(component, data) {
          'timeout': 30000
       };
 
-      queueManager.addToQueue(myRESTRequest);
+      queueManagerConfig.addToQueue(myRESTRequest);
    }
 
    mgt_Console(success_getConfiguration.name + " - Successfully retrieved configuration: " + myConfiguration.getName() + " for component: " + component.getName(), CONSOLE_INFO);

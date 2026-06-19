@@ -99,6 +99,7 @@ const GUI_BLACK_COLOR = "black";
 const GUI_ICON_STREAM = "./resources/rm_stream_icon.png";
 const GUI_ICON_BASELINE = "./resources/rm_baseline_icon.png";
 const GUI_ICON_COMPONENT = "./resources/rm_component_icon.png";
+const GUI_ICON_CHANGSET = "./resources/rm_changeset_icon.png";
 const GUI_ICON_MODULE = "./resources/rm_module_icon.png";
 
 const IS_OLD = "OLD";
@@ -120,17 +121,17 @@ const COMPARE_MODE_LABEL = ["Local Conf"];
    ---- Variables globales
    --------------------------------------------------------------------------- */
 
-var g_ProjectList = [];                       // ---- Liste des projets DNG
-var g_Project = new ClassProject();      // ---- Projet selectionne
-var g_ComponentList = [];                       // ---- Liste des composants DNG
-var g_Component = new ClassComponent();    // ---- Composant selectionne
-var g_ConfList = [];                       // ---- Liste des configurations d'un composant
-var g_ConfOld = new ERM_Configuration() // ---- Configuration Old selectionnee
-var g_ConfNew = new ERM_Configuration() // ---- Configuration New selectionnee
-var g_ModuleOldList = [];                       // ---- Liste des modules de la configuration Old
-var g_ModuleOld = new ClassModule(IS_OLD); // ---- Module Old selectionne
-var g_ModuleNewList = [];                       // ---- Liste des modules de la configuration New
-var g_ModuleNew = new ClassModule(IS_NEW); // ---- Module New selectionne
+var g_ProjectList = [];                      // ---- Liste des projets DNG
+var g_Project = null                         // ---- Projet selectionne
+var g_ComponentList = [];                    // ---- Liste des composants DNG
+var g_Component = null;                      // ---- Composant selectionne
+var g_ConfList = [];                         // ---- Liste des configurations d'un composant
+var g_ConfOld = null;                        // ---- Configuration Old selectionnee
+var g_ConfNew = null;                        // ---- Configuration New selectionnee
+var g_ModuleOldList = [];                    // ---- Liste des modules de la configuration Old
+var g_ModuleOld = new ClassModule(IS_OLD);   // ---- Module Old selectionne
+var g_ModuleNewList = [];                    // ---- Liste des modules de la configuration New
+var g_ModuleNew = new ClassModule(IS_NEW);   // ---- Module New selectionne
 
 var g_DiffList = [];                      // ---- Tableau des resultats de comparaison
 
@@ -218,7 +219,7 @@ function gui_InitProjectBtn() {
    $("#" + GUI_ITEM_diffzone).empty();
    $("#" + GUI_ITEM_diffzone).hide();
 
-   g_Project.empty();
+   g_Project = null;
 
    // ---- Reinitialiser les items dependants
 
@@ -237,7 +238,7 @@ function gui_BuildComponentBtn(project) {
 
    // ---- Reinitialiser les information relatives aux composants
 
-   g_Component.empty();
+   g_Component = null;
 
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, ACTION_DISP_OFF);
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
@@ -299,7 +300,7 @@ function gui_InitComponentBtn() {
 
    gui_mgtIndicator(GUI_ITEM_COMPONENTIND_ROOT, ACTION_DISP_OFF);
 
-   g_Component.empty();
+   g_Component= null;
 
    // ---- Ses dependances
 
@@ -310,46 +311,50 @@ function gui_InitComponentBtn() {
 
 /**
  * Construire le contenu du bouton de sélection d'une configuration si reponse REST = OK
- * @param {String} data - Reponse REST contenant la liste des configurations sous forme de structure XML
  */
 
-function gui_BuildConfBtn(data) {
-   let xmlData = $.parseXML(data);
+function gui_BuildConfBtn() {
+   let myConfigurationList = [];
 
    // ---- Reinitialiser les information relatives aux configurations
 
-   g_ConfOld.empty();
-   g_ConfNew.empty();
+   g_ConfOld = null;
+   g_ConfNew = null;
 
    gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
    gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
 
-   // ---- Trier la liste des configurations et construire le bouton
+   // ---- Get all configurations and changesets for the selected component
 
-   /* g_ConfList.sort(compareName);
+   for (let myConf of g_Component.getConfigurationList()) {
+      myConfigurationList.push(myConf);
 
-   for (let myConf of g_ConfList) {
-      let myItem;
-      let myConfIcon;
+      myConfigurationList = myConfigurationList.concat(myConf.getChangesetsList());
+   }
 
-      if (myConf.getName() != myConf.getIdentifier()) { // ---- Si Name = ID, il s'agit d'une configuration archivée pour laquelle la résolution n'a pu être faite
+   myConfigurationList.sort(compareName);
 
-         // ---- Construire le bouton
+   // ---- Create the buttons for each configuration (stream, baseline, changeset)
 
-         if (myConf.getType() === "stream") {
-            myConfIcon = '<img src="' + GUI_ICON_STREAM + '" alt="Stream"> ';
-         } else {
-            myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
-         }
+   const myIconByType = {
+      stream: { src: GUI_ICON_STREAM, alt: "Stream" },
+      baseline: { src: GUI_ICON_BASELINE, alt: "Baseline" },
+      changeset: { src: GUI_ICON_CHANGSET, alt: "Changeset" }
+   };
 
-         myItem = '<li id="_old' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
-         gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
+   for (let myConf of myConfigurationList) {
+      const myIcon = myIconByType[myConf.getType()];
 
-         myItem = '<li id="_new' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myConfIcon + myConf.getName() + '</a></li>';
-         gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
+      if (!myIcon) {
+         continue;
       }
-   } */
+
+      const myLabel = '<img src="' + myIcon.src + '" alt="' + myIcon.alt + '"> ' + myConf.getName();
+
+      gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, '<li id="_old' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myLabel + '</a></li>');
+      gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, '<li id="_new' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myLabel + '</a></li>');
+   }
 
    // ---- Activer le bouton 
 
@@ -358,63 +363,45 @@ function gui_BuildConfBtn(data) {
 }
 
 /**
- * Mettre à jour le contenu du bouton de sélection d'une configuration si reponse REST = OK
- * @param {String} data - Reponse REST contenant les caractéristiques d'une configuration sous forme de structure XML
- */
-
-function gui_UpdateConfBtn(data) {
-   let xmlData = $.parseXML(data);
-   let myConf;
-   let myConfIdx;
-   let myConfId;
-   let myConfName;
-
-   // ---- Decoder le contenu de la reponse REST (la reponse differe selon s'il s'agit du stream racine
-   // ---- ou d'un stream parallele ou encore d'une baseline)
-
-   myConf = $(xmlData).find('oslc_config\\:Stream'); // ---- 1ere forme de la reponse
-
-   if (myConf.length === 0) {
-      myConf = $(xmlData).find('oslc_config\\:Configuration'); // ---- 2sde forme de la reponse
-
-      if (myConf.length === 0) {
-         myConf = $(xmlData).find('oslc_config\\:Baseline'); // ---- 3ieme forme de la reponse
-      }
-   }
-
-   myConfId = myConf.find('dcterms\\:identifier').text();
-   myConfName = myConf.find('dcterms\\:title').text();
-
-   // ---- Mettre à jour la liste des configurations
-
-   myConfIdx = g_ConfList.findIndex(conf => conf.getIdentifier() === myConfId)
-
-   if (myConfIdx > -1) {
-      g_ConfList[myConfIdx].setName(myConfName);
-   }
-}
-
-/**
  * Afficher le nom de la configuration selectionnee
  * @param {Object} object - Objet IHM selectionne par l'utilisateur
  */
 
 function gui_SelectConf(object) {
-   let myConfId = [];
+   const myConfId = object.id.match(/^_(old|new)(.+)/); // ---- Groupe 1 = prefix | Groupe 2 = identifiant de la configuration
+
+   let mySelectedConf;
+   let myConfigurationList = [];
    let myConfIcon;
 
-   myConfId = object.id.match(/^_(old|new)(.+)/); // ---- Groupe 1 = prefix | Groupe 2 = identifiant de la configuration
+   // ---- Get all configurations and changesets for the selected component
+
+   for (let myConf of g_Component.getConfigurationList()) {
+      myConfigurationList.push(myConf);
+
+      myConfigurationList = myConfigurationList.concat(myConf.getChangesetsList());
+   }
+
+   mySelectedConf = myConfigurationList.find(myConf => myConf.getIdentifier() === myConfId[2]);
+
+   switch (mySelectedConf.getType()) {
+      case "stream":
+         myConfIcon = '<img src="' + GUI_ICON_STREAM + '" alt="Stream"> ';
+         break;
+      case "baseline":
+         myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
+         break;
+      case "changeset":
+         myConfIcon = '<img src="' + GUI_ICON_CHANGSET + '" alt="Changeset"> ';
+         break;
+      default:
+         myConfIcon = '';
+   }
 
    // ---- Sauvegarder l'identifiant de la configuration selectionnee
 
    if (myConfId[1] === 'old') { // ---- Old configuration
-      g_ConfOld.set(g_ConfList, myConfId[2]);
-
-      if (g_ConfOld.getType() === "stream") {
-         myConfIcon = '<img src="' + GUI_ICON_STREAM + '" alt="Stream"> ';
-      } else {
-         myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
-      }
+      g_ConfOld = mySelectedConf;
 
       gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_SETLABEL, myConfIcon + g_ConfOld.getName());
 
@@ -424,22 +411,18 @@ function gui_SelectConf(object) {
 
       // ---- Etablir la liste des configurations (streams, baselines ...)
 
-      if (g_ConfOld.getIdentifier() === g_ConfNew.getIdentifier()) {
+      if (g_ConfNew && g_ConfOld.getIdentifier() === g_ConfNew.getIdentifier()) {
          // ---- Alerter si les 2 configurations sont identiques
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, IS_WARNING);
       } else {
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
+         gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_INPROGRESS);
+
          BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfOld.getUrl(), IS_OLD);
       }
    } else { // ---- New configuration
-      g_ConfNew.set(g_ConfList, myConfId[2]);
-
-      if (g_ConfNew.getType() === "stream") {
-         myConfIcon = '<img src="' + GUI_ICON_STREAM + '" alt="Stream"> ';
-      } else {
-         myConfIcon = '<img src="' + GUI_ICON_BASELINE + '" alt="Baseline"> ';
-      }
+      g_ConfNew = mySelectedConf;
 
       gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_SETLABEL, myConfIcon + g_ConfNew.getName());
 
@@ -449,12 +432,14 @@ function gui_SelectConf(object) {
 
       // ---- Etablir la liste des configurations (streams, baselines ...)
 
-      if (g_ConfOld.getIdentifier() === g_ConfNew.getIdentifier()) {
+      if (g_ConfOld && g_ConfNew.getIdentifier() === g_ConfOld.getIdentifier()) {
          // ---- Alerter si les 2 configurations sont identiques
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, IS_WARNING);
       } else {
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
+         gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_INPROGRESS);
+         
          BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfNew.getUrl(), IS_NEW);
       }
    }
@@ -476,8 +461,8 @@ function gui_InitConfBtn() {
    gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
    gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
 
-   g_ConfOld.empty();
-   g_ConfNew.empty();
+   g_ConfOld = null;
+   g_ConfNew = null;
 
    // ---- Ses dependances
 
