@@ -92,6 +92,17 @@ const CONSOLE_ERROR                          = "### ERROR : ";
    --------------------------------------------------------------------------- */
 
 /**
+  * Extract ERM root context from an URL : https://<erm-server>:<port>/rm/cm/stream/<streamid> --> https://<erm-server>:<port>/rm
+  * @param {String} url - URL to analyze
+  * @returns - Root context
+  */
+
+function extractRmBase(url) {
+  const match = url.match(/^(https?:\/\/[^/]+\/[^/]+)/);
+  return match ? match[1] : null;
+}
+
+/**
  * Compare property "name" from array of objects (via getName()), ascendant sort
  * @param {Object} a - object exposing getName()
  * @param {Object} b - object exposing getName()

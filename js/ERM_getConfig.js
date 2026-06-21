@@ -90,7 +90,7 @@ function fail_get_ProjectList() {
  */
 
 function get_ComponentList(project) {
-   const REST_RM_GETCOMPONENTLIST = RM_HOSTNAME + "/rm/rm-projects/" + project.getIdentifier() + "/components";
+   const REST_RM_GETCOMPONENTLIST = extractRmBase(project.getUrl()) + "/rm-projects/" + project.getIdentifier() + "/components";
 
    project.reset_componentList(); // ---- Clear the componentList before filling it with the REST response
 
@@ -153,7 +153,7 @@ function fail_get_ComponentList() {
  */
 
 function get_ConfigurationList(component) {
-   const REST_RM_GETCONFLIST = RM_HOSTNAME + "/rm/cm/component/" + component.getIdentifier() + "/configurations";
+   const REST_RM_GETCONFLIST = extractRmBase(component.getUrl()) + "/cm/component/" + component.getIdentifier() + "/configurations";
 
    component.reset_configurationList(); // ---- Clear the configurationList before filling it with the REST response
 
@@ -246,8 +246,6 @@ function success_getConfiguration(component, data) {
    }
 
    mgt_Console(success_getConfiguration.name + " - Successfully retrieved configuration: " + myConfiguration.getName() + " for component: " + component.getName(), CONSOLE_INFO);
-
-   // ---- To do : add a function to decode the configuration details and fill the component's configuration list
 }
 
 /**
@@ -300,22 +298,20 @@ function failed_getChangesets(configuration, httpCode) {
 /* --------------------------------------------------------------------------- */
 
 /**
- * Construire le "Dropdown Button" contenant la liste des modules pour une configuration donnee
- * @param {String} prjURI - URI du projet (URI ou Id ?)
- * @param {String} compURI - URI du composant (URI ou Id ?)
- * @param {String} confURI - URI de la configuration
- * @param {String} state - Etat ("old" ou "new")
+ * Get module list for a givent configuration
+ * @param {ClassProject} project - Project object
+ * @param {ClassComponent} component - Component object
+ * @param {ERM_Configuration} configuration - The given configuration
  */
 
-function BuildModuleList(prjURI, compURI, confURI, state) {
-   let myRestURL = RM_HOSTNAME + "/rm/views?oslc.query=true";
+function get_ModuleList(project, component, configuration) {
 
-   // ---- Preparation requete OSLC
+   // ---- Build OSLC request
 
    let myContext = "";
-   myContext += "&project_URL=" + encodeURIComponent(prjURI);
-   myContext += "&oslc_config.context=" + encodeURIComponent(confURI);
-   myContext += "&componentURI=" + encodeURIComponent(compURI);
+   myContext += "&project_URL=" + encodeURIComponent(project.getUrl());
+   myContext += "&oslc_config.context=" + encodeURIComponent(configuration.getUrl());
+   myContext += "&componentURI=" + encodeURIComponent(component.getUrl());
 
    let myOslcPrefix = "";
    myOslcPrefix += "&oslc.prefix=" + encodeURIComponent("oslc=<http://open-services.net/ns/core#>");
@@ -327,22 +323,69 @@ function BuildModuleList(prjURI, compURI, confURI, state) {
    myOslcQuery += "&oslc.select=dcterms:title,oslc:instanceShape,dcterms:modified,dcterms:identifier";
    myOslcQuery += "&oslc.where=rdf:type=" + encodeURIComponent("<http://open-services.net/ns/rm#RequirementCollection>");
 
-   myRestURL += myContext + myOslcPrefix + myOslcQuery;
+   let myRESTRequest = {
+      'method': "GET",
+      'rest_url': extractRmBase(configuration.getUrl()) + "/views?oslc.query=true" + myContext + myOslcPrefix + myOslcQuery,
+      'successCallback': success_get_ModuleList,
+      'successArg' : configuration,
+      'errorCallback': failed_get_ModuleList,
+      'errorArg': configuration,
+      'timeout': 30000
+   };
 
-   let myRequest = {
-      'rest_method': "GET",
-      'rest_url': myRestURL,
-      'rest_success': "",
-      'rest_failed': ""
-   }
+   mgt_Console(get_ModuleList.name + " - Get module list for : " + configuration.getUrl(), CONSOLE_INFO);
 
-   console.log("$$$ Get modules list for '" + state + "'\n");
+   queueManager.addToQueue(myRESTRequest);
+}
 
-   // ---- Executer requete
+/**
+ * Success callback for get_ModuleList function
+ * @param {ERM_Configuration} configuration - The configuration object for which to get modules
+ * @param {String} data - The REST response data
+ */
 
-   if (state === IS_OLD) {
-      ajax_async_request(myRequest, gui_BuildOldModuleBtn, gui_FailOldModuleBtn, null);
-   } else {
-      ajax_async_request(myRequest, gui_BuildNewModuleBtn, gui_FailNewModuleBtn, null);
-   }
+function success_get_ModuleList (configuration, data) {
+   let xmlData = $.parseXML(data);
+
+   configuration.empty_ModuleList();
+
+   // ---- Decoder le contenu de la reponse REST
+   // ---- <rdfs:member>
+   // ----     <oslc_rm:RequirementCollection rdf:about="https://jazz:9443/rm/resources/_e0e3a11c46854792bc3f0c95a8a4f015">
+   // ----        <oslc:instanceShape rdf:resource="https://jazz:9443/rm/types/_9QWN1ir4EeuJ8b5wb92nYg"/>
+   // ----        <dcterms:title>REST Discovery - 1</dcterms:title>
+   // ----     </oslc_rm:RequirementCollection>
+   // ---- </rdfs:member>
+
+   $(xmlData).find(RDF_DESCRIPTION).children(RDFS_MEMBER).each(function () {
+      let myModule = new ClassModule();
+
+      myModule.init($(this));
+
+      if (myModule.getIdentifier() != null) {
+         configuration.add_Module(myModule);
+      }
+   });
+
+   // ---- Sort module list
+
+   configuration.getModuleList().sort(function (a, b) {
+      return a.getName().localeCompare(b.getName());
+   });
+
+   // ---- Build the select module button for the target configuration
+   
+   gui_BuildModuleBtn(configuration);
+}
+
+/**
+ * Error callback for get_ModuleList function
+ * @param {ERM_Configuration} configuration - The configuration object for which to get changesets
+ * @param {Number} httpCode - The HTTP response code from the REST request
+ */
+
+function failed_get_ModuleList (configuration, httpCode) {
+   mgt_Console(failed_get_ModuleList.name + " - Can not get module list for configuration : " + configuration.getName() + " - " + httpCode, CONSOLE_ERROR);
+
+   gui_FatalError("<strong>ERROR : </strong> Changesets not loaded for configuration '" + configuration.getName() + "' !");
 }

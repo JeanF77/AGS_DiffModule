@@ -123,15 +123,11 @@ const COMPARE_MODE_LABEL = ["Local Conf"];
 
 var g_ProjectList = [];                      // ---- Liste des projets DNG
 var g_Project = null                         // ---- Projet selectionne
-var g_ComponentList = [];                    // ---- Liste des composants DNG
 var g_Component = null;                      // ---- Composant selectionne
-var g_ConfList = [];                         // ---- Liste des configurations d'un composant
 var g_ConfOld = null;                        // ---- Configuration Old selectionnee
 var g_ConfNew = null;                        // ---- Configuration New selectionnee
-var g_ModuleOldList = [];                    // ---- Liste des modules de la configuration Old
-var g_ModuleOld = new ClassModule(IS_OLD);   // ---- Module Old selectionne
-var g_ModuleNewList = [];                    // ---- Liste des modules de la configuration New
-var g_ModuleNew = new ClassModule(IS_NEW);   // ---- Module New selectionne
+var g_ModuleOld = null;   // ---- Module Old selectionne
+var g_ModuleNew = null;   // ---- Module New selectionne
 
 var g_DiffList = [];                      // ---- Tableau des resultats de comparaison
 
@@ -283,6 +279,9 @@ function gui_SelectComponent(object) {
    gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, IS_INPROGRESS);
    gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, IS_INPROGRESS);
 
+   g_ConfOld = null;
+   g_ConfNew = null;
+
    get_ConfigurationList(g_Component);
 }
 
@@ -315,11 +314,6 @@ function gui_InitComponentBtn() {
 
 function gui_BuildConfBtn() {
    let myConfigurationList = [];
-
-   // ---- Reinitialiser les information relatives aux configurations
-
-   g_ConfOld = null;
-   g_ConfNew = null;
 
    gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
    gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
@@ -419,7 +413,7 @@ function gui_SelectConf(object) {
          gui_mgtIndicator(GUI_ITEM_NEWCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_INPROGRESS);
 
-         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfOld.getUrl(), IS_OLD);
+         get_ModuleList(g_Project, g_Component, g_ConfOld);
       }
    } else { // ---- New configuration
       g_ConfNew = mySelectedConf;
@@ -440,7 +434,7 @@ function gui_SelectConf(object) {
          gui_mgtIndicator(GUI_ITEM_OLDCONFIGIND_ROOT, ACTION_DISP_OFF);
          gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_INPROGRESS);
          
-         BuildModuleList(g_Project.getUrl(), g_Component.getUrl(), g_ConfNew.getUrl(), IS_NEW);
+         get_ModuleList(g_Project, g_Component, g_ConfNew);
       }
    }
 }
@@ -499,106 +493,60 @@ function gui_FailConfBtn(httpCode) {
 /* ---- Module --------------------------------------------------------------- */
 
 /**
- * Construire le contenu du bouton de sélection du module "Old" si reponse REST = OK
- * @param {String} data - Reponse REST contenant la liste des modules sous forme de structure XML
+ * Create module selection button from the selectec configuration
+ * @param {ERM_Configuration} configuration - Configuration object
  */
 
-function gui_BuildOldModuleBtn(data) {
-   gui_BuildModuleBtn(data, g_ModuleOldList, g_ModuleOld, GUI_ITEM_OLDMODULE_BTN_ROOT, GUI_ITEM_OLDMODULEIND_ROOT);
-}
-
-/**
- * Construire le contenu du bouton de sélection du module "New" si reponse REST = OK
- * @param {String} data - Reponse REST contenant la liste des modules sous forme de structure XML
- */
-
-function gui_BuildNewModuleBtn(data) {
-   gui_BuildModuleBtn(data, g_ModuleNewList, g_ModuleNew, GUI_ITEM_NEWMODULE_BTN_ROOT, GUI_ITEM_NEWMODULEIND_ROOT);
-}
-
-/**
- * Construire le contenu du bouton de sélection du module
- * @param {String} data - Reponse REST contenant la liste des modules sous forme de structure XML
- * @param {Array} moduleList - Liste des modules
- * @param {Object} moduleObj - Objet module
- * @param {String} btnName - Id du bouton
- * @param {*String} loadInd - Id de l'indicateur de chargement 
- */
-
-function gui_BuildModuleBtn(data, moduleList, moduleObj, btnName, loadInd) {
-   let xmlData = $.parseXML(data);
+function gui_BuildModuleBtn (configuration) {
    let myItem;
 
-   // ---- Reinitialiser les information relatives aux modules
+   // ---- Build module button
 
-   moduleObj.empty();
-   moduleList.splice(0);
+   if (g_ConfNew && configuration.getUrl() === g_ConfNew.getUrl()) { // ---- New module button
+      mgt_Console(gui_BuildModuleBtn.name + " - Build 'New' module list for " + configuration.getName(), CONSOLE_INFO);
 
-   gui_mgtIndicator(loadInd, ACTION_DISP_OFF);
-   gui_mgtAlert(GUI_ITEM_ALERT_ROOT, ACTION_DISP_OFF);
+      gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, ACTION_DISP_OFF);
 
-   // ---- Decoder le contenu de la reponse REST
-   // ---- <rdfs:member>
-   // ----     <oslc_rm:RequirementCollection rdf:about="https://jazz:9443/rm/resources/_e0e3a11c46854792bc3f0c95a8a4f015">
-   // ----        <oslc:instanceShape rdf:resource="https://jazz:9443/rm/types/_9QWN1ir4EeuJ8b5wb92nYg"/>
-   // ----        <dcterms:title>REST Discovery - 1</dcterms:title>
-   // ----     </oslc_rm:RequirementCollection>
-   // ---- </rdfs:member>
+      if (configuration.getModuleList().length > 0) {
+         for (let myModule of configuration.getModuleList()) {
+            myItem = '<li id="_new' + myModule.getIdentifier() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="New Module"> ' + myModule.getName() + '</a></li>';
 
-   $(xmlData).find('rdfs\\:member').each(function () {
-      let myModule = new ClassModule();
-      let myModuleId = [];
-      let myCollection;
-
-      myCollection = $(this).find('oslc_rm\\:RequirementCollection');
-      myModule.setUrl(myCollection.attr('rdf:about'));                   // ---- URL du module
-      myModuleId = myModule.getUrl().match(/^https.+\/resources\/(.+)/);
-
-      // ---- Peut ne pas "matcher" car une forme de reponse peut etre : <oslc_rm:RequirementCollection rdf:about="https://jazz/rm/materializedviews/_gR5ioTC4EeuHlq5APHMxmg">
-
-      if (myModuleId != null) {
-         myModule.setIdentifier(myModuleId[1]);                                   // ---- Identifiant du module
-         myModule.setName(myCollection.find('dcterms\\:title').text());      // ---- Nom du module
-         myModule.setModified(myCollection.find('dcterms\\:modified').text());   // ---- Date de modification du module
-         myModule.setModified(new Date(myModule.getModified()));
-         myModule.setIddng(myCollection.find('dcterms\\:identifier').text()); // ---- IDentifiant externe du module
-
-         // ---- Stocker caracteristiques du projet dans la liste globale
-
-         moduleList.push(myModule);
-      }
-   });
-
-   // ---- Trier les modules et construire le bouton
-
-   if (moduleList.length === 0 && moduleObj.getStatus() === IS_OLD) { // ---- Module List is empty, display warning
-      gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "Warning : Old Module List is empty !")
-
-      // ---- Hide progess and display error indicator
-
-      gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_ERROR);
-      gui_mgtButtonDrop(btnName, ACTION_ACTIVE_OFF);
-   } else if (moduleList.length === 0 && moduleObj.getStatus() !== IS_OLD) {
-      gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "Warning : New Module List is empty !")
-
-      // ---- Hide progess and display error indicator
-
-      gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_ERROR);
-      gui_mgtButtonDrop(btnName, ACTION_ACTIVE_OFF);
-   } else {
-      moduleList.sort(compareName);
-
-      for (let myModule of moduleList) {
-         if (moduleObj.getStatus() === IS_OLD) {
-            myItem = '<li id="_old' + myModule.getIdentifier() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
-         } else {
-            myItem = '<li id="_new' + myModule.getIdentifier() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Module"> ' + myModule.getName() + '</a></li>';
+            gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
          }
 
-         gui_mgtButtonDrop(btnName, ACTION_APPENDCONTENT, myItem);
+         gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
+      } else { // ---- Module list is empty
+         gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "Warning : New Module List is empty !");
+         gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_ERROR);
+         gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_ACTIVE_OFF);
       }
+   } else if (g_ConfOld && configuration.getUrl() === g_ConfOld.getUrl()) { // ---- Old module button
+      mgt_Console(gui_BuildModuleBtn.name + " - Build 'Old' module list for " + configuration.getName(), CONSOLE_INFO);
 
-      gui_mgtButtonDrop(btnName, ACTION_ACTIVE_ON);
+      if (configuration.getModuleList().length > 0) {
+         gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, ACTION_DISP_OFF);
+
+         for (let myModule of configuration.getModuleList()) {
+            myItem = '<li id="_old' + myModule.getIdentifier() + '" onclick="gui_SelectModule (this)"><a class="dropdown-item"><img src="' + GUI_ICON_MODULE + '" alt="Old Module"> ' + myModule.getName() + '</a></li>';
+
+            gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_APPENDCONTENT, myItem);
+         }
+
+         gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
+      } else { // ---- Module list is empty
+         gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_WARNING, "Warning : New Module List is empty !");
+         gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_ERROR);
+         gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_ACTIVE_OFF);
+      }
+   } else {
+      // ---- Somthing is wrong !
+
+      mgt_Console(gui_BuildModuleBtn.name + " - Something is wrong for " + configuration.getName(), CONSOLE_ERROR);
+
+      gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_ERROR);
+      gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_ACTIVE_OFF);
+      gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_ERROR);
+      gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_ACTIVE_OFF);
    }
 }
 
@@ -615,12 +563,12 @@ function gui_SelectModule(object) {
    // ---- Sauvegarder l'identifiant du module selectionne
 
    if (myModuleId[1] === 'old') { // ---- Old module
-      g_ModuleOld.set(g_ModuleOldList, myModuleId[2], g_ConfOld);
+      g_ModuleOld = g_ConfOld.getModuleList().find(myModule => myModule.getIdentifier() === myModuleId[2]);
 
       gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="Old Module"> ' + g_ModuleOld.getName());
       gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_SUCCESS);
    } else { // ---- New module
-      g_ModuleNew.set(g_ModuleNewList, myModuleId[2], g_ConfNew);
+      g_ModuleNew = g_ConfNew.getModuleList().find(myModule => myModule.getIdentifier() === myModuleId[2]);
 
       gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="New Module"> ' + g_ModuleNew.getName());
       gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_SUCCESS);
@@ -630,13 +578,13 @@ function gui_SelectModule(object) {
 
    switch (g_CompareMode) {
       case COMPARE_MODE_LOCALLOCAL:
-         if (g_ModuleOld.getIdentifier() !== null && g_ModuleNew.getIdentifier() !== null) {
+         if (g_ModuleOld && g_ModuleNew) {
             gui_mgtButtonDrop(GUI_ITEM_LOADMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
          }
          break;
 
       case COMPARE_MODE_LOCALREQIF:
-         if (g_ModuleOld.getIdentifier() !== null) {
+         if (g_ModuleOld !== null) {
             gui_mgtButtonDrop(GUI_ITEM_LOADMODULE_BTN_ROOT, ACTION_ACTIVE_ON);
          }
          break;
@@ -659,8 +607,6 @@ function gui_InitOldModuleBtn() {
    // ---- Reinitialiser le bouton et ses dependances
 
    gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, ACTION_DISP_OFF);
-
-   g_ModuleOld.empty();
 
    // ---- Ses dependances
 
@@ -702,8 +648,6 @@ function gui_InitNewModuleBtn() {
    // ---- Reinitialiser le bouton et ses dependances
 
    gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, ACTION_DISP_OFF);
-
-   g_ModuleNew.empty();
 
    // ---- Ses dependances
 

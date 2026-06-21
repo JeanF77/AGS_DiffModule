@@ -140,7 +140,7 @@ function load_newTxtmodule (pos) {
  * On récupère la liste de tous les artefacts contenus le module
  */
 
-function load_OldModule () {
+/* function load_OldModule () {
    const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.getIdentifier() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
 
    let myRequest = {
@@ -163,6 +163,68 @@ function load_OldModule () {
    $.when (ajax_async_request (myRequest, g_ModuleOld.get_structure.bind(g_ModuleOld), gui_FailedOldTableStat, null)).then(function () {
       load_oldTxtmodule ();
    });
+} */
+
+function load_OldModule (module, configuration) {
+   const REST_RM_GETMODULESTR_OLD = extractRmBase(module.getUrl()) + "/publish/modules?resourceURI=" + module.getIdentifier() + "&oslc_config.context=" + configuration.getUrl();
+
+   let myRequest = {
+      'rest_method'  : "GET",
+      'rest_url'     : REST_RM_GETMODULESTR_OLD,
+      'rest_success' : "",
+      'rest_failed'  : ""
+   }
+
+   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
+
+   module.empty_artifact ();
+
+   mgt_Console ("Load module structure (old) : " + module.getIdentifier(), CONSOLE_INFO);
+
+   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, module.getPagepos());
+
+   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
+
+   $.when (ajax_async_request (myRequest, module.get_structure.bind(module), gui_FailedOldTableStat, null)).then(function () {
+      load_oldTxtmodule ();
+   });
+}
+
+
+
+function get_ModuleStructure (module, configuration) {
+   let myRESTRequest = {
+      'method': "GET",
+      'rest_url': extractRmBase(module.getUrl()) + "/publish/modules?resourceURI=" + module.getIdentifier() + "&oslc_config.context=" + configuration.getUrl(),
+      'successCallback': success_get_ModuleStructure,
+      'successArg' : module,
+      'errorCallback': failedget_ModuleStructure,
+      'errorArg': module,
+      'timeout': 30000
+   };
+
+   mgt_Console(get_ModuleStructure.name + " - Get module structure for : " + module.getUrl(), CONSOLE_INFO);
+
+   queueManager.addToQueue(myRESTRequest);
+}
+
+function success_get_ModuleStructure (module, data) {
+   let xmlData = $.parseXML(data);
+
+   
+
+}
+
+/**
+ * Error callback for get_ModuleStructure function
+ * @param {ClassModule} module - The module object for which to get the structure
+ * @param {Number} httpCode - The HTTP response code from the REST request
+ */
+
+function failedget_ModuleStructure (module, httpCode) {
+   mgt_Console(failedget_ModuleStructure.name + " - Can not get module structure for : " + module.getName() + " - " + httpCode, CONSOLE_ERROR);
+
+   gui_FatalError("<strong>ERROR : </strong> Can not the module structure for '" + module.getName() + "' !");
 }
 
 /**

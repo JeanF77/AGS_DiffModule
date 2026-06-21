@@ -276,6 +276,7 @@ class ERM_Configuration extends ClassJazzItem {
    #changesetsListUrl = null; // ---- URL de la liste des changesets de la configuration
    #changesetsList = [];      // ---- Liste des changesets de la configuration
    #overrides = null;         // ---- Liste des overrides de la configuration
+   #moduleList = [];          // ---- Modules hosted by the configuration
 
    /**
     * @param {string|null} url - Optional URL forwarded to ERM_Config constructor.
@@ -312,6 +313,12 @@ class ERM_Configuration extends ClassJazzItem {
    getOverrides() {
       return this.#overrides;
    }
+
+   getModuleList() {
+      return this.#moduleList;
+   }
+
+   // ---- Core functions
 
    init(xml_data) { // ---- Init an ERM Configuration with an XML Node from ERM API
       const XML_FINDREQ = OSLCCONFIG_CONFIGURATION + ", " + OSLCCONFIG_CONFIGURATION2 + ", " + OSLCCONFIG_BASELINE + ", " + OSLCCONFIG_STREAM + ", " + OSLCCONFIG_CHANGESET; // ---- Configuration represented in a "Configuration" or "Baseline" or "Stream" or "ChangeSet" node
@@ -357,6 +364,14 @@ class ERM_Configuration extends ClassJazzItem {
          }
       });
    }
+
+   add_Module(module) {
+      this.#moduleList.push(module);
+   }
+
+   empty_ModuleList() {
+      this.#moduleList.splice(0);
+   }
 }
 
 class ERM_wrappedResources extends ClassJazzItem {
@@ -375,34 +390,34 @@ class ERM_wrappedResources extends ClassJazzItem {
       return this.#contenttype;
    }
 
-   init(xml_data) { // ---- Init an ERM Configuration with an XML Node from ERM API
-      let mySelf = this;
+   // ---- Rename this class, because it is not "specific" to a Wrapped Resource !!!
 
-      $(xml_data).find(RDF_DESCRIPTION).children().each(function () {
-         switch ($(this).prop('nodeName')) {
+   init(xml_data) { // ---- Init an ERM Configuration with an XML Node from ERM API
+      xml_data.find(RDF_DESCRIPTION).children().each((index, node) => {
+         switch ($(node).prop('nodeName')) {
             case DCTERMS0_IDENTIFIER:
-               mySelf.setIdentifier($(this).text());
+               this.setIdentifier($(node).text());
                break;
             case DCTERMS0_TITLE:
-               mySelf.setName($(this).text());
+               this.setName($(node).text());
                break;
             case DCTERMS0_DESCRIPTION:
-               mySelf.setDescription($(this).text());
+               this.setDescription($(node).text());
                break;
             case DCTERMS0_CREATED:
-               mySelf.setCreated($(this).text());
+               this.setCreated($(node).text());
                break;
             case DCTERMS0_CREATOR:
-               mySelf.setCreator($(this).attr(RDF0_RESOURCE));
+               this.setCreator($(node).attr(RDF0_RESOURCE));
                break;
             case DCTERMS0_MODIFIED:
-               mySelf.setModified($(this).attr(RDF0_RESOURCE));
+               this.setModified($(node).text());
                break;
             case DCTERMS0_CONTRIBUTOR:
-               mySelf.setContributor($(this).attr(RDF0_RESOURCE));
+               this.setContributor($(node).attr(RDF0_RESOURCE));
                break;
-            case PUBLIC0_RM10_WRAPPEDRESCONTENTTYPE:
-               mySelf.#contenttype = ($(this).text());
+            case PUBLIC0_RM10_WRAPPEDRESCONTENTTYPE: // ---- Only for Wrapped Resource !
+               this.#contenttype = ($(node).text());
             default:
             // ---- Do nothing for the moment
          }
@@ -411,32 +426,62 @@ class ERM_wrappedResources extends ClassJazzItem {
 }
 
 class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module JAZZ
-   #iddng;              // ---- Identifiant du module (identifiant externe visible dans les vues)
-   #status;             // ---- Status du module ("New" ou "Old"), defini a la creation de l'objet
-   #format;             // ---- Format "Collection" ou "Module"
-   #artefact_list;       // ---- Liste des artefacts (liste d'objets de la classe "ClassArtefact")
-   #attributecust_list;  // ---- Liste de tous les "Custom Attributes" detectes dans le module
-   #artefacttype_list;   // ---- Liste des tous les types d'artefacts et leur nombre - Index = type d'artefact / Contenu = nombre
-   #nbpage;             // ---- Nombre de pages du module
-   #pagepos;            // ---- Position de pagination
-   #conf;               // ---- Configuration du module (objet de la classe "ClassConfiguration")
+   #iddng = null;             // ---- Identifiant du module (identifiant externe visible dans les vues)
+   #status = null;            // ---- Status du module ("New" ou "Old"), defini a la creation de l'objet
+   #format = null;            // ---- Format "Collection" ou "Module"
+   #artefact_list = [];       // ---- Liste des artefacts (liste d'objets de la classe "ClassArtefact")
+   #attributecust_list = [];  // ---- Liste de tous les "Custom Attributes" detectes dans le module
+   #artefacttype_list = [];   // ---- Liste des tous les types d'artefacts et leur nombre - Index = type d'artefact / Contenu = nombre
+   #nbpage = 0;               // ---- Nombre de pages du module
+   #pagepos = 0;              // ---- Position de pagination
+   #conf = null;              // ---- Configuration du module (objet de la classe "ClassConfiguration")
 
    constructor(modStatus) {
       super();
 
-      this.#iddng = null;
-      this.#status = null;
-      this.#format = null;
-      this.#artefact_list = [];
-      this.#attributecust_list = [];
-      this.#artefacttype_list = [];
-      this.#nbpage = 0;
-      this.#pagepos = 0;
-      this.#conf = null;
+      this.#status = (modStatus != undefined ? modStatus : null);
+   }
 
-      if (modStatus != undefined) {
-         this.#status = modStatus;
-      }
+   init(xml_data) {
+      xml_data.find(OSLCRM_REQUIREMENTCOLLECTION).each((index, node) => {
+         let myIdentifier;
+
+         // ---- Get "internal" identifier
+         /* ---- Response form is :
+            <rdfs:member>
+               <oslc_rm:RequirementCollection rdf:about="https://elm703.raoulnet/rm/resources/MD_0neRECstEfGpLb-cxbHKhQ">
+                  <oslc:instanceShape rdf:resource="https://elm703.raoulnet/rm/types/OT_aUyAgCstEfGpLb-cxbHKhQ"/>
+                  <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2026-06-12T05:38:46.780Z</dcterms:modified>
+                  <dcterms:title>TRD Test Module</dcterms:title>
+                  <dcterms:identifier rdf:datatype="http://www.w3.org/2001/XMLSchema#long">704</dcterms:identifier>
+               </oslc_rm:RequirementCollection>
+            </rdfs:member>
+         */
+
+         this.setUrl($(node).attr(RDF0_ABOUT));
+
+         myIdentifier = this.getUrl().match(/^https.+\/resources\/(.+)/);
+
+         this.setIdentifier((myIdentifier === null ? myIdentifier : myIdentifier[1]));
+
+         // ---- Loop on each sub-nodes
+
+         $(node).children().each((index, node) => {
+            switch ($(node).prop('nodeName')) {
+               case DCTERMS0_IDENTIFIER:
+                  this.#iddng = $(node).text();
+                  break;
+               case DCTERMS0_TITLE:
+                  this.setName($(node).text());
+                  break;
+               case DCTERMS0_MODIFIED:
+                  this.setModified($(node).text());
+                  break;
+               default:
+               // ---- Do nothing
+            }
+         });
+      });
    }
 
    /**
