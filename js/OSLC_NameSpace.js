@@ -27,28 +27,12 @@ const OSCL_GC_PERSONNALSTREAM       = "http://jazz.net/ns/config_ext#PersonalStr
 // ---- form "rdf\\:about" used to get a node
 // ---- form "rdf:about" used to get an attribute
 
-const RDF_ABOUT                     = "rdf\\:about";
-const RDF0_ABOUT                    = RDF_ABOUT.replace ("\\:",":");
-const RDF_DESCRIPTION               = "rdf\\:Description";
-const RDF0_DESCRIPTION              = RDF_DESCRIPTION.replace ("\\:",":");
-const RDF_LI                        = "rdf\\:li";
-const RDF0_LI                       = RDF_LI.replace ("\\:",":");
-const RDF_RESOURCE                  = "rdf\\:resource";
-const RDF0_RESOURCE                 = RDF_RESOURCE.replace ("\\:",":");
-const RDF_TYPE                      = "rdf\\:type";
-const RDF0_TYPE                     = RDF_TYPE.replace ("\\:",":");
-const RDF_VALUE                     = "rdf\\:value";
-const RDF0_VALUE                    = RDF_VALUE.replace ("\\:",":");
-
-const RDFS_MEMBER                   = "rdfs\\:member";
-const RDFS0_MEMBER                  = RDFS_MEMBER.replace ("\\:",":");
-
-const DCTERMS_CREATOR               = "dcterms\\:creator";
-const DCTERMS0_CREATOR              = DCTERMS_CREATOR.replace ("\\:",":");
-const DCTERMS_CREATED               = "dcterms\\:created";
-const DCTERMS0_CREATED              = DCTERMS_CREATED.replace ("\\:",":");
 const DCTERMS_CONTRIBUTOR           = "dcterms\\:contributor";
 const DCTERMS0_CONTRIBUTOR          = DCTERMS_CONTRIBUTOR.replace ("\\:",":");
+const DCTERMS_CREATED               = "dcterms\\:created";
+const DCTERMS0_CREATED              = DCTERMS_CREATED.replace ("\\:",":");
+const DCTERMS_CREATOR               = "dcterms\\:creator";
+const DCTERMS0_CREATOR              = DCTERMS_CREATOR.replace ("\\:",":");
 const DCTERMS_DESCRIPTION           = "dcterms\\:description";
 const DCTERMS0_DESCRIPTION          = DCTERMS_DESCRIPTION.replace ("\\:",":");
 const DCTERMS_IDENTIFIER            = "dcterms\\:identifier";
@@ -56,18 +40,40 @@ const DCTERMS0_IDENTIFIER           = DCTERMS_IDENTIFIER.replace ("\\:",":");
 const DCTERMS_MODIFIED              = "dcterms\\:modified";
 const DCTERMS0_MODIFIED             = DCTERMS_MODIFIED.replace ("\\:",":");
 const DCTERMS_TITLE                 = "dcterms\\:title";
+
 const DCTERMS0_TITLE                = DCTERMS_TITLE.replace ("\\:",":");
+const DS_ARTIFACT                   = "ds\\:artifact";
+const DS0_ARTIFACT                  = DS_ARTIFACT.replace ("\\:",":");
+const DS_MODULECONTEXT              = "ds\\:moduleContext";
+const DS0_MODULECONTEXT             = DS_MODULECONTEXT.replace ("\\:",":");
 
 const FOAF_MBOX                     = "foaf\\:mbox";
 const FOAF0_MBOX                    = FOAF_MBOX.replace ("\\:",":");
 const FOAF_NAME                     = "foaf\\:name";
 const FOAF0_NAME                    = FOAF_NAME.replace ("\\:",":");
 
+const J0_CHANGESETS                 = "j\\.0\\:changesets";
+const J00_CHANGESETS                = J0_CHANGESETS.replace("\\.", ".").replace("\\:", ":");
+const JP06_ARCHIVED                 = "jp06\\:archived";
+const JP060_ARCHIVED                = JP06_ARCHIVED.replace ("\\:",":");
+const JP06_DESCRIPTION              = "jp06\\:description";
+const JP060_DESCRIPTION             = JP06_DESCRIPTION.replace ("\\:",":");
+const JP06_MODIFIED                 = "jp06\\:modified";
+const JP060_MODIFIED                = JP06_MODIFIED.replace ("\\:",":");
+const JP06_NAME                     = "jp06\\:name";
+const JP060_NAME                    = JP06_NAME.replace ("\\:",":");
+const JP06_PROJECTAREA              = "jp06\\:project-area";
+const JP060_PROJECTAREA             = JP06_PROJECTAREA.replace ("\\:",":");
+const JP06_PROJECTAREAS             = "jp06\\:project-areas";
+const JP060_PROJECTAREAS            = JP06_PROJECTAREAS.replace ("\\:",":");
+const JP06_SUMMARY                  = "jp06\\:summary";
+const JP060_SUMMARY                 = JP06_SUMMARY.replace ("\\:",":");
+const JP06_URL                      = "jp06\\:url";
+const JP060_URL                     = JP06_URL.replace ("\\:",":");
+
 const LDP_DIRECTCONTAINER           = "ldp\\:DirectContainer";
 const LDP0_DIRECTCONTAINER          = LDP_DIRECTCONTAINER.replace ("\\:",":");
 
-const OSLC_RMUSES                   = "oslc_rm\\:uses";
-const OSLC0_RMUSES                  = OSLC_RMUSES.replace ("\\:",":");
 const OSCL_SHORTID                  = "oslc\\:shortId";
 const OSCL0_SHORTID                 = OSCL_SHORTID.replace ("\\:",":");
 
@@ -85,12 +91,12 @@ const OSLCCONFIG_OVERRIDES          = "oslc_config\\:overrides";
 const OSLCCONFIG0_OVERRIDES         = OSLCCONFIG_OVERRIDES.replace ("\\:",":");
 const OSLCCONFIG_STREAM             = "oslc_config\\:Stream";
 const OSLCCONFIG0_STREAM            = OSLCCONFIG_STREAM.replace ("\\:",":");
-
 const OSLCRM_REQUIREMENTCOLLECTION  = "oslc_rm\\:RequirementCollection";
 const OSLCRM0_REQUIREMENTCOLLECTION = OSLCRM_REQUIREMENTCOLLECTION.replace ("\\:",":");
-
 const OSLC_INSTANCESHAPE            = "oslc\\:instanceShape";
 const OSLC0_INSTANCESHAPE           = OSLC_INSTANCESHAPE.replace ("\\:",":");
+const OSLC_RMUSES                   = "oslc_rm\\:uses";
+const OSLC0_RMUSES                  = OSLC_RMUSES.replace ("\\:",":");
 
 const OWL_SAMEAS                    = "owl\\:sameAs";
 const OWL0_SAMEAS                   = OWL_SAMEAS.replace ("\\:",":");
@@ -98,25 +104,21 @@ const OWL0_SAMEAS                   = OWL_SAMEAS.replace ("\\:",":");
 const PUBLIC_RM10_WRAPPEDRESCONTENTTYPE   = "public_rm_10\\:wrappedResourceContentType";
 const PUBLIC0_RM10_WRAPPEDRESCONTENTTYPE  = PUBLIC_RM10_WRAPPEDRESCONTENTTYPE.replace ("\\:",":");
 
-const J0_CHANGESETS                 = "j\\.0\\:changesets";
-const J00_CHANGESETS                = J0_CHANGESETS.replace("\\.", ".").replace("\\:", ":");
+const RDFS_MEMBER                   = "rdfs\\:member";
+const RDFS0_MEMBER                  = RDFS_MEMBER.replace ("\\:",":");
 
-const JP06_ARCHIVED                 = "jp06\\:archived";
-const JP060_ARCHIVED                = JP06_ARCHIVED.replace ("\\:",":");
-const JP06_DESCRIPTION              = "jp06\\:description";
-const JP060_DESCRIPTION             = JP06_DESCRIPTION.replace ("\\:",":");
-const JP06_MODIFIED                 = "jp06\\:modified";
-const JP060_MODIFIED                = JP06_MODIFIED.replace ("\\:",":");
-const JP06_NAME                     = "jp06\\:name";
-const JP060_NAME                    = JP06_NAME.replace ("\\:",":");
-const JP06_PROJECTAREA              = "jp06\\:project-area";
-const JP060_PROJECTAREA             = JP06_PROJECTAREA.replace ("\\:",":");
-const JP06_PROJECTAREAS             = "jp06\\:project-areas";
-const JP060_PROJECTAREAS            = JP06_PROJECTAREAS.replace ("\\:",":");
-const JP06_SUMMARY                  = "jp06\\:summary";
-const JP060_SUMMARY                 = JP06_SUMMARY.replace ("\\:",":");
-const JP06_URL                      = "jp06\\:url";
-const JP060_URL                     = JP06_URL.replace ("\\:",":");
+const RDF_ABOUT                     = "rdf\\:about";
+const RDF0_ABOUT                    = RDF_ABOUT.replace ("\\:",":");
+const RDF_DESCRIPTION               = "rdf\\:Description";
+const RDF0_DESCRIPTION              = RDF_DESCRIPTION.replace ("\\:",":");
+const RDF_LI                        = "rdf\\:li";
+const RDF0_LI                       = RDF_LI.replace ("\\:",":");
+const RDF_RESOURCE                  = "rdf\\:resource";
+const RDF0_RESOURCE                 = RDF_RESOURCE.replace ("\\:",":");
+const RDF_TYPE                      = "rdf\\:type";
+const RDF0_TYPE                     = RDF_TYPE.replace ("\\:",":");
+const RDF_VALUE                     = "rdf\\:value";
+const RDF0_VALUE                    = RDF_VALUE.replace ("\\:",":");
 
 const RMREQIF_MODULE                = "rmReqIF\\:module";
 const RMREQIF0_MODULE               = RMREQIF_MODULE.replace ("\\:",":");
@@ -157,3 +159,29 @@ const RM_VALUETYPE                  = "rm\\:valueType";
 const RM0_VALUETYPE                 = RM_VALUETYPE.replace ("\\:",":");
 const RM_WORKFLOW                   = "rm\\:workflow";
 const RM0_WORKFLOW                  = RM_WORKFLOW.replace ("\\:",":");
+
+const RRM_ABOUT                     = "rrm\\:about";
+const RRM0_ABOUT                    = RRM_ABOUT.replace ("\\:",":");
+const RRM_BOOKORDER                 = "rrm\\:bookOrder";
+const RRM0_BOOKORDER                = RRM_BOOKORDER.replace ("\\:",":");
+const RRM_CONTEXTBINDING            = "rrm\\:contextBinding";
+const RRM0_CONTEXTBINDING           = RRM_CONTEXTBINDING.replace ("\\:",":");;
+const RRM_CORE                      = "rrm\\:core";
+const RRM0_CORE                     = RRM_CORE.replace ("\\:",":");
+const RRM_DEPTH                     = "rrm\\:depth";
+const RRM0_DEPTH                    = RRM_DEPTH.replace ("\\:",":");
+const RRM_FORMAT                    = "rrm\\:format";
+const RRM0_FORMAT                   = RRM_FORMAT.replace ("\\:",":");
+const RRM_IDENTIFIER                = "rrm\\:identifier";
+const RRM0_IDENTIFIER               = RRM_IDENTIFIER.replace ("\\:",":");
+const RRM_ISHEADING                 = "rrm\\:isHeading";
+const RRM0_ISHEADING                = RRM_ISHEADING.replace ("\\:",":");
+const RRM_MODULEURL                 = "rrm\\:moduleUrl";
+const RRM0_MODULEURL                = RRM_MODULEURL.replace ("\\:",":");
+const RRM_PARENTBINDINGURL          = "rrm\\:parentBindingUrl";
+const RRM0_PARENTBINDINGURL         = RRM_PARENTBINDINGURL.replace ("\\:",":");
+const RRM_SECTION                   = "rrm\\:section";
+const RRM0_SECTION                  = RRM_SECTION.replace ("\\:",":");
+const RRM_TITLE                     = "rrm\\:title";
+const RRM0_TITLE                    = RRM_TITLE.replace ("\\:",":");
+

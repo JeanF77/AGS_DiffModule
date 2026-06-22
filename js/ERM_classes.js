@@ -516,30 +516,6 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
    }
 
    /**
-    * Affecter un module a partir d'une liste
-    * @param {Array} modList - Table d'objets de type "Module"
-    * @param {String} modId - Identifiant du module
-    * @param {Object} confObj - Objet de type "ClassConfiguration" correspondant a la configuration du module (optionnel)
-    */
-
-   set(modList, modId, confObj) {
-      for (let myMod of modList) {
-         if (modId === myMod.getIdentifier()) {
-            this.setName(myMod.getName());
-            this.setUrl(myMod.getUrl());
-            this.setIdentifier(myMod.getIdentifier());
-            this.setIddng(myMod.getIddng());
-            this.setModified(myMod.getModified());
-            break;
-         }
-      }
-
-      if (confObj !== undefined) {
-         this.setConf(confObj);
-      }
-   }
-
-   /**
     * Analyser la structure XML d'un module et la stocker
     * @param {String} data - XML Structure
     */
@@ -702,6 +678,8 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
     * @param {String} data - XLM Structure
     */
 
+   // ---- Must be removed !!!
+
    get_structure(data) {
       let mySelf = this;
       let xmlData = $.parseXML(data);
@@ -759,7 +737,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
       return this.#format;
    }
 
-   getArtefactList() {
+   getArtifactList() {
       return this.#artefact_list;
    }
 
@@ -808,32 +786,26 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
    setConf(conf) {
       this.#conf = conf;
    }
+
+   // ---- Core Functions
+
+   add_Artifact(artifact) {
+      this.#artefact_list.push(artifact);
+   }
 }
 
 class ClassArtefact { // ---- Caracteristiques d'un artefact
-   #id;              // ---- Identifiant artefact
-   #uri;             // ---- URI artefact
-   #format;          // ---- Format de l'artefact
-   #modified;        // ---- Date de modification
-   #content;         // ---- Contenu ("Contents")
-   #type;            // ---- Type artefact
-   #bookorder;       // ---- Position in module hierarchy
-   #custattr_list;   // ---- Liste des attributs (liste d'objets de la classe "ClassAttribute")
-   #tag_list;        // ---- Liste des tags (Tag Value + Tag Scope)
-   #joinedfile_list; // ---- Liste des pieces jointes de l'artefact (images, autres fichiers ...)
-
-   constructor() {
-      this.#id = null;
-      this.#uri = null;
-      this.#format = null;
-      this.#modified = null;
-      this.#content = null;
-      this.#type = null;
-      this.#bookorder = null;
-      this.#custattr_list = [];
-      this.#tag_list = [];
-      this.#joinedfile_list = [];
-   }
+   #id = null;             // ---- Identifiant artefact
+   #uri = null;            // ---- URI artefact
+   #format = null;         // ---- Format de l'artefact
+   #modified = null;       // ---- Date de modification
+   #content = null;        // ---- Contenu ("Contents")
+   #type = null;           // ---- Type artefact
+   #bookorder = null;      // ---- Position in module hierarchy
+   #depth = null;          // ---- Hierarchy level
+   #custattr_list = [];    // ---- Liste des attributs (liste d'objets de la classe "ClassAttribute")
+   #tag_list = [];         // ---- Liste des tags (Tag Value + Tag Scope)
+   #joinedfile_list = [];  // ---- Liste des pieces jointes de l'artefact (images, autres fichiers ...)
 
    // ---- Getters
 
@@ -851,6 +823,10 @@ class ClassArtefact { // ---- Caracteristiques d'un artefact
 
    getModified() {
       return this.#modified;
+   }
+
+   getDepth() {
+      return this.#depth;
    }
 
    /**
@@ -924,6 +900,46 @@ class ClassArtefact { // ---- Caracteristiques d'un artefact
 
    setBookorder(bookorder) {
       this.#bookorder = bookorder;
+   }
+
+   /* ---- Node structure
+   <rrm:contextBinding>
+      <rrm:about>https://elm703.raoulnet/rm/resources/BI_0ndDWystEfGpLb-cxbHKhQ</rrm:about>
+      <rrm:identifier>705</rrm:identifier>
+      <rrm:title>Chapter 1</rrm:title>
+      <rrm:format>Text</rrm:format>
+      <rrm:core>TX_0v3_KystEfGpLb-cxbHKhQ</rrm:core>
+      <rrm:moduleUrl>https://elm703.raoulnet/rm/resources/MD_0neRECstEfGpLb-cxbHKhQ</rrm:moduleUrl>
+      <rrm:parentBindingUrl/>
+      <rrm:section>1</rrm:section>
+      <rrm:bookOrder>1</rrm:bookOrder>
+      <rrm:depth>1</rrm:depth>
+      <rrm:isHeading>true</rrm:isHeading>
+   </rrm:contextBinding>
+   */
+
+   init(xml_data) {
+      xml_data.children().each((index, node) => {
+         switch ($(node).prop('nodeName')) {
+            case RRM0_ABOUT:
+               this.#uri = $(node).text();
+               break;
+            case RRM0_IDENTIFIER:
+               this.#id = $(node).text();
+               break;
+            case RRM0_FORMAT:
+               this.#format = $(node).text();
+               break;
+            case RRM0_BOOKORDER:
+               this.#bookorder = $(node).text();
+               break;
+            case RRM0_DEPTH:
+               this.#depth = $(node).text();
+               break;
+            default:
+            // ---- Do nothing
+         }
+      });
    }
 
    /**

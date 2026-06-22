@@ -189,7 +189,7 @@ class ClassDiffResult {       // ---- Resultat de comparaison
 function cmp_DiffModArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.getArtefactList()) {
+   for (let myRefArtefact of modRef.getArtifactList()) {
       let myDiffInfo = new ClassDiffResult();
 
       if (modTest.get_artefactById(myRefArtefact.getId()) === undefined) {
@@ -320,7 +320,7 @@ function cmp_DiffTag(artTest, artRef) {
 function cmp_DiffTypeArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.getArtefactList()) {
+   for (let myRefArtefact of modRef.getArtifactList()) {
       let myDiffInfo = new ClassDiffResult();
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.getId());
 
@@ -345,7 +345,7 @@ function cmp_DiffTypeArtefact(modTest, modRef) {
 function cmp_DiffAttrArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.getArtefactList()) {
+   for (let myRefArtefact of modRef.getArtifactList()) {
       let myDiffAttrList = [];
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.getId());
 
@@ -374,7 +374,7 @@ function cmp_DiffAttrArtefact(modTest, modRef) {
 function cmp_DiffTagArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.getArtefactList()) {
+   for (let myRefArtefact of modRef.getArtifactList()) {
       let myDiffAttrList = [];
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.getId());
 
@@ -579,7 +579,7 @@ function cmpImgEmbedded(imgInfo, imgDate) {
 function cmp_DiffContentArtefact(modTest, modRef) {
    let myDiffList = [];
 
-   for (let myRefArtefact of modRef.getArtefactList()) {
+   for (let myRefArtefact of modRef.getArtifactList()) {
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.getId());
       let myDiffContent;
 
@@ -620,7 +620,7 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
       'imgList': []
    };
 
-   for (let myRefArtefact of modRef.getArtefactList()) {
+   for (let myRefArtefact of modRef.getArtifactList()) {
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.getId());
 
       // ---- Identifier toutes les images contenues dans le Primary Text et voir si elles ont ete modifiees
