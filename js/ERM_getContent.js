@@ -48,16 +48,16 @@ function load_oldTxtmodule(pos) {
 
    console.log("$$$ Load modules (old) '" + g_ModuleOld.getIdentifier() + "'\n");
 
-   gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPagepos(), g_ModuleOld.artefactCount());
+   gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPageOffset(), g_ModuleOld.artefactCount());
 
    $.when(ajax_async_request(myRequest, g_ModuleOld.get_data.bind(g_ModuleOld), gui_FailedOldTableStat, null)).then(function () {
 
       // ---- Si la reponse est paginee, il faut de nouveau faire une requete pour recuperer la page suivante
 
-      if (g_ModuleOld.getPagepos() == (PAGE_SIZE * g_ModuleOld.getNbpage())) {
-         load_oldTxtmodule(g_ModuleOld.getPagepos());
+      if (g_ModuleOld.getPageOffset() == (PAGE_SIZE * g_ModuleOld.getNbpage())) {
+         load_oldTxtmodule(g_ModuleOld.getPageOffset());
 
-         console.log("$$$ Old - Get new page : '" + g_ModuleOld.getPagepos() + "'\n");
+         console.log("$$$ Old - Get new page : '" + g_ModuleOld.getPageOffset() + "'\n");
       } else {
          if (g_ModuleOld.artefactCount() > 0) { // ---- Le module s'est charge correctement
             gui_BuildTableStat(GUI_ITEM_oldstatdiv, g_ModuleOld);
@@ -106,16 +106,16 @@ function load_newTxtmodule(pos) {
 
    console.log("$$$ Load modules (new) '" + g_ModuleNew.getIdentifier() + "'\n");
 
-   gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPagepos(), g_ModuleNew.artefactCount());
+   gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPageOffset(), g_ModuleNew.artefactCount());
 
    $.when(ajax_async_request(myRequest, g_ModuleNew.get_data.bind(g_ModuleNew), gui_FailedNewTableStat, null)).then(function () {
 
       // ---- Si la reponse est paginee, il faut de nouveau faire une requete pour recuperer la suite
 
-      if (g_ModuleNew.getPagepos() == (PAGE_SIZE * g_ModuleNew.getNbpage())) {
-         load_newTxtmodule(g_ModuleNew.getPagepos());
+      if (g_ModuleNew.getPageOffset() == (PAGE_SIZE * g_ModuleNew.getNbpage())) {
+         load_newTxtmodule(g_ModuleNew.getPageOffset());
 
-         console.log("$$$ New - Get new page : '" + g_ModuleNew.getPagepos() + "'\n");
+         console.log("$$$ New - Get new page : '" + g_ModuleNew.getPageOffset() + "'\n");
       } else {
          if (g_ModuleNew.artefactCount() > 0) { // ---- Le module s'est charge correctement
             gui_BuildTableStat(GUI_ITEM_newstatdiv, g_ModuleNew);
@@ -135,64 +135,8 @@ function load_newTxtmodule(pos) {
    });
 }
 
-/**
- * Chargement de la structure du module "Old"
- * On récupère la liste de tous les artefacts contenus le module
- */
 
-/* function load_OldModule () {
-   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.getIdentifier() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
-
-   let myRequest = {
-      'rest_method'  : "GET",
-      'rest_url'     : REST_RM_GETMODULESTR_OLD,
-      'rest_success' : "",
-      'rest_failed'  : ""
-   }
-
-   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
-
-   g_ModuleOld.empty_artifact ();
-
-   mgt_Console ("Load module structure (old) : " + g_ModuleOld.getIdentifier(), CONSOLE_INFO);
-
-   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPagepos());
-
-   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
-
-   $.when (ajax_async_request (myRequest, g_ModuleOld.get_structure.bind(g_ModuleOld), gui_FailedOldTableStat, null)).then(function () {
-      load_oldTxtmodule ();
-   });
-} */
-
-function load_OldModule(module, configuration) {
-   const REST_RM_GETMODULESTR_OLD = extractRmBase(module.getUrl()) + "/publish/modules?resourceURI=" + module.getIdentifier() + "&oslc_config.context=" + configuration.getUrl();
-
-   let myRequest = {
-      'rest_method': "GET",
-      'rest_url': REST_RM_GETMODULESTR_OLD,
-      'rest_success': "",
-      'rest_failed': ""
-   }
-
-   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
-
-   module.empty_artifact();
-
-   mgt_Console("Load module structure (old) : " + module.getIdentifier(), CONSOLE_INFO);
-
-   gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_INPROGRESS, module.getPagepos());
-
-   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
-
-   $.when(ajax_async_request(myRequest, module.get_structure.bind(module), gui_FailedOldTableStat, null)).then(function () {
-      load_oldTxtmodule();
-   });
-}
-
-
-
-
+/*******************************************************************************/
 
 /**
  * Get the module structure
@@ -203,13 +147,12 @@ function load_OldModule(module, configuration) {
  */
 
 function get_ModuleStructure(module, project, configuration, source) {
-   let mySource = (source = !undefined ? source : "old");
    let myRESTRequest = {
       'method': "GET",
       'rest_url': extractRmBase(module.getUrl()) + "/publish/modules?resourceURI=" + module.getIdentifier() + "&oslc_config.context=" + configuration.getUrl(),
       'successCallback': success_get_ModuleStructure,
       'successArg': {
-         'source': mySource,
+         'source': source,
          'module': module,
          'project' : project,
          'configuration': configuration
@@ -223,10 +166,10 @@ function get_ModuleStructure(module, project, configuration, source) {
 
    // ---- Display loading indicator
 
-   if (mySource === "old") {
-      gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_INPROGRESS, module.getPagepos());
+   if (source === "old") {
+      gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_INPROGRESS, module.getPageOffset());
    } else {
-      gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, module.getPagepos());
+      gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, module.getPageOffset());
    }
 
    queueManager.addToQueue(myRESTRequest);
@@ -242,7 +185,7 @@ function success_get_ModuleStructure(success, data) {
    let xmlData = $.parseXML(data);
 
    $(xmlData).find(DS_ARTIFACT).children(DS_MODULECONTEXT).children(RRM_CONTEXTBINDING).each(function () {
-      let myArtefact = new ClassArtefact();
+      let myArtefact = new ERM_Artefact();
 
       myArtefact.init($(this));
 
@@ -274,72 +217,94 @@ function failed_get_ModuleStructure(module, httpCode) {
  * @param {ERM_Configuration} configuration - Configuration object
  * @param {ClassProject} project - Project object
  * @param {String} source - Source is "old" or "new"
- * @param {Integer} page - Paging indicator
+ * @param {Integer} position - Paging position
  */
 
-function load_ModuleContent(module, project, configuration, source, page) {
+function load_ModuleContent(module, project, configuration, source, position) {
    const RRAPI_PAGESIZE = 5;
 
-   let myPaging = "&scoped=true&size=" + RRAPI_PAGESIZE + "&pos=";
+   let myPaging = "&scoped=true&size=" + RRAPI_PAGESIZE + "&pos=" + (position !== undefined && position > 0 ? position : "0");
    let myRESTRequest = {
       'method': "GET",
-      'rest_url': extractRmBase(module.getUrl()) + "publish/text?moduleURI=" + module.getIdentifier() + "&projectURI=" + project.getIdentifier() + "&oslc_config.context=" + configuration.getUrl(),
-      'successCallback': null,
+      'rest_url': extractRmBase(module.getUrl()) + "/publish/text?moduleURI=" + module.getIdentifier() + "&projectURI=" + project.getIdentifier() + "&oslc_config.context=" + configuration.getUrl() + myPaging,
+      'successCallback': success_load_ModuleContent,
       'successArg': {
          'source': source,
          'module': module,
          'project' : project,
          'configuration': configuration,
-         'page' : null
+         'position' : (position !== undefined ? position : 0)
       },
-      'errorCallback': null,
-      'errorArg': null,
+      'errorCallback': failed_load_ModuleContent,
+      'errorArg': module,
       'timeout': 30000
    };
 
    mgt_Console(load_ModuleContent.name + " - Load module content for " + module.getName() + " (" + source + ")", CONSOLE_INFO);
 
-   // ---- Gestion de la pagination de la requete
+   // ---- Manage loading indicator
 
-   if (page !== undefined && pos > 0) {
-      myPaging += pos;
+   if (source === "old") {
+      gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_INPROGRESS, module.getPageOffset(), module.artefactCount());
    } else {
-      myPaging += "0";
+      gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, module.getPageOffset(), module.artefactCount());
    }
+   
+   // ---- Send request
+
+   queueManager.addToQueue(myRESTRequest);   
 }
 
-
-
-
-
 /**
- * Chargement de la structure du module "New"
- * On récupère la liste de tous les artefacts contenus le module
- */
+ * Success callback for load_ModuleContent function
+ * @param {Object} success - Structure with module + configuration objects
+ * @param {String} data - The REST response data */
 
-function load_NewModule() {
-   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.getIdentifier() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
+function success_load_ModuleContent(success, data) {
+   let xmlData = $.parseXML(data);
+   let myPosition;
+   let myHref;
 
-   let myRequest = {
-      'rest_method': "GET",
-      'rest_url': REST_RM_GETMODULESTR_NEW,
-      'rest_success': "",
-      'rest_failed': ""
+   success.module.setNbpage(success.module.getNbpage() + 1);
+
+   // ---- Read page position
+
+   myHref = $(xmlData).find(DS_DATASOURCE).attr('href');
+
+   if (myHref != undefined) {
+      myHref = decodeURIComponent(myHref);
+      myPosition = myHref.match(/^https.+(&pos=([0-9]+)).*/);
+
+      success.module.setPageOffset(myPosition[2]);
    }
 
-   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
+   mgt_Console(success_load_ModuleContent.name + " - Load module content for " + success.module.getName() + " (" + success.source + ") at range " + success.position + "/" + success.module.getPageOffset(), CONSOLE_INFO);
 
-   g_ModuleNew.empty_artifact();
+   // ---- Create artifact from REST contents
 
-   mgt_Console("Load module structure (new) : " + g_ModuleNew.getIdentifier(), CONSOLE_INFO);
+   $(xmlData).find(DS_ARTIFACT).each((index, node) => {
+      let myArtefactId = $(node).children(RRM_IDENTIFIER).text();
+      let myArtefactOrder = $(node).children(DS_MODULECONTEXT).children(RRM_CONTEXTBINDING).children(RRM_BOOKORDER).text();      
+      
+      let myArtifact = success.module.get_artefactById(myArtefactId, myArtefactOrder);
 
-   gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPagepos());
+      if (myArtifact === undefined) {
+         myArtifact = new ERM_Artefact ();
+      }
+      
+      switch ($(node).prop('nodeName')) {
 
-   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
 
-   $.when(ajax_async_request(myRequest, g_ModuleNew.get_structure.bind(g_ModuleNew), gui_FailedNewTableStat, null)).then(function () {
-      load_newTxtmodule();
+         default:
+            // ---- Do nothing
+      }
    });
+
+
+}
+
+function failed_load_ModuleContent(module) {
+   mgt_Console(failed_load_ModuleContent.name + " - Can not load module : " + module.getName(), CONSOLE_ERROR);
 }
 
 /**
@@ -361,10 +326,72 @@ function load_module() {
          break;
 
       case COMPARE_MODE_LOCALREQIF:
-         load_OldModule();
+         get_ModuleStructure(g_ModuleOld, g_Project, g_ConfOld, "old");
          break;
 
       default:
          break;
    }
 }
+
+
+/**
+ * Chargement de la structure du module "Old"
+ * On récupère la liste de tous les artefacts contenus le module
+ */
+
+/* function load_OldModule () {
+   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.getIdentifier() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
+
+   let myRequest = {
+      'rest_method'  : "GET",
+      'rest_url'     : REST_RM_GETMODULESTR_OLD,
+      'rest_success' : "",
+      'rest_failed'  : ""
+   }
+
+   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
+
+   g_ModuleOld.empty_artifact ();
+
+   mgt_Console ("Load module structure (old) : " + g_ModuleOld.getIdentifier(), CONSOLE_INFO);
+
+   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPageOffset());
+
+   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
+
+   $.when (ajax_async_request (myRequest, g_ModuleOld.get_structure.bind(g_ModuleOld), gui_FailedOldTableStat, null)).then(function () {
+      load_oldTxtmodule ();
+   });
+} */
+
+/**
+ * Chargement de la structure du module "New"
+ * On récupère la liste de tous les artefacts contenus le module
+ */
+
+/* function load_NewModule() {
+   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.getIdentifier() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
+
+   let myRequest = {
+      'rest_method': "GET",
+      'rest_url': REST_RM_GETMODULESTR_NEW,
+      'rest_success': "",
+      'rest_failed': ""
+   }
+
+   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
+
+   g_ModuleNew.empty_artifact();
+
+   mgt_Console("Load module structure (new) : " + g_ModuleNew.getIdentifier(), CONSOLE_INFO);
+
+   gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPageOffset());
+
+   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
+
+   $.when(ajax_async_request(myRequest, g_ModuleNew.get_structure.bind(g_ModuleNew), gui_FailedNewTableStat, null)).then(function () {
+      load_newTxtmodule();
+   });
+} */
+

@@ -44,6 +44,8 @@ const DCTERMS_TITLE                 = "dcterms\\:title";
 const DCTERMS0_TITLE                = DCTERMS_TITLE.replace ("\\:",":");
 const DS_ARTIFACT                   = "ds\\:artifact";
 const DS0_ARTIFACT                  = DS_ARTIFACT.replace ("\\:",":");
+const DS_DATASOURCE                 = "ds\\:dataSource";
+const DS0_DATASOURCE                = DS_DATASOURCE.replace ("\\:",":");
 const DS_MODULECONTEXT              = "ds\\:moduleContext";
 const DS0_MODULECONTEXT             = DS_MODULECONTEXT.replace ("\\:",":");
 

@@ -323,41 +323,39 @@ class ERM_Configuration extends ClassJazzItem {
    init(xml_data) { // ---- Init an ERM Configuration with an XML Node from ERM API
       const XML_FINDREQ = OSLCCONFIG_CONFIGURATION + ", " + OSLCCONFIG_CONFIGURATION2 + ", " + OSLCCONFIG_BASELINE + ", " + OSLCCONFIG_STREAM + ", " + OSLCCONFIG_CHANGESET; // ---- Configuration represented in a "Configuration" or "Baseline" or "Stream" or "ChangeSet" node
 
-      let mySelf = this;
-
-      mySelf.setUrl($(xml_data).find(XML_FINDREQ).attr(RDF0_ABOUT));
+      this.setUrl($(xml_data).find(XML_FINDREQ).attr(RDF0_ABOUT));
 
       // ---- Determine the type of configuration from the URL (changeset, stream, or baseline)
 
-      const myTypeMatch = mySelf.getUrl().match(/\/cm\/(changeset|stream|baseline)\//);
+      const myTypeMatch = this.getUrl().match(/\/cm\/(changeset|stream|baseline)\//);
       if (myTypeMatch) {
-         mySelf.setType(myTypeMatch[1]);
+         this.setType(myTypeMatch[1]);
       }
 
       // ---- Parse the XML data to extract configuration details and set them in the object
 
-      $(xml_data).find(XML_FINDREQ).children().each(function () {
-         switch ($(this).prop('nodeName')) {
+      $(xml_data).find(XML_FINDREQ).children().each((index, node) => {
+         switch ($(node).prop('nodeName')) {
             case DCTERMS0_IDENTIFIER:
-               mySelf.setIdentifier($(this).text());
+               this.setIdentifier($(node).text());
                break;
             case DCTERMS0_TITLE:
-               mySelf.setName($(this).text());
+               this.setName($(node).text());
                break;
             case DCTERMS0_DESCRIPTION:
-               mySelf.setDescription($(this).text());
+               this.setDescription($(node).text());
                break;
             case DCTERMS0_CREATED:
-               mySelf.setCreated($(this).text());
+               this.setCreated($(node).text());
                break;
             case DCTERMS0_CREATOR:
-               mySelf.setCreator($(this).attr(RDF0_RESOURCE));
+               this.setCreator($(node).attr(RDF0_RESOURCE));
                break;
             case J00_CHANGESETS:
-               mySelf.#changesetsListUrl = $(this).attr(RDF0_RESOURCE);
+               this.#changesetsListUrl = $(node).attr(RDF0_RESOURCE);
                break;
             case OSLCCONFIG0_OVERRIDES:
-               mySelf.#overrides = $(this).attr(RDF0_RESOURCE);
+               this.#overrides = $(node).attr(RDF0_RESOURCE);
                break;
             default:
             // ---- Do nothing for the moment
@@ -429,7 +427,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
    #iddng = null;             // ---- Identifiant du module (identifiant externe visible dans les vues)
    #status = null;            // ---- Status du module ("New" ou "Old"), defini a la creation de l'objet
    #format = null;            // ---- Format "Collection" ou "Module"
-   #artefact_list = [];       // ---- Liste des artefacts (liste d'objets de la classe "ClassArtefact")
+   #artefact_list = [];       // ---- Liste des artefacts (liste d'objets de la classe "ERM_Artefact")
    #attributecust_list = [];  // ---- Liste de tous les "Custom Attributes" detectes dans le module
    #artefacttype_list = [];   // ---- Liste des tous les types d'artefacts et leur nombre - Index = type d'artefact / Contenu = nombre
    #nbpage = 0;               // ---- Nombre de pages du module
@@ -556,7 +554,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
          myArtefact = mySelf.get_artefactById(myArtefactId, myArtefactOrder);
 
          if (myArtefact === undefined) { // ---- Artefact introuvable dans la structure préchargée
-            myArtefact = new ClassArtefact();
+            myArtefact = new ERM_Artefact();
             pushArtefact = true;
 
             myArtefact.setId(myArtefactId);
@@ -665,39 +663,12 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
       // ---- Artifacts characteristics
 
       for (let myReqifArtefact of reqifModule.artefactlist) {
-         let myArtefact = new ClassArtefact();
+         let myArtefact = new ERM_Artefact();
 
          myArtefact.get_datareqif(myReqifArtefact, reqifArtefactList, reqifArtefactTypeList, reqifDataTypeList);
 
          this.#artefact_list.push(myArtefact);
       }
-   }
-
-   /**
-    * Analyser la structure XML représentant la structure du module
-    * @param {String} data - XLM Structure
-    */
-
-   // ---- Must be removed !!!
-
-   get_structure(data) {
-      let mySelf = this;
-      let xmlData = $.parseXML(data);
-
-      // ---- Decoder le contenu de la reponse REST
-
-      $(xmlData).find('rrm\\:contextBinding').each(function () { // ---- Boucler sur chaque artefact
-         let myArtefact = new ClassArtefact();
-
-         myArtefact.setId($(this).find('rrm\\:identifier').first().text());
-         myArtefact.setUri($(this).find('rrm\\:about').first().text());
-         myArtefact.setFormat($(this).find('rrm\\:format').first().text());
-         myArtefact.setBookorder($(this).find('rrm\\:bookOrder').first().text());
-
-         // ---- Store artefact short representation
-
-         mySelf.#artefact_list.push(myArtefact);
-      });
    }
 
    /**
@@ -753,7 +724,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
       return this.#nbpage;
    }
 
-   getPagepos() {
+   getPageOffset() {
       return this.#pagepos;
    }
 
@@ -779,7 +750,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
       this.#nbpage = nbpage;
    }
 
-   setPagepos(pagepos) {
+   setPageOffset(pagepos) {
       this.#pagepos = pagepos;
    }
 
@@ -794,7 +765,7 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
    }
 }
 
-class ClassArtefact { // ---- Caracteristiques d'un artefact
+class ERM_Artefact { // ---- Caracteristiques d'un artefact
    #id = null;             // ---- Identifiant artefact
    #uri = null;            // ---- URI artefact
    #format = null;         // ---- Format de l'artefact
