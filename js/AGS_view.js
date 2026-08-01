@@ -794,9 +794,10 @@ function gui_UpdateTableStat(guiObjectId, templname, metrics) {
  * @param {String} divstat - Nom de la zone statistique a initialiser
  * @param {String} status - Status d'initialisation de la zone
  * @param {String} paging - Taux de chargement du module
+ * @param {String} nbartifact - Nombre total d'artefacts
  */
 
-function gui_InitTableStat(divstat, status, paging) {
+function gui_InitTableStat(divstat, status, paging, nbartifact) {
    let myDivStat = $("#" + divstat);
    let myHtmlCode = "";
 
@@ -816,7 +817,7 @@ function gui_InitTableStat(divstat, status, paging) {
          myHtmlCode += '<tr><td style="text-align:center"><b>Failed to load the modules to compare. See the log for more details ...</b></tr></td>';
       } else if (status === IS_INPROGRESS) { // ---- Loading in progress
          myHtmlCode += '<tr><td style="text-align:center"><img src="resources/loading.gif" alt="Loading Module" width="35" height="35" /></tr></td>';
-         myHtmlCode += '<tr><td style="text-align:center"><b>Module Loading in Progress ...</b><br>Progress is <b>' + paging + '</b> artifacts</tr></td>';
+         myHtmlCode += '<tr><td style="text-align:center"><b>Module Loading in Progress ...</b><br>Progress is <b>' + paging + '/'+ nbartifact + '</b> artifacts</tr></td>';
       }
 
       myHtmlCode += '</tbody>';

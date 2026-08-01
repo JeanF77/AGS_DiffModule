@@ -487,30 +487,11 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
     */
 
    empty() {
-      super.empty();
-
-      this.#iddng = null;
       this.#nbpage = 0;
       this.#pagepos = 0;
-      this.#conf = null;
-
-      this.empty_artifact();
-   }
-
-   /**
-    * Vider le contenu de l'objet (artefacts, types d'artefacts ...)
-    */
-
-   empty_artifact() {
-      this.#nbpage = 0;
-      this.#pagepos = 0;
-
       this.#artefact_list.splice(0);
       this.#attributecust_list.splice(0);
-
-      for (let myArtefactType in this.#artefacttype_list) {
-         this.#artefacttype_list[myArtefactType] = 0;
-      }
+      this.#artefacttype_list.splice(0);
    }
 
    /**
@@ -569,11 +550,15 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
          myXmlObj = $(this).find('rrm\\:collaboration').find('rrm\\:attributes').find('attribute\\:objectType');
          myArtefact.setType($(myXmlObj).attr('attribute:name'));
 
+         // ---- 26/06/2026 : Remplacer par une méthode "getArtifactTypeList" de la classe module
+
          if (myArtefact.getType() in mySelf.#artefacttype_list) { // ---- Le type d'artefact est dans la liste : incrementer son compteur
             mySelf.#artefacttype_list[myArtefact.getType()]++;
          } else { // ---- Le type d'artefact n'est dans la liste : empiler le type et initialiser son compteur
             mySelf.#artefacttype_list[myArtefact.getType()] = 1;
          }
+
+         // ---- 26/06/2026
 
          // ---- Boucler sur tous les Custom Attributs de l'artefact et recuperer les caracteristiques
 
@@ -768,7 +753,10 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 class ERM_Artefact { // ---- Caracteristiques d'un artefact
    #id = null;             // ---- Identifiant artefact
    #uri = null;            // ---- URI artefact
+   #description = null;    // ---- Artifact Description
    #format = null;         // ---- Format de l'artefact
+   #core = null;           // ---- Core artefact
+   #created = null;        // ---- Artifact creation date
    #modified = null;       // ---- Date de modification
    #content = null;        // ---- Contenu ("Contents")
    #type = null;           // ---- Type artefact
@@ -788,8 +776,16 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
       return this.#uri;
    }
 
+   getDescription() {
+      return this.#description;
+   }
+
    getFormat() {
       return this.#format;
+   }
+
+   getCreated () {
+      return this.#created;
    }
 
    getModified() {
@@ -908,7 +904,62 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
                this.#depth = $(node).text();
                break;
             default:
-            // ---- Do nothing
+               // ---- Do nothing
+         }
+      });
+   }
+
+   /* ---- RRAPI Artifact structure 
+   <ds:artifact attribute:itemId="BI_0ndDrCstEfGpLb-cxbHKhQ">
+        <rrm:title attribute:itemId="title">]Vivamus suscipit tortor eget felis porttitor volutpat. Proin eget tortor risus. Vestibulum ac diam sit amet quam vehicula elementum sed sit amet dui.[</rrm:title>
+        <rrm:description attribute:itemId="description"/>
+        <rrm:identifier attribute:itemId="identifier">801</rrm:identifier>
+        <rrm:about>https://elm703.raoulnet/rm/resources/BI_0ndDrCstEfGpLb-cxbHKhQ</rrm:about>
+        <rrm:format attribute:itemId="ArtifactFormat">Text</rrm:format>
+        <rrm:core>TX_0v50VystEfGpLb-cxbHKhQ</rrm:core>
+        <rrm:collaboration></rrm:collaboration>
+        ...
+   </ds:artifact>
+   */
+   
+   load(xml_data) {
+      xml_data.children().each((index, node) => {
+         switch ($(node).prop('nodeName')) {
+            case RRM0_IDENTIFIER:
+               this.#id = $(node).text();
+               break;
+            case RRM0_ABOUT:
+               this.#uri = $(node).text();
+               break;
+            case RRM0_FORMAT:
+               this.#format = $(node).text();
+               break;
+            case RRM0_CORE:
+               this.#core = $(node).text();
+               break;
+            case RRM0_DESCRIPTION:
+               this.#description = $(node).text();
+               break;
+            case DS0_CONTENT:
+               this.#content = $(node).children(TEXT_TEXT).children(TEXT_RICHTEXTBODY).text();
+               break;
+            case RRM0_COLLABORATION:
+               this.#created = $(node).children(RRM_CREATED).text()
+               this.#modified = $(node).children(RRM_MODIFIED).text()
+               this.#type = $(node).children(RRM_ATTRIBUTES).children(ATTRIBUTE_OBJECTTYPE).attr(ATTRIBUTE0_NAME);
+
+               // ---- 01/08/2026 - Get custom attributes
+
+               $(node).children(RRM_ATTRIBUTES).children(ATTRIBUTE_OBJECTTYPE).children().each((index, node) => {
+
+               });
+               break;
+            case DS0_MODULECONTEXT:
+               this.#bookorder = $(node).children(RRM_CONTEXTBINDING).children(RRM_BOOKORDER).text();
+               this.#depth = $(node).children(RRM_CONTEXTBINDING).children(RRM_DEPTH).text();              
+               break;
+            default:
+               // ---- Do nothing
          }
       });
    }

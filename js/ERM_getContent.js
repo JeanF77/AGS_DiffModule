@@ -24,7 +24,7 @@
  * @param {Integer} pos - Position de pagination
  */
 
-function load_oldTxtmodule(pos) {
+/* function load_oldTxtmodule(pos) {
    const REST_RM_GETMODULE_OLD = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleOld.getIdentifier() + "&projectURI=" + g_Project.getIdentifier() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
 
    let myPaging = "&scoped=true&size=" + PAGE_SIZE + "&pos=";
@@ -75,14 +75,14 @@ function load_oldTxtmodule(pos) {
          console.log("$$$ Old - Number of pages read : '" + g_ModuleOld.getNbpage() + "'\n");
       }
    });
-}
+} */
 
 /**
  * Chargement du module "New" (Text artifact only)
  * @param {Integer} pos - Position de pagination
  */
 
-function load_newTxtmodule(pos) {
+/* function load_newTxtmodule(pos) {
    const REST_RM_GETMODULE_NEW = RM_HOSTNAME + "/rm/publish/text?moduleURI=" + g_ModuleNew.getIdentifier() + "&projectURI=" + g_Project.getIdentifier() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
 
    let myPaging = "&scoped=true&size=" + PAGE_SIZE + "&pos=";
@@ -133,7 +133,7 @@ function load_newTxtmodule(pos) {
          console.log("$$$ New - Number of pages read : '" + g_ModuleNew.getNbpage() + "'\n");
       }
    });
-}
+} */
 
 
 /*******************************************************************************/
@@ -154,13 +154,15 @@ function get_ModuleStructure(module, project, configuration, source) {
       'successArg': {
          'source': source,
          'module': module,
-         'project' : project,
+         'project': project,
          'configuration': configuration
       },
       'errorCallback': failed_get_ModuleStructure,
       'errorArg': module,
       'timeout': 30000
    };
+
+   module.empty(); // ---- Empty module structure each time it is reloaded
 
    mgt_Console(get_ModuleStructure.name + " - Get module structure for : " + module.getUrl(), CONSOLE_INFO);
 
@@ -231,16 +233,19 @@ function load_ModuleContent(module, project, configuration, source, position) {
       'successArg': {
          'source': source,
          'module': module,
-         'project' : project,
+         'project': project,
          'configuration': configuration,
-         'position' : (position !== undefined ? position : 0)
+         'position': (position !== undefined ? position : 0)
       },
       'errorCallback': failed_load_ModuleContent,
-      'errorArg': module,
+      'errorArg': {
+         'source': source,
+         'module': module
+      },
       'timeout': 30000
    };
 
-   mgt_Console(load_ModuleContent.name + " - Load module content for " + module.getName() + " (" + source + ")", CONSOLE_INFO);
+   mgt_Console(load_ModuleContent.name + " - Load module content for '" + module.getName() + "' (" + source + ")", CONSOLE_INFO);
 
    // ---- Manage loading indicator
 
@@ -249,16 +254,33 @@ function load_ModuleContent(module, project, configuration, source, position) {
    } else {
       gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, module.getPageOffset(), module.artefactCount());
    }
-   
+
    // ---- Send request
 
-   queueManager.addToQueue(myRESTRequest);   
+   if (module.getPageOffset() === 0) { // ---- First call !
+      mgt_Console(load_ModuleContent.name + " - Fist call for content loading for '" + source + "'", CONSOLE_INFO);
+
+      queueManager.addToQueue(myRESTRequest);
+   } else if (module.getPageOffset() == (RRAPI_PAGESIZE * module.getNbpage())) { // ---- Next page
+      mgt_Console(load_ModuleContent.name + " - Get new page : " + module.getPageOffset(), CONSOLE_INFO);
+
+      queueManager.addToQueue(myRESTRequest);
+   } else { // ---- Content loading is finished
+      mgt_Console(load_ModuleContent.name + " - Content loading is finishad for '" + module.getName() + "' (" + source + ")", CONSOLE_INFO);
+
+      if (source === "old") {
+         gui_BuildTableStat(GUI_ITEM_oldstatdiv, module);
+      } else {
+         gui_BuildTableStat(GUI_ITEM_newstatdiv, module);
+      }
+   }
 }
 
 /**
  * Success callback for load_ModuleContent function
- * @param {Object} success - Structure with module + configuration objects
- * @param {String} data - The REST response data */
+ * @param {Object} success - Succes message structure
+ * @param {String} data - The REST response data
+ */
 
 function success_load_ModuleContent(success, data) {
    let xmlData = $.parseXML(data);
@@ -278,33 +300,44 @@ function success_load_ModuleContent(success, data) {
       success.module.setPageOffset(myPosition[2]);
    }
 
-   mgt_Console(success_load_ModuleContent.name + " - Load module content for " + success.module.getName() + " (" + success.source + ") at range " + success.position + "/" + success.module.getPageOffset(), CONSOLE_INFO);
+   mgt_Console(success_load_ModuleContent.name + " - Load module content for '" + success.module.getName() + "' (" + success.source + ") at range " + success.position + "/" + success.module.getPageOffset(), CONSOLE_INFO);
 
-   // ---- Create artifact from REST contents
+   // ---- Get artifact contents and attributes
 
    $(xmlData).find(DS_ARTIFACT).each((index, node) => {
       let myArtefactId = $(node).children(RRM_IDENTIFIER).text();
-      let myArtefactOrder = $(node).children(DS_MODULECONTEXT).children(RRM_CONTEXTBINDING).children(RRM_BOOKORDER).text();      
-      
+      let myArtefactOrder = $(node).children(DS_MODULECONTEXT).children(RRM_CONTEXTBINDING).children(RRM_BOOKORDER).text();
+
+      // ---- Module structure is already preloaded : the goal is to find the artifact in the existing structure
+
       let myArtifact = success.module.get_artefactById(myArtefactId, myArtefactOrder);
 
       if (myArtifact === undefined) {
-         myArtifact = new ERM_Artefact ();
-      }
-      
-      switch ($(node).prop('nodeName')) {
-
-
-         default:
-            // ---- Do nothing
+         mgt_Console(success_load_ModuleContent.name + " - Can not find artifact " + myArtefactId + " in the module structure !", CONSOLE_ERROR);
+      } else { // ---- Get artifact details
+         myArtifact.load($(node));
       }
    });
 
+   // ---- Get another page
 
+   load_ModuleContent(success.module, success.project, success.configuration, success.source, success.module.getPageOffset());
 }
 
-function failed_load_ModuleContent(module) {
-   mgt_Console(failed_load_ModuleContent.name + " - Can not load module : " + module.getName(), CONSOLE_ERROR);
+/**
+ * Failed callback for load_ModuleContent function
+ * @param {Object} error - Error message structure
+ * @param {String} data - The REST response data
+ */
+
+function failed_load_ModuleContent(error) {
+   mgt_Console(failed_load_ModuleContent.name + " - Can not load module : " + error.module.getName(), CONSOLE_ERROR);
+
+   if (error.source === "old") {
+      gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_ERROR);
+   } else {
+      gui_InitTableStat(GUI_ITEM_newstatdiv, IS_ERROR);
+   }
 }
 
 /**

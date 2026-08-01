@@ -27,6 +27,11 @@ const OSCL_GC_PERSONNALSTREAM       = "http://jazz.net/ns/config_ext#PersonalStr
 // ---- form "rdf\\:about" used to get a node
 // ---- form "rdf:about" used to get an attribute
 
+const ATTRIBUTE_OBJECTTYPE          = "attribute\\:objectType";
+const ATTRIBUTE0_OBJECTTYPE         = ATTRIBUTE_OBJECTTYPE.replace ("\\:",":");
+const ATTRIBUTE_NAME                = "attribute\\:name";
+const ATTRIBUTE0_NAME               = ATTRIBUTE_NAME.replace ("\\:",":");
+
 const DCTERMS_CONTRIBUTOR           = "dcterms\\:contributor";
 const DCTERMS0_CONTRIBUTOR          = DCTERMS_CONTRIBUTOR.replace ("\\:",":");
 const DCTERMS_CREATED               = "dcterms\\:created";
@@ -44,6 +49,8 @@ const DCTERMS_TITLE                 = "dcterms\\:title";
 const DCTERMS0_TITLE                = DCTERMS_TITLE.replace ("\\:",":");
 const DS_ARTIFACT                   = "ds\\:artifact";
 const DS0_ARTIFACT                  = DS_ARTIFACT.replace ("\\:",":");
+const DS_CONTENT                    = "ds\\:content";
+const DS0_CONTENT                   = DS_CONTENT.replace ("\\:",":");
 const DS_DATASOURCE                 = "ds\\:dataSource";
 const DS0_DATASOURCE                = DS_DATASOURCE.replace ("\\:",":");
 const DS_MODULECONTEXT              = "ds\\:moduleContext";
@@ -164,20 +171,30 @@ const RM0_WORKFLOW                  = RM_WORKFLOW.replace ("\\:",":");
 
 const RRM_ABOUT                     = "rrm\\:about";
 const RRM0_ABOUT                    = RRM_ABOUT.replace ("\\:",":");
+const RRM_ATTRIBUTES                = "rrm\\:attributes";
+const RRM0_ATTRIBUTES               = RRM_ATTRIBUTES.replace ("\\:",":");
 const RRM_BOOKORDER                 = "rrm\\:bookOrder";
 const RRM0_BOOKORDER                = RRM_BOOKORDER.replace ("\\:",":");
+const RRM_COLLABORATION             = "rrm\\:collaboration";
+const RRM0_COLLABORATION            = RRM_COLLABORATION.replace ("\\:",":");
 const RRM_CONTEXTBINDING            = "rrm\\:contextBinding";
 const RRM0_CONTEXTBINDING           = RRM_CONTEXTBINDING.replace ("\\:",":");;
 const RRM_CORE                      = "rrm\\:core";
 const RRM0_CORE                     = RRM_CORE.replace ("\\:",":");
+const RRM_CREATED                   = "rrm\\:created";
+const RRM0_CREATED                  = RRM_CREATED.replace ("\\:",":");
 const RRM_DEPTH                     = "rrm\\:depth";
 const RRM0_DEPTH                    = RRM_DEPTH.replace ("\\:",":");
+const RRM_DESCRIPTION               = "rrm\\:description";
+const RRM0_DESCRIPTION              = RRM_DESCRIPTION.replace ("\\:",":");
 const RRM_FORMAT                    = "rrm\\:format";
 const RRM0_FORMAT                   = RRM_FORMAT.replace ("\\:",":");
 const RRM_IDENTIFIER                = "rrm\\:identifier";
 const RRM0_IDENTIFIER               = RRM_IDENTIFIER.replace ("\\:",":");
 const RRM_ISHEADING                 = "rrm\\:isHeading";
 const RRM0_ISHEADING                = RRM_ISHEADING.replace ("\\:",":");
+const RRM_MODIFIED                  = "rrm\\:modified";
+const RRM0_MODIFIED                 = RRM_MODIFIED.replace ("\\:",":");
 const RRM_MODULEURL                 = "rrm\\:moduleUrl";
 const RRM0_MODULEURL                = RRM_MODULEURL.replace ("\\:",":");
 const RRM_PARENTBINDINGURL          = "rrm\\:parentBindingUrl";
@@ -186,4 +203,9 @@ const RRM_SECTION                   = "rrm\\:section";
 const RRM0_SECTION                  = RRM_SECTION.replace ("\\:",":");
 const RRM_TITLE                     = "rrm\\:title";
 const RRM0_TITLE                    = RRM_TITLE.replace ("\\:",":");
+
+const TEXT_RICHTEXTBODY             = "text\\:richTextBody";
+const TEXT0_RICHTEXTBODY            = TEXT_RICHTEXTBODY.replace ("\\:",":");
+const TEXT_TEXT                     = "text\\:text";
+const TEXT0_TEXT                    = TEXT_TEXT.replace ("\\:",":");
 
