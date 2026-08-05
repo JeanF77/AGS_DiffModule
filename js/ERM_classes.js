@@ -429,7 +429,6 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
    #format = null;            // ---- Format "Collection" ou "Module"
    #artefact_list = [];       // ---- Liste des artefacts (liste d'objets de la classe "ERM_Artefact")
    #attributecust_list = [];  // ---- Liste de tous les "Custom Attributes" detectes dans le module
-   #artefacttype_list = [];   // ---- Liste des tous les types d'artefacts et leur nombre - Index = type d'artefact / Contenu = nombre
    #nbpage = 0;               // ---- Nombre de pages du module
    #pagepos = 0;              // ---- Position de pagination
    #conf = null;              // ---- Configuration du module (objet de la classe "ClassConfiguration")
@@ -491,142 +490,6 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
       this.#pagepos = 0;
       this.#artefact_list.splice(0);
       this.#attributecust_list.splice(0);
-      this.#artefacttype_list.splice(0);
-   }
-
-   /**
-    * Analyser la structure XML d'un module et la stocker
-    * @param {String} data - XML Structure
-    */
-
-   get_data(data) {
-      let mySelf = this;
-      let xmlData = $.parseXML(data);
-      let myHref;
-      let myPos = [];
-
-      this.#nbpage++;
-
-      // ---- Recuperer les informations de pagination (si la recuperation du module est paginee)
-
-      myHref = $(xmlData).find('ds\\:dataSource').attr('href');
-
-      if (myHref != undefined) {
-         myHref = decodeURIComponent(myHref);
-         myPos = myHref.match(/^https.+(&pos=([0-9]+)).*/);
-
-         this.#pagepos = myPos[2];
-      }
-
-      // ---- Decoder le contenu de la reponse REST
-
-      $(xmlData).find('ds\\:artifact').each(function () { // ---- Boucler sur chaque artefact
-         let myXmlObj;
-         let myArtefactId = $(this).find('rrm\\:identifier').first().text();
-         let myArtefactOrder = $(this).find('ds\\:moduleContext').find('rrm\\:contextBinding').find('rrm\\:bookOrder').first().text();
-         let myArtefact;
-         let pushArtefact = false;
-
-         // ---- 2 modes de fonctionnements sont admis :
-         // ----     - la structure du module a été préchargée, et dans ce cas il faut se contenter de retrouver l'ID de l'artefact
-         // ----       et compléter les caractéristiques de celui-ci
-         // ----     - si la structure est incomplète, l'artefact sera alors ajoutée à la liste des artefacts constituants le module
-
-         myArtefact = mySelf.get_artefactById(myArtefactId, myArtefactOrder);
-
-         if (myArtefact === undefined) { // ---- Artefact introuvable dans la structure préchargée
-            myArtefact = new ERM_Artefact();
-            pushArtefact = true;
-
-            myArtefact.setId(myArtefactId);
-            myArtefact.setUri($(this).find('rrm\\:about').first().text());
-            myArtefact.setFormat($(this).find('rrm\\:format').first().text());
-            myArtefact.setBookorder(myArtefactOrder);
-         }
-
-         myArtefact.setModified($(this).find('rrm\\:collaboration').find('rrm\\:modified').text());
-         myArtefact.setContent($(this).find('ds\\:content').find('text\\:text').find('text\\:richTextBody').find('div').html());
-
-         myXmlObj = $(this).find('rrm\\:collaboration').find('rrm\\:attributes').find('attribute\\:objectType');
-         myArtefact.setType($(myXmlObj).attr('attribute:name'));
-
-         // ---- 26/06/2026 : Remplacer par une méthode "getArtifactTypeList" de la classe module
-
-         if (myArtefact.getType() in mySelf.#artefacttype_list) { // ---- Le type d'artefact est dans la liste : incrementer son compteur
-            mySelf.#artefacttype_list[myArtefact.getType()]++;
-         } else { // ---- Le type d'artefact n'est dans la liste : empiler le type et initialiser son compteur
-            mySelf.#artefacttype_list[myArtefact.getType()] = 1;
-         }
-
-         // ---- 26/06/2026
-
-         // ---- Boucler sur tous les Custom Attributs de l'artefact et recuperer les caracteristiques
-
-         $(myXmlObj).find('attribute\\:customAttribute').each(function () {
-            let myCustAttribute = new ClassAttribute();
-            let myEnumCustAttribute = new ClassAttribute();
-
-            myCustAttribute.setName($(this).attr('attribute:name'));
-            myCustAttribute.setType($(this).attr('attribute:datatype'));
-            myCustAttribute.setIsenum($(this).attr('attribute:isEnumeration'));
-            myCustAttribute.setIsmultivalue($(this).attr('attribute:isMultiValued'));
-
-            if (myCustAttribute.getIsenum() === undefined || myCustAttribute.getIsenum() === 'false') {
-               // ---- L'attribut n'est pas une enumeration
-
-               myCustAttribute.getValue().push($(this).attr('attribute:value'));
-
-               myArtefact.getCustattrList().push(myCustAttribute);
-            } else {
-               // ---- L'attribut est une enumeration
-
-               myEnumCustAttribute = myArtefact.get_attributeByName(myCustAttribute.getName());
-
-               if (myEnumCustAttribute === undefined) {
-                  // ---- Il n'est pas encore connu de l'artefact, on peut donc l'ajouter
-
-                  myCustAttribute.getValue().push($(this).attr('attribute:literalName'));
-
-                  myArtefact.getCustattrList().push(myCustAttribute);
-               } else {
-                  // ---- Il est connu de l'artefact, donc on empile seulement sa valeur
-
-                  myEnumCustAttribute.getValue().push($(this).attr('attribute:literalName'));
-                  myEnumCustAttribute.getValue().sort();
-               }
-            }
-
-            // ---- Empiler le nom du Custom Attribut, s'il n'existe pas dans la liste globale
-
-            if (mySelf.#attributecust_list.indexOf(myCustAttribute.getName()) < 0) {
-               mySelf.#attributecust_list.push(myCustAttribute.getName());
-            }
-         });
-
-         // ---- Boucler sur tous les tags
-
-         myXmlObj = $(this).find('rrm\\:collaboration').find('rrm\\:tags');
-
-         $(myXmlObj).find('rrm\\:tag').each(function () {
-            let myTag = {
-               value: "",
-               scope: ""
-            };
-
-            myTag.value = $(this).find('rrm\\:title').first().text();
-            myTag.scope = $(this).find('rrm\\:scope').first().text();
-
-            // ---- DNG s'assure qu'il n'y ait pas de doublon de tags
-
-            myArtefact.getTagList().push(myTag);
-         });
-
-         // ---- Stocker l'artefact dans l'objet
-
-         if (pushArtefact) {
-            mySelf.#artefact_list.push(myArtefact);
-         }
-      });
    }
 
    /**
@@ -701,8 +564,27 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
       return this.#attributecust_list;
    }
 
+   /**
+    * Etablir la liste des types d'artefacts contenus dans le module et leur nombre d'occurrences
+    * @returns {Array} - Index = type d'artefact / Contenu = nombre d'occurrences
+    */
+
    getArtefacttypeList() {
-      return this.#artefacttype_list;
+      let myArtefacttypeList = [];
+
+      for (let myArtefact of this.#artefact_list) {
+         if (myArtefact.getType() === null) { // ---- Type non renseigne : ne pas le comptabiliser
+            continue;
+         }
+
+         if (myArtefact.getType() in myArtefacttypeList) {
+            myArtefacttypeList[myArtefact.getType()]++;
+         } else {
+            myArtefacttypeList[myArtefact.getType()] = 1;
+         }
+      }
+
+      return myArtefacttypeList;
    }
 
    getNbpage() {
@@ -941,22 +823,68 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
                this.#description = $(node).text();
                break;
             case DS0_CONTENT:
-               this.#content = $(node).children(TEXT_TEXT).children(TEXT_RICHTEXTBODY).text();
+               this.#content = $(node).children(TEXT_TEXT).children(TEXT_RICHTEXTBODY).children('div').html();
                break;
-            case RRM0_COLLABORATION:
-               this.#created = $(node).children(RRM_CREATED).text()
-               this.#modified = $(node).children(RRM_MODIFIED).text()
-               this.#type = $(node).children(RRM_ATTRIBUTES).children(ATTRIBUTE_OBJECTTYPE).attr(ATTRIBUTE0_NAME);
+            case RRM0_COLLABORATION: {
+               let myObjectType;
 
-               // ---- 01/08/2026 - Get custom attributes
+               this.#created = $(node).children(RRM_CREATED).text();
+               this.#modified = $(node).children(RRM_MODIFIED).text();
 
-               $(node).children(RRM_ATTRIBUTES).children(ATTRIBUTE_OBJECTTYPE).children().each((index, node) => {
+               myObjectType = $(node).children(RRM_ATTRIBUTES).children(ATTRIBUTE_OBJECTTYPE);
+               this.#type = myObjectType.attr(ATTRIBUTE0_NAME);
 
+               // ---- Boucler sur tous les Custom Attributs de l'artefact et recuperer les caracteristiques
+
+               myObjectType.children(ATTRIBUTE_CUSTOMATTRIBUTE).each((index, attrNode) => {
+                  let myCustAttribute = new ClassAttribute();
+                  let myEnumCustAttribute;
+
+                  myCustAttribute.setName($(attrNode).attr(ATTRIBUTE0_NAME));
+                  myCustAttribute.setType($(attrNode).attr(ATTRIBUTE0_DATATYPE));
+                  myCustAttribute.setIsenum($(attrNode).attr(ATTRIBUTE0_ISENUMERATION));
+                  myCustAttribute.setIsmultivalue($(attrNode).attr(ATTRIBUTE0_ISMULTIVALUED));
+
+                  if (myCustAttribute.getIsenum() === undefined || myCustAttribute.getIsenum() === 'false') {
+                     // ---- L'attribut n'est pas une enumeration
+
+                     myCustAttribute.getValue().push($(attrNode).attr(ATTRIBUTE0_VALUE));
+
+                     this.#custattr_list.push(myCustAttribute);
+                  } else {
+                     // ---- L'attribut est une enumeration
+
+                     myEnumCustAttribute = this.get_attributeByName(myCustAttribute.getName());
+
+                     if (myEnumCustAttribute === undefined) {
+                        // ---- Il n'est pas encore connu de l'artefact, on peut donc l'ajouter
+
+                        myCustAttribute.getValue().push($(attrNode).attr(ATTRIBUTE0_LITERALNAME));
+
+                        this.#custattr_list.push(myCustAttribute);
+                     } else {
+                        // ---- Il est connu de l'artefact, donc on empile seulement sa valeur
+
+                        myEnumCustAttribute.getValue().push($(attrNode).attr(ATTRIBUTE0_LITERALNAME));
+                        myEnumCustAttribute.getValue().sort();
+                     }
+                  }
                });
+
+               // ---- Boucler sur tous les tags
+
+               $(node).children(RRM_TAGS).children(RRM_TAG).each((index, tagNode) => {
+                  this.#tag_list.push({
+                     value: $(tagNode).children(RRM_TITLE).text(),
+                     scope: $(tagNode).children(RRM_SCOPE).text()
+                  });
+               });
+
                break;
+            }
             case DS0_MODULECONTEXT:
                this.#bookorder = $(node).children(RRM_CONTEXTBINDING).children(RRM_BOOKORDER).text();
-               this.#depth = $(node).children(RRM_CONTEXTBINDING).children(RRM_DEPTH).text();              
+               this.#depth = $(node).children(RRM_CONTEXTBINDING).children(RRM_DEPTH).text();
                break;
             default:
                // ---- Do nothing

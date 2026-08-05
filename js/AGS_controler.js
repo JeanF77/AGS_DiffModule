@@ -33,6 +33,12 @@ class QueueManager {
       this.processQueue();
    }
 
+   resetQueue() { // ---- Empty the queue (pending requests only, running requests are not aborted)
+      mgt_Console("Queue reset (" + this.queue.length + " pending request(s) removed)", CONSOLE_INFO);
+
+      this.queue.splice(0);
+   }
+
    processQueue() { // ---- Execute queue content
       while (this.running < this.maxConcurrentRequests && this.queue.length > 0) {
          var rest_request = this.queue.shift();

@@ -174,7 +174,7 @@ function get_ModuleStructure(module, project, configuration, source) {
       gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, module.getPageOffset());
    }
 
-   queueManager.addToQueue(myRESTRequest);
+   queueManagerContent.addToQueue(myRESTRequest);
 }
 
 /**
@@ -260,19 +260,13 @@ function load_ModuleContent(module, project, configuration, source, position) {
    if (module.getPageOffset() === 0) { // ---- First call !
       mgt_Console(load_ModuleContent.name + " - Fist call for content loading for '" + source + "'", CONSOLE_INFO);
 
-      queueManager.addToQueue(myRESTRequest);
+      queueManagerContent.addToQueue(myRESTRequest);
    } else if (module.getPageOffset() == (RRAPI_PAGESIZE * module.getNbpage())) { // ---- Next page
       mgt_Console(load_ModuleContent.name + " - Get new page : " + module.getPageOffset(), CONSOLE_INFO);
 
-      queueManager.addToQueue(myRESTRequest);
+      queueManagerContent.addToQueue(myRESTRequest);
    } else { // ---- Content loading is finished
       mgt_Console(load_ModuleContent.name + " - Content loading is finishad for '" + module.getName() + "' (" + source + ")", CONSOLE_INFO);
-
-      if (source === "old") {
-         gui_BuildTableStat(GUI_ITEM_oldstatdiv, module);
-      } else {
-         gui_BuildTableStat(GUI_ITEM_newstatdiv, module);
-      }
    }
 }
 
@@ -333,11 +327,12 @@ function success_load_ModuleContent(success, data) {
 function failed_load_ModuleContent(error) {
    mgt_Console(failed_load_ModuleContent.name + " - Can not load module : " + error.module.getName(), CONSOLE_ERROR);
 
-   if (error.source === "old") {
-      gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_ERROR);
-   } else {
-      gui_InitTableStat(GUI_ITEM_newstatdiv, IS_ERROR);
-   }
+   gui_InitTableStat(GUI_ITEM_oldstatdiv, IS_ERROR);
+   gui_InitTableStat(GUI_ITEM_newstatdiv, IS_ERROR);
+
+   queueManagerContent.resetQueue();
+
+   gui_mgtButtonDrop(GUI_ITEM_COMPARE_BTN_ROOT, ACTION_ACTIVE_OFF);
 }
 
 /**
@@ -367,64 +362,18 @@ function load_module() {
    }
 }
 
-
 /**
- * Chargement de la structure du module "Old"
- * On récupère la liste de tous les artefacts contenus le module
+ * Finalize the content loading process
  */
 
-/* function load_OldModule () {
-   const REST_RM_GETMODULESTR_OLD = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleOld.getIdentifier() + "&oslc_config.context=" + g_ModuleOld.getConf().getUrl();
+function finalizeContent() {
+   
+   // ---- Display the module statistics
 
-   let myRequest = {
-      'rest_method'  : "GET",
-      'rest_url'     : REST_RM_GETMODULESTR_OLD,
-      'rest_success' : "",
-      'rest_failed'  : ""
-   }
+   gui_BuildTableStat(GUI_ITEM_oldstatdiv, g_ModuleOld);
+   gui_BuildTableStat(GUI_ITEM_newstatdiv, g_ModuleNew);
 
-   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
+   // ---- Activate the compare button
 
-   g_ModuleOld.empty_artifact ();
-
-   mgt_Console ("Load module structure (old) : " + g_ModuleOld.getIdentifier(), CONSOLE_INFO);
-
-   gui_InitTableStat (GUI_ITEM_oldstatdiv, IS_INPROGRESS, g_ModuleOld.getPageOffset());
-
-   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
-
-   $.when (ajax_async_request (myRequest, g_ModuleOld.get_structure.bind(g_ModuleOld), gui_FailedOldTableStat, null)).then(function () {
-      load_oldTxtmodule ();
-   });
-} */
-
-/**
- * Chargement de la structure du module "New"
- * On récupère la liste de tous les artefacts contenus le module
- */
-
-/* function load_NewModule() {
-   const REST_RM_GETMODULESTR_NEW = RM_HOSTNAME + "/rm/publish/modules?resourceURI=" + g_ModuleNew.getIdentifier() + "&oslc_config.context=" + g_ModuleNew.getConf().getUrl();
-
-   let myRequest = {
-      'rest_method': "GET",
-      'rest_url': REST_RM_GETMODULESTR_NEW,
-      'rest_success': "",
-      'rest_failed': ""
-   }
-
-   // ---- Vider le contenu du module et initialiser la zone d'affichage des statistiques
-
-   g_ModuleNew.empty_artifact();
-
-   mgt_Console("Load module structure (new) : " + g_ModuleNew.getIdentifier(), CONSOLE_INFO);
-
-   gui_InitTableStat(GUI_ITEM_newstatdiv, IS_INPROGRESS, g_ModuleNew.getPageOffset());
-
-   // ---- On récupère la structure du module (tous artafacts, quelque soit leur format)
-
-   $.when(ajax_async_request(myRequest, g_ModuleNew.get_structure.bind(g_ModuleNew), gui_FailedNewTableStat, null)).then(function () {
-      load_newTxtmodule();
-   });
-} */
-
+   gui_mgtButtonDrop(GUI_ITEM_COMPARE_BTN_ROOT, ACTION_ACTIVE_ON);
+}

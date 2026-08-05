@@ -34,6 +34,7 @@ var RM_HOSTNAME;           // ---- Nom d'hote du serveur RM
 
 var queueManager = new QueueManager(REST_QUEUE_SIZE, null);
 var queueManagerConfig = new QueueManager(REST_QUEUE_SIZE, gui_BuildConfBtn);
+var queueManagerContent = new QueueManager(REST_QUEUE_SIZE, finalizeContent);
 
 /* ------------------------------------------------------------------------------
    ---- Core Fonctions

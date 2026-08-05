@@ -758,10 +758,6 @@ function gui_BuildTableStat(divstat, objModule) {
    }
 
    $("#" + divstat).append($('</tbody>'));
-
-   // ---- Afficher le bouton de comparaison
-
-   gui_mgtButtonDrop(GUI_ITEM_COMPARE_BTN_ROOT, ACTION_ACTIVE_ON);
 }
 
 /**
