@@ -209,9 +209,9 @@ function success_get_ModuleStructure(success, data) {
  */
 
 function failed_get_ModuleStructure(module, httpCode) {
-   mgt_Console(failedget_ModuleStructure.name + " - Can not get module structure for : " + module.getName() + " - " + httpCode, CONSOLE_ERROR);
+   mgt_Console(failed_get_ModuleStructure.name + " - Can not get module structure for : " + module.getName() + " - " + httpCode, CONSOLE_ERROR);
 
-   gui_FatalError("<strong>ERROR : </strong> Can not the module structure for '" + module.getName() + "' !");
+   gui_FatalError("<strong>ERROR : </strong> Can not get the module structure for '" + module.getName() + "' !");
 }
 
 /**
@@ -333,7 +333,7 @@ function failed_load_ModuleContent(error) {
 
    queueManagerContent.resetQueue();
 
-   gui_mgtButtonDrop(GUI_ITEM_COMPARE_BTN_ROOT, ACTION_ACTIVE_OFF);
+   gui_FatalError("<strong>ERROR : </strong> Can not load the content of module '" + error.module.getName() + "' (" + error.source + ") !");
 }
 
 /**

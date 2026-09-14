@@ -87,6 +87,8 @@ const CONSOLE_ERROR                          = "### ERROR : ";
 	---- Variables globales
    --------------------------------------------------------------------------- */
 
+var g_WidgetLocked = false; // ---- Passe a "true" suite a un gui_FatalError() : plus aucun gadget ne doit pouvoir se reactiver
+
 /* ------------------------------------------------------------------------------
 	---- Core Fonctions
    --------------------------------------------------------------------------- */
@@ -243,6 +245,10 @@ function gui_mgtButtonDrop (guiRoot, action, content) {
       break;
 
       case ACTION_ACTIVE_ON: // ---- Activation and visible
+         if (g_WidgetLocked) { // ---- Une erreur fatale a verrouille le widget : aucune reactivation possible
+            break;
+         }
+
          myGuiObj.prop('disabled', false);
          myGuiObj.show();
       break;
@@ -271,6 +277,8 @@ function gui_mgtButtonDrop (guiRoot, action, content) {
  */
 
 function gui_FatalError (message) {
+   g_WidgetLocked = true; // ---- Empeche toute reactivation ulterieure d'un gadget (ex: callback de fin de file REST)
+
    gui_mgtAlert(GUI_ITEM_ALERT_ROOT, IS_ERROR, message);
 
    for (let myBtnRoot of GUI_ALL_BTN_ROOT) {
