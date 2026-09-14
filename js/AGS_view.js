@@ -564,11 +564,13 @@ function gui_SelectModule(object) {
 
    if (myModuleId[1] === 'old') { // ---- Old module
       g_ModuleOld = g_ConfOld.getModuleList().find(myModule => myModule.getIdentifier() === myModuleId[2]);
+      g_ModuleOld.setStatus(IS_OLD); // ---- Tag the module with its role, now that it is known
 
       gui_mgtButtonDrop(GUI_ITEM_OLDMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="Old Module"> ' + g_ModuleOld.getName());
       gui_mgtIndicator(GUI_ITEM_OLDMODULEIND_ROOT, IS_SUCCESS);
    } else { // ---- New module
       g_ModuleNew = g_ConfNew.getModuleList().find(myModule => myModule.getIdentifier() === myModuleId[2]);
+      g_ModuleNew.setStatus(IS_NEW); // ---- Tag the module with its role, now that it is known
 
       gui_mgtButtonDrop(GUI_ITEM_NEWMODULE_BTN_ROOT, ACTION_SETLABEL, '<img src="' + GUI_ICON_MODULE + '" alt="New Module"> ' + g_ModuleNew.getName());
       gui_mgtIndicator(GUI_ITEM_NEWMODULEIND_ROOT, IS_SUCCESS);

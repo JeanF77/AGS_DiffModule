@@ -163,6 +163,7 @@ function get_ModuleStructure(module, project, configuration, source) {
    };
 
    module.empty(); // ---- Empty module structure each time it is reloaded
+   module.setConf(configuration); // ---- Associate the configuration with the module (needed later for embedded image URL resolution)
 
    mgt_Console(get_ModuleStructure.name + " - Get module structure for : " + module.getUrl(), CONSOLE_INFO);
 

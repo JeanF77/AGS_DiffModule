@@ -654,7 +654,7 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
 
                myFctReturnStr.imgList.push(myImgDiff);
             } else { // ---- Nouvelle image dans l'artefact de reference
-               myDiffInfo.set_diff_imagenew(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.attrname);
+               myDiffInfo.set_diff_imagenew(myRefArtefact.getId(), myRefArtefact.getType(), ClassDiffResult.SYS_ATTR_CONTENT);
                myFctReturnStr.diffList.push(myDiffInfo);
 
                mgt_Console("New image in '" + myRefArtefact.getId() + "'", CONSOLE_INFO);
@@ -667,7 +667,7 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
             let myDiffInfo = new ClassDiffResult();
 
             if (myRefImgList[myId] === undefined) {
-               myDiffInfo.set_diff_imagedel(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.attrname);
+               myDiffInfo.set_diff_imagedel(myRefArtefact.getId(), myRefArtefact.getType(), ClassDiffResult.SYS_ATTR_CONTENT);
                myFctReturnStr.diffList.push(myDiffInfo);
 
                mgt_Console("Image deleted from '" + myRefArtefact.getId() + "'", CONSOLE_INFO);
