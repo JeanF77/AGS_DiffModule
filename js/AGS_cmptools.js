@@ -24,7 +24,9 @@ const DIFF_LABEL = ["New Artifact",
    "Image deleted",
    "Image not found in new module !",
    "Image not found in old module !",
-   "Tag Has Changed"
+   "Tag Has Changed",
+   "Custom Attribut Cleared",
+   "Custom Attribut Filled"
 ];
 
 const DIFF_NODIFF = -1;
@@ -39,6 +41,8 @@ const DIFF_IMAGEDEL = 7;
 const DIFF_IMAGENOTFOUND_NEW = 8;
 const DIFF_IMAGENOTFOUND_OLD = 9;
 const DIFF_TAGCHANGED = 10;
+const DIFF_CUSTATTRCLEARED = 11; // ---- Valeur "avant" existante, valeur "apres" vide (attribut vide de son contenu)
+const DIFF_CUSTATTRFILLED = 12;  // ---- Valeur "avant" absente, valeur "apres" existante (attribut rempli)
 
 const CST_NOT_FOUND = "Not_Found";
 const CST_MOD_REF = "module_ref";
@@ -98,6 +102,14 @@ class ClassDiffResult {       // ---- Resultat de comparaison
       },
       [DIFF_TAGCHANGED]: {
          label: DIFF_LABEL[DIFF_TAGCHANGED], badgeClass: 'bg-warning text-dark', dtRowClass: 'table-warning', rptRowClass: 'rpt-row-changed',
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+      },
+      [DIFF_CUSTATTRCLEARED]: {
+         label: DIFF_LABEL[DIFF_CUSTATTRCLEARED], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+      },
+      [DIFF_CUSTATTRFILLED]: {
+         label: DIFF_LABEL[DIFF_CUSTATTRFILLED], badgeClass: 'bg-primary', dtRowClass: 'table-primary', rptRowClass: 'rpt-row-content',
          cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
       }
    };
@@ -161,6 +173,27 @@ function cmp_DiffModArtefact(modTest, modRef) {
   * @returns {Array} - Tableau d'objets de la classe "ClassDiffResult" (Taille tableau = 0, si pas d'ecart)
   */
 
+/**
+ * Determiner le type d'ecart precis pour un attribut "custom" en fonction du remplissage
+ * des valeurs avant/apres : DIFF_CUSTATTRFILLED (avant vide, apres rempli), DIFF_CUSTATTRCLEARED
+ * (avant rempli, apres vide) ou DIFF_CUSTATTRCHANGED (avant et apres tous les deux non vides)
+ * @param {String|Array} oldvalue - Valeur avant (chaine vide ou tableau de valeurs)
+ * @param {String|Array} newvalue - Valeur apres (chaine vide ou tableau de valeurs)
+ * @returns {Number} - Code du type d'ecart (DIFF_CUSTATTRFILLED, DIFF_CUSTATTRCLEARED ou DIFF_CUSTATTRCHANGED)
+ */
+
+function cmp_pickCustAttrDiffcode(oldvalue, newvalue) {
+   const isEmpty = (value) => value === "" || value === undefined || value === null || (Array.isArray(value) && value.length === 0);
+
+   if (isEmpty(oldvalue) && !isEmpty(newvalue)) {
+      return DIFF_CUSTATTRFILLED;
+   } else if (!isEmpty(oldvalue) && isEmpty(newvalue)) {
+      return DIFF_CUSTATTRCLEARED;
+   } else {
+      return DIFF_CUSTATTRCHANGED;
+   }
+}
+
 function cmp_DiffAttr(artTest, artRef) {
    let myDiffList = [];
 
@@ -175,7 +208,7 @@ function cmp_DiffAttr(artTest, artRef) {
       if (myAttrTest === undefined) {
          // ---- L'attribut existe seulement dans la reference
 
-         myDiffList.push(new ClassDiffResult(artRef.getDiffContext(), DIFF_CUSTATTRCHANGED,
+         myDiffList.push(new ClassDiffResult(artRef.getDiffContext(), cmp_pickCustAttrDiffcode("", myAttrRef.getValue()),
             { attrname: myAttrRef.getName(), oldvalue: "", newvalue: myAttrRef.getValue() }));
       } else {
          // ---- L'attribut existe dans la reference et le test, il faut donc evaluer l'ecart de valeur
@@ -184,7 +217,7 @@ function cmp_DiffAttr(artTest, artRef) {
          let myValueDiff = myAttrRef.getValue().filter(x => myAttrTest.getValue().indexOf(x) === -1);
 
          if ((myAttrTest.getValue().length != myAttrRef.getValue().length) || (myValueDiff.length > 0)) {
-            myDiffList.push(new ClassDiffResult(artRef.getDiffContext(), DIFF_CUSTATTRCHANGED,
+            myDiffList.push(new ClassDiffResult(artRef.getDiffContext(), cmp_pickCustAttrDiffcode(myAttrTest.getValue(), myAttrRef.getValue()),
                { attrname: myAttrRef.getName(), oldvalue: myAttrTest.getValue(), newvalue: myAttrRef.getValue() }));
          }
       }
@@ -200,7 +233,7 @@ function cmp_DiffAttr(artTest, artRef) {
       if (myAttrRef === undefined) {
          // ---- L'attribut existe seulement dans le test
 
-         myDiffList.push(new ClassDiffResult(artTest.getDiffContext(), DIFF_CUSTATTRCHANGED,
+         myDiffList.push(new ClassDiffResult(artTest.getDiffContext(), cmp_pickCustAttrDiffcode(myAttrTest.getValue(), ""),
             { attrname: myAttrTest.getName(), oldvalue: myAttrTest.getValue(), newvalue: "" }));
       }
    }

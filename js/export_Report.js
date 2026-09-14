@@ -84,6 +84,26 @@ function rpt_getDiffRowClass(diffLabel) {
 }
 
 /**
+ * Retourner la classe CSS de colorisation de ligne pour l'export "Compact"
+ * Une ligne compacte cumule potentiellement plusieurs types d'ecart pour un meme artefact :
+ * une couleur n'est donc appliquee que pour les 3 etats qui concernent l'artefact dans son
+ * ensemble (nouveau / supprime / type change) ; pour tout le reste (attribut, tag, contenu,
+ * image ...), une couleur induirait une mauvaise interpretation de la ligne, donc aucune
+ * classe n'est appliquee.
+ * @param {String} difflabelBlock - Labels de diff cumules pour l'artefact, separes par '\n'
+ * @returns {String}              - Classe CSS (ex: "rpt-row-newart"), ou '' si aucune ne s'applique
+ */
+function rpt_getCompactRowClass(difflabelBlock) {
+    const myLabels = difflabelBlock.split('\n');
+
+    if (myLabels.includes(DIFF_LABEL[DIFF_NEWARTIFACT])) return ClassDiffResult.META[DIFF_NEWARTIFACT].rptRowClass;
+    if (myLabels.includes(DIFF_LABEL[DIFF_DELARTIFACT])) return ClassDiffResult.META[DIFF_DELARTIFACT].rptRowClass;
+    if (myLabels.includes(DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED])) return ClassDiffResult.META[DIFF_ARTIFACTTYPECHANGED].rptRowClass;
+
+    return '';
+}
+
+/**
  * Déclencher le téléchargement d'un fichier HTML
  * Stratégie identique à l'export XLSX : window.top pour contourner frame-src CSP
  * @param {String} htmlContent - Contenu HTML complet du rapport
@@ -208,13 +228,19 @@ ${diff2htmlCss}
  * @param {String} rows    - HTML des lignes de données (<tr>…)
  * @param {Array}  labels  - Labels de diff uniques présents dans les données (pour le filtre)
  * @param {String} css     - CSS complet à embarquer dans <style>
+ * @param {Boolean} isCompact - true = rapport Compact (legende restreinte aux 3 couleurs utilisees)
  * @returns {String}       - Document HTML complet
  */
-function rpt_buildHtml(info, headers, rows, labels, css) {
+function rpt_buildHtml(info, headers, rows, labels, css, isCompact) {
 
     // ---- Légende : n'afficher que les types réellement présents dans les données
     // ---- Source unique de la correspondance type d'ecart / couleur : ClassDiffResult.META
-    const myLegendDefs = Object.values(ClassDiffResult.META).map(function(m) {
+    // ---- Rapport Compact : une ligne cumule plusieurs types d'ecart, seuls les 3 etats globaux
+    // ---- de l'artefact (nouveau / supprime / type change) sont colores (cf rpt_getCompactRowClass) ;
+    // ---- la legende se restreint donc a ces 3 entrees pour rester coherente avec les lignes.
+    const myCompactLegendCodes = [DIFF_NEWARTIFACT, DIFF_DELARTIFACT, DIFF_ARTIFACTTYPECHANGED];
+    const myLegendSource = isCompact ? myCompactLegendCodes.map(dc => ClassDiffResult.META[dc]) : Object.values(ClassDiffResult.META);
+    const myLegendDefs = myLegendSource.map(function(m) {
         return { cls: m.rptRowClass, label: m.label };
     });
 
@@ -373,6 +399,8 @@ async function export_report(isCompact) {
                     break;
 
                 case DIFF_LABEL[DIFF_CUSTATTRCHANGED]:
+                case DIFF_LABEL[DIFF_CUSTATTRCLEARED]:
+                case DIFF_LABEL[DIFF_CUSTATTRFILLED]:
                 case DIFF_LABEL[DIFF_TAGCHANGED]:
                     if (myCustAttrChangeList.indexOf(myFilteredTable[i][RPT_COL_ATTR]) === -1) {
                         myCustAttrChangeList.push(myFilteredTable[i][RPT_COL_ATTR]);
@@ -417,7 +445,7 @@ async function export_report(isCompact) {
         for (let i = 0; i < myCompactTable.length; i++) {
             const myRow       = myCompactTable[i];
             const myPrimLabel = myRow.difflabel.split('\n')[0];
-            const myRowClass  = rpt_getDiffRowClass(myPrimLabel);
+            const myRowClass  = rpt_getCompactRowClass(myRow.difflabel);
             myLabelSet.add(myPrimLabel);
 
             let myHtml = '<tr class="' + myRowClass + '" data-difflabel="' + rpt_escHtml(myPrimLabel) + '">';
@@ -496,7 +524,8 @@ async function export_report(isCompact) {
         { colgroup: myHeaderColgroup, ths: myHeaderThs },
         myRowsHtml,
         [...myLabelSet],
-        rpt_buildCss(myDiff2htmlCss)
+        rpt_buildCss(myDiff2htmlCss),
+        isCompact === true
     );
 
     rpt_downloadHtml(myHtml, g_ModuleNew.getName() + '_diff_report');
