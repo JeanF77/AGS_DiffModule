@@ -642,6 +642,7 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
    #modified = null;       // ---- Date de modification
    #content = null;        // ---- Contenu ("Contents")
    #type = null;           // ---- Type artefact
+   #section = null;        // ---- Section in module hierarchy
    #bookorder = null;      // ---- Position in module hierarchy
    #depth = null;          // ---- Hierarchy level
    #custattr_list = [];    // ---- Liste des attributs (liste d'objets de la classe "ClassAttribute")
@@ -707,6 +708,10 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
 
    getBookorder() {
       return this.#bookorder;
+   }
+
+   getSection() {
+      return this.#section;
    }
 
    getCustattrList() {
@@ -778,6 +783,9 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
                break;
             case RRM0_FORMAT:
                this.#format = $(node).text();
+               break;
+            case RRM0_SECTION:
+               this.#section = $(node).text();
                break;
             case RRM0_BOOKORDER:
                this.#bookorder = $(node).text();

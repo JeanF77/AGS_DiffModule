@@ -74,11 +74,13 @@ const TEMPL_COMPARE_STAT = "templ-compare-stat";
 
 const RPT_COL_ID = 0;
 const RPT_COL_TYPE = 1;
-const RPT_COL_DIFFLABEL = 2;
-const RPT_COL_ATTR = 3;
-const RPT_COL_OLDVAL = 4;
-const RPT_COL_NEWVAL = 5;
-const RPT_COL_DIFFCONTENT = 6;
+const RPT_COL_SECTION = 2;
+const RPT_COL_DIFFLABEL = 3;
+const RPT_COL_ATTR = 4;
+const RPT_COL_OLDVAL = 5;
+const RPT_COL_NEWVAL = 6;
+const RPT_COL_DIFFCONTENT = 7;
+const RPT_COL_BOOKORDER = 8; // ---- Colonne technique (masquee) : position de l'artefact dans le module, utilisee pour le tri par defaut
 
 /* --------------------------------------------------------------------------- */
 
@@ -960,9 +962,12 @@ function gui_DisplayDiff() {
          },
          paging: true,
          scrollY: "600px",
+         order: [[RPT_COL_BOOKORDER, 'asc']], // ---- Tri par defaut = position de l'artefact dans le module (localisation)
          columnDefs: [
             { targets: RPT_COL_ID, type: "num", width: "4%" },
             { targets: RPT_COL_TYPE, type: "string", width: "9%", searchPanes: { show: true } },
+            { targets: RPT_COL_SECTION, type: "string", width: "6%", searchPanes: { show: false } },
+            { targets: RPT_COL_BOOKORDER, type: "num", visible: false, searchable: false },
             { targets: RPT_COL_ATTR, type: "string", width: "9%", searchPanes: { show: true } },
             { targets: RPT_COL_OLDVAL, type: "string", width: "14%", orderable: false, searchPanes: { show: false } },
             { targets: RPT_COL_NEWVAL, type: "string", width: "14%", orderable: false, searchPanes: { show: false } },
@@ -1036,23 +1041,25 @@ function gui_DisplayDiff() {
 function fmt_diffreport(diffObjList) {
    let myHtmlCode = "";
 
-   // ---- +----+------+------------+-----------+-----------+-----------+---------+
-   // ---- | ID | Type | Diff Label | Attribute | Old Value | New Value | Content |
-   // ---- | 0  | 1    | 2          | 3         | 4         | 5         | 6       |
-   // ---- +----+------+------------+-----------+-----------+-----------+---------+
+   // ---- +----+------+---------+------------+-----------+-----------+-----------+---------+-----------+
+   // ---- | ID | Type | Section | Diff Label | Attribute | Old Value | New Value | Content | Bookorder |
+   // ---- | 0  | 1    | 2       | 3          | 4         | 5         | 6         | 7       | 8 (cachee)|
+   // ---- +----+------+---------+------------+-----------+-----------+-----------+---------+-----------+
 
    myHtmlCode = '<thead><tr>';
    myHtmlCode += '<th>ID</th>';
    myHtmlCode += '<th>Type</th>';
+   myHtmlCode += '<th>Section</th>';
    myHtmlCode += '<th>Diff Label</th>';
    myHtmlCode += '<th>Attribute</th>';
    myHtmlCode += '<th>Old Value</th>';
    myHtmlCode += '<th>New Value</th>';
    myHtmlCode += '<th>Diff Content</th>';
+   myHtmlCode += '<th>Bookorder</th>'; // ---- Colonne masquee (voir RPT_COL_BOOKORDER) : sert uniquement de cle de tri
    myHtmlCode += '</tr></thead><tbody style="font-size: 12px;">';
 
    for (let myDiffObj of diffObjList) {
-      myHtmlCode += '<tr>' + gui_genCell([myDiffObj.id, myDiffObj.arttype, myDiffObj.difflabel]);
+      myHtmlCode += '<tr>' + gui_genCell([myDiffObj.id, myDiffObj.arttype, myDiffObj.section, myDiffObj.difflabel]);
 
       switch (myDiffObj.diffcode) {
          case DIFF_ARTIFACTTYPECHANGED:
@@ -1088,6 +1095,8 @@ function fmt_diffreport(diffObjList) {
 
             myHtmlCode += gui_genCell(["", "", "", ""]);
       }
+
+      myHtmlCode += gui_genCell([myDiffObj.bookorder]);
 
       myHtmlCode += '</tr>';
    }

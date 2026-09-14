@@ -359,6 +359,7 @@ async function export_report(isCompact) {
                 let myRow = {
                     'id':          myFilteredTable[i][RPT_COL_ID],
                     'type':        myFilteredTable[i][RPT_COL_TYPE],
+                    'section':     myFilteredTable[i][RPT_COL_SECTION],
                     'difflabel':   myFilteredTable[i][RPT_COL_DIFFLABEL],
                     'diffcontent': '',
                     'nbdiff':      1,
@@ -409,13 +410,13 @@ async function export_report(isCompact) {
         myCustAttrChangeList.sort();
 
         // ---- Compact report - Structure de sortie
-        // ---- +----+------+------------+--------------+------------------+----...----+
-        // ---- | ID | Type | Diff Label | Diff Content | Old Artifact (*) | Attr  (*) |
-        // ---- |    |      |            |              | Type             | Old | New  |
+        // ---- +----+------+---------+------------+--------------+------------------+----...----+
+        // ---- | ID | Type | Section | Diff Label | Diff Content | Old Artifact (*) | Attr  (*) |
+        // ---- |    |      |         |            |              | Type             | Old | New  |
         // ---- (*) : colonnes présentes uniquement si des changements de ce type existent
 
-        const myCols   = ['5%', '12%', '15%', ''];  // ---- '' : Diff Content prend l'espace restant
-        const myLabels = ['ID', 'Type', 'Diff Label', 'Diff Content'];
+        const myCols   = ['5%', '10%', '8%', '15%', ''];  // ---- '' : Diff Content prend l'espace restant
+        const myLabels = ['ID', 'Type', 'Section', 'Diff Label', 'Diff Content'];
 
         if (myTypeChange) {
             myCols.push('12%');
@@ -441,6 +442,7 @@ async function export_report(isCompact) {
             let myHtml = '<tr class="' + myRowClass + '" data-difflabel="' + rpt_escHtml(myPrimLabel) + '">';
             myHtml += '<td>' + rpt_escHtml(myRow.id) + '</td>';
             myHtml += '<td>' + rpt_escHtml(myRow.type) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(myRow.section) + '</td>';
             myHtml += '<td>' + rpt_escHtml(myRow.difflabel).replace(/\n/g, '<br>') + '</td>';
             // ---- Diff Content : HTML diff2html rendu directement (texte riche)
             myHtml += '<td class="rpt-diffcontent">' + (myRow.diffcontent || '') + '</td>';
@@ -467,13 +469,13 @@ async function export_report(isCompact) {
         console.log("$$$ Standard Export Diff Report to HTML");
 
         // ---- Standard report - Structure de sortie
-        // ---- +----+------+------------+-----------+-----------+-----------+----------------+
-        // ---- | ID | Type | Diff Label | Attribute | Old Value | New Value | Diff Content   |
-        // ---- +----+------+------------+-----------+-----------+-----------+----------------+
+        // ---- +----+------+---------+------------+-----------+-----------+-----------+----------------+
+        // ---- | ID | Type | Section | Diff Label | Attribute | Old Value | New Value | Diff Content   |
+        // ---- +----+------+---------+------------+-----------+-----------+-----------+----------------+
 
-        myHeaderColgroup = '<col style="width:5%"><col style="width:10%"><col style="width:13%">'
+        myHeaderColgroup = '<col style="width:5%"><col style="width:10%"><col style="width:8%"><col style="width:13%">'
                          + '<col style="width:10%"><col style="width:13%"><col style="width:13%"><col>';
-        myHeaderThs = '<th>ID</th><th>Type</th><th>Diff Label</th>'
+        myHeaderThs = '<th>ID</th><th>Type</th><th>Section</th><th>Diff Label</th>'
                     + '<th>Attribute</th><th>Old Value</th><th>New Value</th><th>Diff Content</th>';
 
         for (let i = 0; i < myFilteredTable.length; i++) {
@@ -485,6 +487,7 @@ async function export_report(isCompact) {
             let myHtml = '<tr class="' + myRowClass + '" data-difflabel="' + rpt_escHtml(myDiffLabel) + '">';
             myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_ID]) + '</td>';
             myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_TYPE]) + '</td>';
+            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_SECTION]) + '</td>';
             myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_DIFFLABEL]) + '</td>';
             myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_ATTR])) + '</td>';
             myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_OLDVAL])) + '</td>';
