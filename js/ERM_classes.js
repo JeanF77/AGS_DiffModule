@@ -726,6 +726,20 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
       return this.#joinedfile_list;
    }
 
+   /**
+    * Obtenir le contexte d'identification/localisation de l'artefact (utilise pour construire un "ClassDiffResult")
+    * @returns {Object} - {id, type, section, bookorder}
+    */
+
+   getDiffContext() {
+      return {
+         id: this.#id,
+         type: this.#type,
+         section: this.#section,
+         bookorder: this.#bookorder
+      };
+   }
+
    // ---- Setters
 
    setId(id) {

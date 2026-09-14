@@ -73,24 +73,14 @@ function rpt_escHtml(str) {
 /**
  * Retourner la classe CSS de colorisation de ligne selon le label de diff
  * Les classes correspondent aux couleurs définies dans rpt_buildCss()
+ * Source unique de la correspondance diffcode/label/classe : ClassDiffResult.META
  * @param {String} diffLabel - Valeur d'un élément de DIFF_LABEL[]
  * @returns {String}         - Classe CSS (ex: "rpt-row-content")
  */
 function rpt_getDiffRowClass(diffLabel) {
-    switch (diffLabel) {
-        case DIFF_LABEL[DIFF_NEWARTIFACT]:           return 'rpt-row-newart';
-        case DIFF_LABEL[DIFF_DELARTIFACT]:           return 'rpt-row-delart';
-        case DIFF_LABEL[DIFF_CONTENTCHANGED]:        return 'rpt-row-content';
-        case DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]:
-        case DIFF_LABEL[DIFF_CUSTATTRCHANGED]:
-        case DIFF_LABEL[DIFF_TAGCHANGED]:            return 'rpt-row-changed';
-        case DIFF_LABEL[DIFF_IMAGECHANGED]:
-        case DIFF_LABEL[DIFF_IMAGENEW]:
-        case DIFF_LABEL[DIFF_IMAGEDEL]:              return 'rpt-row-image';
-        case DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]:
-        case DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]:     return 'rpt-row-delart';
-        default:                                     return '';
-    }
+    const myMeta = Object.values(ClassDiffResult.META).find(m => m.label === diffLabel);
+
+    return myMeta ? myMeta.rptRowClass : '';
 }
 
 /**
@@ -223,19 +213,10 @@ ${diff2htmlCss}
 function rpt_buildHtml(info, headers, rows, labels, css) {
 
     // ---- Légende : n'afficher que les types réellement présents dans les données
-    const myLegendDefs = [
-        { cls: 'rpt-row-newart',  label: DIFF_LABEL[DIFF_NEWARTIFACT]          },
-        { cls: 'rpt-row-delart',  label: DIFF_LABEL[DIFF_DELARTIFACT]           },
-        { cls: 'rpt-row-content', label: DIFF_LABEL[DIFF_CONTENTCHANGED]        },
-        { cls: 'rpt-row-changed', label: DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]   },
-        { cls: 'rpt-row-changed', label: DIFF_LABEL[DIFF_CUSTATTRCHANGED]       },
-        { cls: 'rpt-row-changed', label: DIFF_LABEL[DIFF_TAGCHANGED]            },
-        { cls: 'rpt-row-image',   label: DIFF_LABEL[DIFF_IMAGECHANGED]          },
-        { cls: 'rpt-row-image',   label: DIFF_LABEL[DIFF_IMAGENEW]              },
-        { cls: 'rpt-row-image',   label: DIFF_LABEL[DIFF_IMAGEDEL]              },
-        { cls: 'rpt-row-delart',  label: DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]     },
-        { cls: 'rpt-row-delart',  label: DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]     }
-    ];
+    // ---- Source unique de la correspondance type d'ecart / couleur : ClassDiffResult.META
+    const myLegendDefs = Object.values(ClassDiffResult.META).map(function(m) {
+        return { cls: m.rptRowClass, label: m.label };
+    });
 
     const myActiveSet  = new Set(labels);
     const myLegendHtml = myLegendDefs

@@ -951,6 +951,11 @@ function gui_DisplayDiff() {
       // ---- "dataTables" ... c'est trop fort ... voir https://datatables.net/
       // ---- "dataTables" permet de creer des tables avec un tas de sous-fonctions (tri, flitres ...)
 
+      // ---- Table de correspondance "Diff Label" -> metadonnees de presentation (source unique : ClassDiffResult.META)
+
+      const myMetaByLabel = {};
+      Object.values(ClassDiffResult.META).forEach(m => { myMetaByLabel[m.label] = m; });
+
       g_DiffTable.dataTable({
          destroy: true,
          layout: {
@@ -980,19 +985,7 @@ function gui_DisplayDiff() {
                searchPanes: { show: true },
                render: function (data, type) {             // ---- Badge coloré selon le type de différence
                   if (type !== 'display') return data;
-                  const BADGE = {};
-                  BADGE[DIFF_LABEL[DIFF_NEWARTIFACT]] = 'bg-success';
-                  BADGE[DIFF_LABEL[DIFF_DELARTIFACT]] = 'bg-danger';
-                  BADGE[DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]] = 'bg-warning text-dark';
-                  BADGE[DIFF_LABEL[DIFF_CUSTATTRCHANGED]] = 'bg-warning text-dark';
-                  BADGE[DIFF_LABEL[DIFF_CONTENTCHANGED]] = 'bg-primary';
-                  BADGE[DIFF_LABEL[DIFF_IMAGECHANGED]] = 'bg-info text-dark';
-                  BADGE[DIFF_LABEL[DIFF_IMAGENEW]] = 'bg-info text-dark';
-                  BADGE[DIFF_LABEL[DIFF_IMAGEDEL]] = 'bg-secondary';
-                  BADGE[DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]] = 'bg-danger';
-                  BADGE[DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]] = 'bg-danger';
-                  BADGE[DIFF_LABEL[DIFF_TAGCHANGED]] = 'bg-warning text-dark';
-                  let cls = BADGE[data] || 'bg-secondary';
+                  let cls = (myMetaByLabel[data] || {}).badgeClass || 'bg-secondary';
                   return '<span class="badge ' + cls + ' text-wrap">' + data + '</span>';
                }
             }
@@ -1003,19 +996,7 @@ function gui_DisplayDiff() {
             });
          },
          rowCallback: function (row, data) {               // ---- Colorier les lignes selon le type de différence
-            const ROW_CLASS = {};
-            ROW_CLASS[DIFF_LABEL[DIFF_NEWARTIFACT]] = 'table-success';
-            ROW_CLASS[DIFF_LABEL[DIFF_DELARTIFACT]] = 'table-danger';
-            ROW_CLASS[DIFF_LABEL[DIFF_CONTENTCHANGED]] = 'table-primary';
-            ROW_CLASS[DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]] = 'table-warning';
-            ROW_CLASS[DIFF_LABEL[DIFF_CUSTATTRCHANGED]] = 'table-warning';
-            ROW_CLASS[DIFF_LABEL[DIFF_TAGCHANGED]] = 'table-warning';
-            ROW_CLASS[DIFF_LABEL[DIFF_IMAGECHANGED]] = 'table-info';
-            ROW_CLASS[DIFF_LABEL[DIFF_IMAGENEW]] = 'table-info';
-            ROW_CLASS[DIFF_LABEL[DIFF_IMAGEDEL]] = 'table-secondary';
-            ROW_CLASS[DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW]] = 'table-danger';
-            ROW_CLASS[DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD]] = 'table-danger';
-            let cls = ROW_CLASS[data[RPT_COL_DIFFLABEL]];
+            let cls = (myMetaByLabel[data[RPT_COL_DIFFLABEL]] || {}).dtRowClass;
             if (cls) $(row).addClass(cls);
          }
       });
@@ -1059,45 +1040,15 @@ function fmt_diffreport(diffObjList) {
    myHtmlCode += '</tr></thead><tbody style="font-size: 12px;">';
 
    for (let myDiffObj of diffObjList) {
-      myHtmlCode += '<tr>' + gui_genCell([myDiffObj.id, myDiffObj.arttype, myDiffObj.section, myDiffObj.difflabel]);
+      const myMeta = ClassDiffResult.META[myDiffObj.diffcode];
 
-      switch (myDiffObj.diffcode) {
-         case DIFF_ARTIFACTTYPECHANGED:
-            myHtmlCode += gui_genCell(["", myDiffObj.oldvalue, "", ""]);
-            break;
-
-         case DIFF_CUSTATTRCHANGED:
-            myHtmlCode += gui_genCell([myDiffObj.attrname, myDiffObj.oldvalue, myDiffObj.newvalue, ""]);
-            break;
-
-         case DIFF_CONTENTCHANGED:
-            myHtmlCode += gui_genCell([myDiffObj.attrname, "", "", myDiffObj.content]);
-            break;
-
-         case DIFF_TAGCHANGED:
-            myHtmlCode += gui_genCell([myDiffObj.attrname, myDiffObj.oldvalue, myDiffObj.newvalue, ""]);
-            break;
-
-         case DIFF_NEWARTIFACT:
-         case DIFF_DELARTIFACT:
-            myHtmlCode += gui_genCell([myDiffObj.attrname, "", "", myDiffObj.content]);
-            break;
-         case DIFF_IMAGECHANGED:
-         case DIFF_IMAGENOTFOUND_NEW:
-         case DIFF_IMAGENOTFOUND_OLD:
-         case DIFF_IMAGENEW:
-         case DIFF_IMAGEDEL:
-            myHtmlCode += gui_genCell(["", "", "", ""]);
-            break;
-
-         default:
-            console.log("### ERROR : Diff code '" + myDiffObj.diffcode + "' is unknown !");
-
-            myHtmlCode += gui_genCell(["", "", "", ""]);
+      if (myMeta === undefined) {
+         console.log("### ERROR : Diff code '" + myDiffObj.diffcode + "' is unknown !");
       }
 
+      myHtmlCode += '<tr>' + gui_genCell([myDiffObj.id, myDiffObj.arttype, myDiffObj.section, myDiffObj.difflabel]);
+      myHtmlCode += gui_genCell(myMeta !== undefined ? myMeta.cells(myDiffObj) : ["", "", "", ""]);
       myHtmlCode += gui_genCell([myDiffObj.bookorder]);
-
       myHtmlCode += '</tr>';
    }
 

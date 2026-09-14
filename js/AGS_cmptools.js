@@ -51,147 +51,78 @@ const CST_MOD_TEST = "module_test";
 class ClassDiffResult {       // ---- Resultat de comparaison
    static SYS_ATTR_CONTENT = "Primary Text";
 
-   constructor() {
-      this.id = ""                    // ---- Identifiant de l'artefect en ecart
-      this.arttype = ""               // ---- Type d'artefact
-      this.section = ""               // ---- Localisation de l'artefact dans le module (section)
-      this.bookorder = 0              // ---- Position de l'artefact dans le module (utilise pour le tri du rapport)
-      this.diffcode = 0               // ---- Code du type d'ecart
-      this.difflabel = ""             // ---- Label du type d'ecart
-      this.attrname = undefined       // ---- Nom attribut modifie (optionnel)
-      this.newvalue = undefined       // ---- Nouvelle valeur (optionnel)
-      this.oldvalue = undefined       // ---- Ancienne valeur (optionnel)
-      this.content = undefined        // ---- Difference du Primary Text (represente sous forme d'une image)
-      this.canvas = undefined         // ---- Representation graphique de "content"
-   }
+   // ---- Metadonnees par type d'ecart : label, presentation (badge/couleur, DataTable, export) et champs a afficher.
+   // ---- Point d'entree unique pour l'affichage ("Display Results") et les exports ("Standard Report", "Compact Export") :
+   // ---- toute evolution de la presentation d'un type d'ecart (existant ou nouveau) se fait ici, et seulement ici.
 
-   // ---- New artifact in the module
+   static META = {
+      [DIFF_NEWARTIFACT]: {
+         label: DIFF_LABEL[DIFF_NEWARTIFACT], badgeClass: 'bg-success', dtRowClass: 'table-success', rptRowClass: 'rpt-row-newart',
+         cells: (d) => [d.attrname, "", "", d.content]
+      },
+      [DIFF_DELARTIFACT]: {
+         label: DIFF_LABEL[DIFF_DELARTIFACT], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
+         cells: (d) => [d.attrname, "", "", d.content]
+      },
+      [DIFF_ARTIFACTTYPECHANGED]: {
+         label: DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED], badgeClass: 'bg-warning text-dark', dtRowClass: 'table-warning', rptRowClass: 'rpt-row-changed',
+         cells: (d) => ["", d.oldvalue, "", ""]
+      },
+      [DIFF_CUSTATTRCHANGED]: {
+         label: DIFF_LABEL[DIFF_CUSTATTRCHANGED], badgeClass: 'bg-warning text-dark', dtRowClass: 'table-warning', rptRowClass: 'rpt-row-changed',
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+      },
+      [DIFF_CONTENTCHANGED]: {
+         label: DIFF_LABEL[DIFF_CONTENTCHANGED], badgeClass: 'bg-primary', dtRowClass: 'table-primary', rptRowClass: 'rpt-row-content',
+         cells: (d) => [d.attrname, "", "", d.content]
+      },
+      [DIFF_IMAGECHANGED]: {
+         label: DIFF_LABEL[DIFF_IMAGECHANGED], badgeClass: 'bg-info text-dark', dtRowClass: 'table-info', rptRowClass: 'rpt-row-image',
+         cells: () => ["", "", "", ""]
+      },
+      [DIFF_IMAGENEW]: {
+         label: DIFF_LABEL[DIFF_IMAGENEW], badgeClass: 'bg-info text-dark', dtRowClass: 'table-info', rptRowClass: 'rpt-row-image',
+         cells: () => ["", "", "", ""]
+      },
+      [DIFF_IMAGEDEL]: {
+         label: DIFF_LABEL[DIFF_IMAGEDEL], badgeClass: 'bg-secondary', dtRowClass: 'table-secondary', rptRowClass: 'rpt-row-image',
+         cells: () => ["", "", "", ""]
+      },
+      [DIFF_IMAGENOTFOUND_NEW]: {
+         label: DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
+         cells: () => ["", "", "", ""]
+      },
+      [DIFF_IMAGENOTFOUND_OLD]: {
+         label: DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
+         cells: () => ["", "", "", ""]
+      },
+      [DIFF_TAGCHANGED]: {
+         label: DIFF_LABEL[DIFF_TAGCHANGED], badgeClass: 'bg-warning text-dark', dtRowClass: 'table-warning', rptRowClass: 'rpt-row-changed',
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+      }
+   };
 
-   set_diff_newartifact(id, type, section, bookorder, content) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_NEWARTIFACT;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname = ClassDiffResult.SYS_ATTR_CONTENT;
-      this.content = content;
-   }
+   /**
+    * @param {Object} context - Identification/localisation de l'artefact en ecart : {id, type, section, bookorder}
+    *                            (cf ERM_Artefact.getDiffContext())
+    * @param {Number} diffcode - Code du type d'ecart (DIFF_NEWARTIFACT, DIFF_CUSTATTRCHANGED, ...)
+    * @param {Object} payload - Champs specifiques au type d'ecart (optionnel) : {attrname, oldvalue, newvalue, content}
+    */
 
-   // ---- Artifact deleted from module
+   constructor(context, diffcode, payload = {}) {
+      this.id = context.id;
+      this.arttype = context.type;
+      this.section = context.section;
+      this.bookorder = context.bookorder;
 
-   set_diff_delartifact(id, type, section, bookorder, content) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_DELARTIFACT;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname = ClassDiffResult.SYS_ATTR_CONTENT;
-      this.content = content;
-   }
+      this.diffcode = diffcode;
+      this.difflabel = DIFF_LABEL[diffcode];
 
-   // ---- Artifact type has changed
-
-   set_diff_artifacttypechanged(id, type, section, bookorder, oldvalue) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_ARTIFACTTYPECHANGED;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.oldvalue = oldvalue;
-   }
-
-   // ---- Artifact custom attribute has changed
-
-   set_diff_attributevaluechanged(id, type, section, bookorder, attrname, oldvalue, newvalue) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_CUSTATTRCHANGED;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname = attrname;
-      this.oldvalue = oldvalue;
-      this.newvalue = newvalue;
-   }
-
-   // ---- Artifact tag has changed
-
-   set_diff_tagchanged(id, type, section, bookorder, oldvalue, newvalue) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_TAGCHANGED;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname = "Tags";
-      this.oldvalue = oldvalue;
-      this.newvalue = newvalue;
-   }
-
-   // ---- Artifact content has changed
-
-   set_diff_contentchanged(id, type, section, bookorder, content) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_CONTENTCHANGED;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname = ClassDiffResult.SYS_ATTR_CONTENT;
-      this.content = content;
-   }
-
-   // ---- Embedded image has changed
-
-   set_diff_imagechanged(id, type, section, bookorder, diffcode) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-
-      switch (diffcode) {
-         case DIFF_IMAGECHANGED:
-            this.diffcode = DIFF_IMAGECHANGED;
-            this.difflabel = DIFF_LABEL[this.diffcode];
-            break;
-         case DIFF_IMAGENOTFOUND_NEW:
-            this.diffcode = DIFF_IMAGENOTFOUND_NEW;
-            this.difflabel = DIFF_LABEL[this.diffcode];
-            break;
-         case DIFF_IMAGENOTFOUND_OLD:
-            this.diffcode = DIFF_IMAGENOTFOUND_OLD;
-            this.difflabel = DIFF_LABEL[this.diffcode];
-            break;
-         default:
-            this.diffcode = DIFF_NODIFF;
-      };
-   }
-
-   // ---- New embedded image
-
-   set_diff_imagenew(id, type, section, bookorder, attrname) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_IMAGENEW;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname = attrname;
-   }
-
-   // ---- Image deleted
-
-   set_diff_imagedel(id, type, section, bookorder, attrname) {
-      this.id = id;
-      this.arttype = type;
-      this.section = section;
-      this.bookorder = bookorder;
-      this.diffcode = DIFF_IMAGEDEL;
-      this.difflabel = DIFF_LABEL[this.diffcode];
-      this.attrname = attrname;
+      this.attrname = payload.attrname;
+      this.oldvalue = payload.oldvalue;
+      this.newvalue = payload.newvalue;
+      this.content = payload.content;
+      this.canvas = undefined;        // ---- Representation graphique de "content"
    }
 }
 
@@ -210,18 +141,13 @@ function cmp_DiffModArtefact(modTest, modRef) {
    let myDiffList = [];
 
    for (let myRefArtefact of modRef.getArtifactList()) {
-      let myDiffInfo = new ClassDiffResult();
-
       if (modTest.get_artefactById(myRefArtefact.getId()) === undefined) {
          // ---- On detecte l'artefact en ecart (existe dans le module de reference, mais pas dans le module a tester)
 
-         if (modRef.getStatus() === IS_NEW) {
-            myDiffInfo.set_diff_newartifact(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.getSection(), myRefArtefact.getBookorder(), myRefArtefact.getContent());
-         } else {
-            myDiffInfo.set_diff_delartifact(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.getSection(), myRefArtefact.getBookorder(), myRefArtefact.getContent());
-         }
+         const myDiffcode = (modRef.getStatus() === IS_NEW) ? DIFF_NEWARTIFACT : DIFF_DELARTIFACT;
 
-         myDiffList.push(myDiffInfo);
+         myDiffList.push(new ClassDiffResult(myRefArtefact.getDiffContext(), myDiffcode,
+            { attrname: ClassDiffResult.SYS_ATTR_CONTENT, content: myRefArtefact.getContent() }));
       }
    }
 
@@ -244,16 +170,13 @@ function cmp_DiffAttr(artTest, artRef) {
    // ----     - attribut rempli dans la reference et le test (donc, faut comparer les valeurs)
 
    for (let myAttrRef of artRef.getCustattrList()) {
-      let myAttrTest = new ClassAttribute();
-      let myDiffInfo = new ClassDiffResult();
-
-      myAttrTest = artTest.get_attributeByName(myAttrRef.getName());
+      let myAttrTest = artTest.get_attributeByName(myAttrRef.getName());
 
       if (myAttrTest === undefined) {
          // ---- L'attribut existe seulement dans la reference
 
-         myDiffInfo.set_diff_attributevaluechanged(artRef.getId(), artRef.getType(), artRef.getSection(), artRef.getBookorder(), myAttrRef.getName(), "", myAttrRef.getValue());
-         myDiffList.push(myDiffInfo);
+         myDiffList.push(new ClassDiffResult(artRef.getDiffContext(), DIFF_CUSTATTRCHANGED,
+            { attrname: myAttrRef.getName(), oldvalue: "", newvalue: myAttrRef.getValue() }));
       } else {
          // ---- L'attribut existe dans la reference et le test, il faut donc evaluer l'ecart de valeur
          // ---- Si nombre de valeur est different, alors ecart, sinon faut comparer chaque valeur
@@ -261,8 +184,8 @@ function cmp_DiffAttr(artTest, artRef) {
          let myValueDiff = myAttrRef.getValue().filter(x => myAttrTest.getValue().indexOf(x) === -1);
 
          if ((myAttrTest.getValue().length != myAttrRef.getValue().length) || (myValueDiff.length > 0)) {
-            myDiffInfo.set_diff_attributevaluechanged(artRef.getId(), artRef.getType(), artRef.getSection(), artRef.getBookorder(), myAttrRef.getName(), myAttrTest.getValue(), myAttrRef.getValue());
-            myDiffList.push(myDiffInfo);
+            myDiffList.push(new ClassDiffResult(artRef.getDiffContext(), DIFF_CUSTATTRCHANGED,
+               { attrname: myAttrRef.getName(), oldvalue: myAttrTest.getValue(), newvalue: myAttrRef.getValue() }));
          }
       }
    }
@@ -272,14 +195,13 @@ function cmp_DiffAttr(artTest, artRef) {
    // ----     - attribut rempli dans le test, mais pas dans la reference
 
    for (let myAttrTest of artTest.getCustattrList()) {
-      let myDiffInfo = new ClassDiffResult();
       let myAttrRef = artRef.get_attributeByName(myAttrTest.getName());
 
       if (myAttrRef === undefined) {
          // ---- L'attribut existe seulement dans le test
 
-         myDiffInfo.set_diff_attributevaluechanged(artTest.getId(), artTest.getType(), artTest.getSection(), artTest.getBookorder(), myAttrTest.getName(), myAttrTest.getValue(), "");
-         myDiffList.push(myDiffInfo);
+         myDiffList.push(new ClassDiffResult(artTest.getDiffContext(), DIFF_CUSTATTRCHANGED,
+            { attrname: myAttrTest.getName(), oldvalue: myAttrTest.getValue(), newvalue: "" }));
       }
    }
 
@@ -294,7 +216,6 @@ function cmp_DiffAttr(artTest, artRef) {
  */
 
 function cmp_DiffTag(artTest, artRef) {
-   let myDiffInfo = new ClassDiffResult();
    let myDiffList = [];
    let myTagRefList = artRef.concat_tag();;
    let myTagTestList = artTest.concat_tag();
@@ -323,8 +244,8 @@ function cmp_DiffTag(artTest, artRef) {
    // ---- Tag list is modified !
 
    if (myTagModified) {
-      myDiffInfo.set_diff_tagchanged(artTest.getId(), artTest.getType(), artTest.getSection(), artTest.getBookorder(), myTagTestList, myTagRefList);
-      myDiffList.push(myDiffInfo);
+      myDiffList.push(new ClassDiffResult(artTest.getDiffContext(), DIFF_TAGCHANGED,
+         { attrname: "Tags", oldvalue: myTagTestList, newvalue: myTagRefList }));
    }
 
    return myDiffList;
@@ -341,14 +262,13 @@ function cmp_DiffTypeArtefact(modTest, modRef) {
    let myDiffList = [];
 
    for (let myRefArtefact of modRef.getArtifactList()) {
-      let myDiffInfo = new ClassDiffResult();
       let myTestArtefact = modTest.get_artefactById(myRefArtefact.getId());
 
       // ---- Pour les artefacts communs, on compare le type
 
       if (myTestArtefact !== undefined && myRefArtefact.getType() !== myTestArtefact.getType()) {
-         myDiffInfo.set_diff_artifacttypechanged(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.getSection(), myRefArtefact.getBookorder(), myTestArtefact.getType());
-         myDiffList.push(myDiffInfo);
+         myDiffList.push(new ClassDiffResult(myRefArtefact.getDiffContext(), DIFF_ARTIFACTTYPECHANGED,
+            { oldvalue: myTestArtefact.getType() }));
       }
    }
 
@@ -458,10 +378,10 @@ function cmp_DiffImgArtefact(diffImgList) {
 
       myImgInfo = {
          'imgIdx': i,                          // ---- Indice de l'image dans la liste des image a tester
-         'artId': diffImgList[i].artId,       // ---- Identifiant de l'artefact dans laquelle se trouve l'image
-         'artType': diffImgList[i].artType,     // ---- Type de l'artefact dans laquelle se trouve l'image
-         'artSection': diffImgList[i].artSection, // ---- Section de l'artefact dans laquelle se trouve l'image
-         'artBookorder': diffImgList[i].artBookorder, // ---- Position de l'artefact dans laquelle se trouve l'image
+         'id': diffImgList[i].id,              // ---- Identifiant de l'artefact dans laquelle se trouve l'image
+         'type': diffImgList[i].type,          // ---- Type de l'artefact dans laquelle se trouve l'image
+         'section': diffImgList[i].section,    // ---- Section de l'artefact dans laquelle se trouve l'image
+         'bookorder': diffImgList[i].bookorder, // ---- Position de l'artefact dans laquelle se trouve l'image
          'imgUri': diffImgList[i].refImgUri,   // ---- URI de l'image de reference
          'imgSrc': CST_MOD_REF                 // ---- Indicateur "Image de Reference"
       };
@@ -479,10 +399,10 @@ function cmp_DiffImgArtefact(diffImgList) {
 
       myImgInfo = {
          'imgIdx': i,                          // ---- Indice de l'image dans la liste des image a tester
-         'artId': diffImgList[i].artId,       // ---- Identifiant de l'artefact dans laquelle se trouve l'image
-         'artType': diffImgList[i].artType,     // ---- Type de l'artefact dans laquelle se trouve l'image
-         'artSection': diffImgList[i].artSection, // ---- Section de l'artefact dans laquelle se trouve l'image
-         'artBookorder': diffImgList[i].artBookorder, // ---- Position de l'artefact dans laquelle se trouve l'image
+         'id': diffImgList[i].id,              // ---- Identifiant de l'artefact dans laquelle se trouve l'image
+         'type': diffImgList[i].type,          // ---- Type de l'artefact dans laquelle se trouve l'image
+         'section': diffImgList[i].section,    // ---- Section de l'artefact dans laquelle se trouve l'image
+         'bookorder': diffImgList[i].bookorder, // ---- Position de l'artefact dans laquelle se trouve l'image
          'imgUri': diffImgList[i].testImgUri,  // ---- URI de l'image de test
          'imgSrc': CST_MOD_TEST                // ---- Indicateur "Image de Test"
       };
@@ -557,25 +477,17 @@ function cmpImgEmbedded(imgInfo, imgDate) {
    if (g_DiffImgList[imgInfo.imgIdx].refImgDate !== undefined && g_DiffImgList[imgInfo.imgIdx].testImgDate !== undefined) {
       if (g_DiffImgList[imgInfo.imgIdx].refImgDate !== CST_NOT_FOUND && g_DiffImgList[imgInfo.imgIdx].testImgDate !== CST_NOT_FOUND &&
          g_DiffImgList[imgInfo.imgIdx].refImgDate !== g_DiffImgList[imgInfo.imgIdx].testImgDate) {
-         let myDiffInfo = new ClassDiffResult();
 
          // ---- Image modifiee
 
-         myDiffInfo.set_diff_imagechanged(imgInfo.artId, imgInfo.artType, imgInfo.artSection, imgInfo.artBookorder, DIFF_IMAGECHANGED);
-         g_DiffList.push(myDiffInfo);
+         g_DiffList.push(new ClassDiffResult(imgInfo, DIFF_IMAGECHANGED));
       } else {
          if (g_DiffImgList[imgInfo.imgIdx].refImgDate === CST_NOT_FOUND) { // ----Image de l'artefact de reference a disparu
-            let myDiffInfo = new ClassDiffResult();
-
-            myDiffInfo.set_diff_imagechanged(imgInfo.artId, imgInfo.artType, imgInfo.artSection, imgInfo.artBookorder, DIFF_IMAGENOTFOUND_NEW);
-            g_DiffList.push(myDiffInfo);
+            g_DiffList.push(new ClassDiffResult(imgInfo, DIFF_IMAGENOTFOUND_NEW));
          }
 
          if (g_DiffImgList[imgInfo.imgIdx].testImgDate === CST_NOT_FOUND) { // ----Image de l'artefact de test a disparu
-            let myDiffInfo = new ClassDiffResult();
-
-            myDiffInfo.set_diff_imagechanged(imgInfo.artId, imgInfo.artType, imgInfo.artSection, imgInfo.artBookorder, DIFF_IMAGENOTFOUND_OLD);
-            g_DiffList.push(myDiffInfo);
+            g_DiffList.push(new ClassDiffResult(imgInfo, DIFF_IMAGENOTFOUND_OLD));
          }
       }
 
@@ -616,10 +528,8 @@ function cmp_DiffContentArtefact(modTest, modRef) {
                myDiffContent = compare_RichTextContent(myRefArtefact.getContent(true), myTestArtefact.getContent(true));
 
                if (myDiffContent.isEqual === false && myDiffContent.diffHtml !== null) {
-                  let myDiffInfo = new ClassDiffResult();
-
-                  myDiffInfo.set_diff_contentchanged(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.getSection(), myRefArtefact.getBookorder(), myDiffContent.diffHtml);
-                  myDiffList.push(myDiffInfo);
+                  myDiffList.push(new ClassDiffResult(myRefArtefact.getDiffContext(), DIFF_CONTENTCHANGED,
+                     { attrname: ClassDiffResult.SYS_ATTR_CONTENT, content: myDiffContent.diffHtml }));
                }
             }
          }
@@ -657,13 +567,14 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
          myRefImgList = myRefArtefact.get_imageList();
          myTestImgList = myTestArtefact.get_imageList();
 
+         const myArtContext = myRefArtefact.getDiffContext();
+
          for (let myId in myRefImgList) {
-            let myDiffInfo = new ClassDiffResult();
             let myImgDiff = {
-               'artId': myRefArtefact.getId(),
-               'artType': myRefArtefact.getType(),
-               'artSection': myRefArtefact.getSection(),
-               'artBookorder': myRefArtefact.getBookorder(),
+               'id': myArtContext.id,
+               'type': myArtContext.type,
+               'section': myArtContext.section,
+               'bookorder': myArtContext.bookorder,
                'refImgUri': "",
                'refImgDate': undefined,
                'testImgUri': "",
@@ -680,8 +591,8 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
 
                myFctReturnStr.imgList.push(myImgDiff);
             } else { // ---- Nouvelle image dans l'artefact de reference
-               myDiffInfo.set_diff_imagenew(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.getSection(), myRefArtefact.getBookorder(), ClassDiffResult.SYS_ATTR_CONTENT);
-               myFctReturnStr.diffList.push(myDiffInfo);
+               myFctReturnStr.diffList.push(new ClassDiffResult(myArtContext, DIFF_IMAGENEW,
+                  { attrname: ClassDiffResult.SYS_ATTR_CONTENT }));
 
                mgt_Console("New image in '" + myRefArtefact.getId() + "'", CONSOLE_INFO);
             }
@@ -690,11 +601,9 @@ function cmp_DiffEmbeddeImg(modTest, modRef) {
          // ---- Images supprimees de l'artefact de referenceBen
 
          for (let myId in myTestImgList) {
-            let myDiffInfo = new ClassDiffResult();
-
             if (myRefImgList[myId] === undefined) {
-               myDiffInfo.set_diff_imagedel(myRefArtefact.getId(), myRefArtefact.getType(), myRefArtefact.getSection(), myRefArtefact.getBookorder(), ClassDiffResult.SYS_ATTR_CONTENT);
-               myFctReturnStr.diffList.push(myDiffInfo);
+               myFctReturnStr.diffList.push(new ClassDiffResult(myArtContext, DIFF_IMAGEDEL,
+                  { attrname: ClassDiffResult.SYS_ATTR_CONTENT }));
 
                mgt_Console("Image deleted from '" + myRefArtefact.getId() + "'", CONSOLE_INFO);
             }
