@@ -78,6 +78,64 @@
 		Images not found in old module ! : <b>{{nb_imgold}}</b><br>
 	</script>
 
+	<!-- Export report templates ("Standard Report" / "Compact Export", js/export_Report.js) -->
+	<script id="templ-rpt-shell" type="text/x-handlebars-template">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNG Comparison Report — {{moduleName}}</title>
+<style>{{{css}}}</style>
+</head>
+<body>
+
+<div class="rpt-title">DNG Module Comparison Report</div>
+
+<div class="rpt-meta"><table>
+  <tr><th>Project</th><td>{{project}}</td></tr>
+  <tr><th>New Module</th><td>{{newModule}}</td></tr>
+  <tr><th>Old Module</th><td>{{oldModule}}</td></tr>
+  <tr><th>Export Date</th><td>{{date}}</td></tr>
+  <tr><th>Number of Changes</th><td><b>{{count}}</b></td></tr>
+</table></div>
+
+<div class="rpt-legend">{{#each legendDefs}}<span class="rpt-legend-item"><span class="rpt-legend-swatch {{cls}}"></span>{{label}}</span>{{/each}}</div>
+
+<div class="rpt-filters">
+  <label>Filter by type :</label>
+  <select id="rpt-type-filter" onchange="rptFilter()">
+    <option value="">— All types —</option>
+    {{#each labels}}<option value="{{this}}">{{this}}</option>{{/each}}
+  </select>
+  <label>Search :</label>
+  <input type="text" id="rpt-text-filter" oninput="rptFilter()" placeholder="Search in all columns…">
+  <span id="rpt-count">{{count}} row(s)</span>
+</div>
+
+<div class="rpt-table-wrap">
+  <table class="rpt-table">
+    <colgroup>{{{colgroup}}}</colgroup>
+    <thead><tr>{{{headerThs}}}</tr></thead>
+    <tbody id="rpt-tbody">{{{rowsHtml}}}</tbody>
+  </table>
+</div>
+
+{{{scriptBlock}}}
+</body>
+</html>
+	</script>
+
+	<!-- Une ligne du rapport "Standard" (une ligne = un ecart) -->
+	<script id="templ-rpt-row-standard" type="text/x-handlebars-template">
+<tr class="{{rowClass}}" data-difflabel="{{difflabel}}"><td>{{id}}</td><td>{{type}}</td><td>{{section}}</td><td>{{difflabel}}</td><td>{{attr}}</td><td>{{oldval}}</td><td>{{newval}}</td><td class="rpt-diffcontent">{{{diffcontent}}}</td></tr>
+	</script>
+
+	<!-- Une ligne du rapport "Compact" (une ligne = un artefact, colonnes variables selon les ecarts) -->
+	<script id="templ-rpt-row-compact" type="text/x-handlebars-template">
+<tr class="{{rowClass}}" data-difflabel="{{primLabel}}"><td>{{id}}</td><td>{{type}}</td><td>{{section}}</td><td>{{{difflabelHtml}}}</td><td class="rpt-diffcontent">{{{diffcontent}}}</td>{{#if typeChange}}<td>{{newtype}}</td>{{/if}}{{#each custattr}}<td>{{old}}</td><td>{{new}}</td>{{/each}}</tr>
+	</script>
+
 	<title>DNG Module Compare</title>
 </head>
 

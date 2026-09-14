@@ -31,6 +31,11 @@ const RPT_DIFF2HTML_CSS_FALLBACK = [
     'color:#586069;border-bottom:1px solid #e0e0e0}'
 ].join('');
 
+// ---- Gabarits Handlebars (voir main.html, section "Export report templates")
+const TEMPL_RPT_SHELL        = "templ-rpt-shell";
+const TEMPL_RPT_ROW_STANDARD = "templ-rpt-row-standard";
+const TEMPL_RPT_ROW_COMPACT  = "templ-rpt-row-compact";
+
 /* ------------------------------------------------------------------------------
    ---- Classes
    --------------------------------------------------------------------------- */
@@ -222,7 +227,7 @@ ${diff2htmlCss}
 }
 
 /**
- * Assembler le document HTML complet et autonome du rapport
+ * Assembler le document HTML complet et autonome du rapport (gabarit Handlebars "templ-rpt-shell")
  * @param {Object} info    - Métadonnées : project, newModule, oldModule, date, count, moduleName
  * @param {Object} headers - { colgroup: HTML des <col>, ths: HTML des <th> }
  * @param {String} rows    - HTML des lignes de données (<tr>…)
@@ -240,27 +245,14 @@ function rpt_buildHtml(info, headers, rows, labels, css, isCompact) {
     // ---- la legende se restreint donc a ces 3 entrees pour rester coherente avec les lignes.
     const myCompactLegendCodes = [DIFF_NEWARTIFACT, DIFF_DELARTIFACT, DIFF_ARTIFACTTYPECHANGED];
     const myLegendSource = isCompact ? myCompactLegendCodes.map(dc => ClassDiffResult.META[dc]) : Object.values(ClassDiffResult.META);
-    const myLegendDefs = myLegendSource.map(function(m) {
-        return { cls: m.rptRowClass, label: m.label };
-    });
-
-    const myActiveSet  = new Set(labels);
-    const myLegendHtml = myLegendDefs
-        .filter(function(d) { return myActiveSet.has(d.label); })
-        .map(function(d) {
-            return '<span class="rpt-legend-item">'
-                 + '<span class="rpt-legend-swatch ' + d.cls + '"></span>'
-                 + rpt_escHtml(d.label)
-                 + '</span>';
-        }).join('');
-
-    // ---- Options du menu déroulant de filtrage par type
-    const myTypeOptions = labels
-        .map(function(l) {
-            return '<option value="' + rpt_escHtml(l) + '">' + rpt_escHtml(l) + '</option>';
-        }).join('');
+    const myActiveSet = new Set(labels);
+    const myLegendDefs = myLegendSource
+        .map(function(m) { return { cls: m.rptRowClass, label: m.label }; })
+        .filter(function(d) { return myActiveSet.has(d.label); });
 
     // ---- Script de filtrage autonome intégré au rapport (pas de dépendance externe)
+    // ---- Construit ici, et non dans le gabarit : un <script>...</script> litteral dans un
+    // ---- gabarit Handlebars stocke en HTML refermerait prematurement le <script> qui le contient
     const myFilterScript =
         'function rptFilter(){'
         + 'var t=document.getElementById("rpt-type-filter").value;'
@@ -274,52 +266,23 @@ function rpt_buildHtml(info, headers, rows, labels, css, isCompact) {
         + '});'
         + 'document.getElementById("rpt-count").textContent=n+" row(s) displayed";'
         + '}';
+    const myScriptBlock = '<script>' + myFilterScript + '<\/script>';
 
-    return '<!DOCTYPE html>\n'
-         + '<html lang="en">\n'
-         + '<head>\n'
-         + '<meta charset="UTF-8">\n'
-         + '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-         + '<title>DNG Comparison Report — ' + rpt_escHtml(info.moduleName) + '</title>\n'
-         + '<style>' + css + '</style>\n'
-         + '</head>\n'
-         + '<body>\n'
-
-         + '<div class="rpt-title">DNG Module Comparison Report</div>\n'
-
-         + '<div class="rpt-meta"><table>\n'
-         + '  <tr><th>Project</th><td>'            + rpt_escHtml(info.project)   + '</td></tr>\n'
-         + '  <tr><th>New Module</th><td>'          + rpt_escHtml(info.newModule) + '</td></tr>\n'
-         + '  <tr><th>Old Module</th><td>'          + rpt_escHtml(info.oldModule) + '</td></tr>\n'
-         + '  <tr><th>Export Date</th><td>'         + rpt_escHtml(info.date)      + '</td></tr>\n'
-         + '  <tr><th>Number of Changes</th><td><b>' + info.count + '</b></td></tr>\n'
-         + '</table></div>\n'
-
-         + '<div class="rpt-legend">' + myLegendHtml + '</div>\n'
-
-         + '<div class="rpt-filters">\n'
-         + '  <label>Filter by type :</label>\n'
-         + '  <select id="rpt-type-filter" onchange="rptFilter()">\n'
-         + '    <option value="">— All types —</option>\n'
-         + myTypeOptions
-         + '  </select>\n'
-         + '  <label>Search :</label>\n'
-         + '  <input type="text" id="rpt-text-filter" oninput="rptFilter()"'
-         + '   placeholder="Search in all columns…">\n'
-         + '  <span id="rpt-count">' + info.count + ' row(s)</span>\n'
-         + '</div>\n'
-
-         + '<div class="rpt-table-wrap">\n'
-         + '  <table class="rpt-table">\n'
-         + '    <colgroup>' + headers.colgroup + '</colgroup>\n'
-         + '    <thead><tr>' + headers.ths + '</tr></thead>\n'
-         + '    <tbody id="rpt-tbody">' + rows + '</tbody>\n'
-         + '  </table>\n'
-         + '</div>\n'
-
-         + '<script>' + myFilterScript + '<\/script>\n'
-         + '</body>\n'
-         + '</html>';
+    return gui_htmlfromtemplate(TEMPL_RPT_SHELL, {
+        moduleName:  info.moduleName,
+        project:     info.project,
+        newModule:   info.newModule,
+        oldModule:   info.oldModule,
+        date:        info.date,
+        count:       info.count,
+        legendDefs:  myLegendDefs,
+        labels:      labels,
+        colgroup:    headers.colgroup,
+        headerThs:   headers.ths,
+        rowsHtml:    rows,
+        css:         css,
+        scriptBlock: myScriptBlock
+    });
 }
 
 /**
@@ -441,37 +404,38 @@ async function export_report(isCompact) {
         }).join('');
         myHeaderThs = myLabels.map(function(t) { return '<th>' + rpt_escHtml(t) + '</th>'; }).join('');
 
-        // ---- Génération des lignes de données compactes
+        // ---- Génération des lignes de données compactes (gabarit Handlebars "templ-rpt-row-compact")
+
+        const myCompactRowTemplate = Handlebars.compile($("#" + TEMPL_RPT_ROW_COMPACT).html());
+
         for (let i = 0; i < myCompactTable.length; i++) {
             const myRow       = myCompactTable[i];
             const myPrimLabel = myRow.difflabel.split('\n')[0];
-            const myRowClass  = rpt_getCompactRowClass(myRow.difflabel);
             myLabelSet.add(myPrimLabel);
 
-            let myHtml = '<tr class="' + myRowClass + '" data-difflabel="' + rpt_escHtml(myPrimLabel) + '">';
-            myHtml += '<td>' + rpt_escHtml(myRow.id) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(myRow.type) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(myRow.section) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(myRow.difflabel).replace(/\n/g, '<br>') + '</td>';
-            // ---- Diff Content : HTML diff2html rendu directement (texte riche)
-            myHtml += '<td class="rpt-diffcontent">' + (myRow.diffcontent || '') + '</td>';
+            // ---- Aligner les cellules Ancien/Nouveau sur la liste (triee) des attributs rencontres
+            const myCustattrCells = myCustAttrChangeList.map(function(attrName) {
+                const myAttr = myRow.custattr.find(a => a.attrname === attrName);
+                return {
+                    old: myAttr ? rpt_stripHtml(myAttr.oldvalue) : '',
+                    new: myAttr ? rpt_stripHtml(myAttr.newvalue) : ''
+                };
+            });
 
-            if (myTypeChange) {
-                myHtml += '<td>' + rpt_escHtml(myRow.newtype) + '</td>';
-            }
-
-            for (let j = 0; j < myCustAttrChangeList.length; j++) {
-                const myAttr = myRow.custattr.find(a => a.attrname === myCustAttrChangeList[j]);
-                if (myAttr === undefined) {
-                    myHtml += '<td></td><td></td>';
-                } else {
-                    myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myAttr.oldvalue)) + '</td>';
-                    myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myAttr.newvalue)) + '</td>';
-                }
-            }
-
-            myHtml += '</tr>';
-            myRowsHtml += myHtml;
+            myRowsHtml += myCompactRowTemplate({
+                rowClass:      rpt_getCompactRowClass(myRow.difflabel),
+                primLabel:     myPrimLabel,
+                id:            myRow.id,
+                type:          myRow.type,
+                section:       myRow.section,
+                // ---- Le retour a la ligne entre labels cumules doit rester du HTML (<br>), donc echappement
+                // ---- manuel prealable puis insertion "raw" ({{{...}}}) dans le gabarit
+                difflabelHtml: rpt_escHtml(myRow.difflabel).replace(/\n/g, '<br>'),
+                diffcontent:   myRow.diffcontent || '', // ---- HTML diff2html deja construit, rendu tel quel
+                typeChange:    myTypeChange,
+                newtype:       myRow.newtype,
+                custattr:      myCustattrCells
+            });
         }
 
     } else {
@@ -487,24 +451,26 @@ async function export_report(isCompact) {
         myHeaderThs = '<th>ID</th><th>Type</th><th>Section</th><th>Diff Label</th>'
                     + '<th>Attribute</th><th>Old Value</th><th>New Value</th><th>Diff Content</th>';
 
+        // ---- Génération des lignes de données (gabarit Handlebars "templ-rpt-row-standard")
+
+        const myStandardRowTemplate = Handlebars.compile($("#" + TEMPL_RPT_ROW_STANDARD).html());
+
         for (let i = 0; i < myFilteredTable.length; i++) {
-            const myRow      = myFilteredTable[i];
+            const myRow       = myFilteredTable[i];
             const myDiffLabel = myRow[RPT_COL_DIFFLABEL];
-            const myRowClass  = rpt_getDiffRowClass(myDiffLabel);
             myLabelSet.add(myDiffLabel);
 
-            let myHtml = '<tr class="' + myRowClass + '" data-difflabel="' + rpt_escHtml(myDiffLabel) + '">';
-            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_ID]) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_TYPE]) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_SECTION]) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(myRow[RPT_COL_DIFFLABEL]) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_ATTR])) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_OLDVAL])) + '</td>';
-            myHtml += '<td>' + rpt_escHtml(rpt_stripHtml(myRow[RPT_COL_NEWVAL])) + '</td>';
-            // ---- Diff Content : HTML diff2html rendu directement (texte riche)
-            myHtml += '<td class="rpt-diffcontent">' + (myRow[RPT_COL_DIFFCONTENT] || '') + '</td>';
-            myHtml += '</tr>';
-            myRowsHtml += myHtml;
+            myRowsHtml += myStandardRowTemplate({
+                rowClass:    rpt_getDiffRowClass(myDiffLabel),
+                difflabel:   myDiffLabel,
+                id:          myRow[RPT_COL_ID],
+                type:        myRow[RPT_COL_TYPE],
+                section:     myRow[RPT_COL_SECTION],
+                attr:        rpt_stripHtml(myRow[RPT_COL_ATTR]),
+                oldval:      rpt_stripHtml(myRow[RPT_COL_OLDVAL]),
+                newval:      rpt_stripHtml(myRow[RPT_COL_NEWVAL]),
+                diffcontent: myRow[RPT_COL_DIFFCONTENT] || '' // ---- HTML diff2html deja construit, rendu tel quel
+            });
         }
     }
 
