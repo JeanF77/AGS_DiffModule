@@ -204,14 +204,42 @@
 						<div class="col-auto">
 							<div class="btn-group btn-group-sm">
 								<button type="button" class="btn btn-outline-primary dropdown-toggle"
-									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-									id="gui_oldconfigBtn">
+									data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true"
+									aria-expanded="false" id="gui_oldconfigBtn">
 									Select Configuration
 								</button>
 								<div class="dropdown-menu p-0" aria-labelledby="gui_oldconfigBtn">
 									<div class="px-2 pt-2 pb-1">
 										<input type="text" class="form-control form-control-sm dropdown-search"
 											placeholder="Filter...">
+									</div>
+									<div class="px-2 pb-2">
+										<div class="btn-group btn-group-sm w-100 dropdown-typefilter" role="group"
+											aria-label="Filter by configuration type">
+											<input type="radio" class="btn-check" name="oldconftype"
+												id="oldconftype-all" autocomplete="off" checked>
+											<label class="btn btn-outline-secondary" for="oldconftype-all"
+												title="All">All</label>
+
+											<input type="radio" class="btn-check" name="oldconftype"
+												id="oldconftype-stream" autocomplete="off" data-conftype="stream">
+											<label class="btn btn-outline-secondary" for="oldconftype-stream"
+												title="Stream"><img src="./resources/rm_stream_icon.png" alt="Stream"
+													height="14"></label>
+
+											<input type="radio" class="btn-check" name="oldconftype"
+												id="oldconftype-baseline" autocomplete="off" data-conftype="baseline">
+											<label class="btn btn-outline-secondary" for="oldconftype-baseline"
+												title="Baseline"><img src="./resources/rm_baseline_icon.png"
+													alt="Baseline" height="14"></label>
+
+											<input type="radio" class="btn-check" name="oldconftype"
+												id="oldconftype-changeset" autocomplete="off"
+												data-conftype="changeset">
+											<label class="btn btn-outline-secondary" for="oldconftype-changeset"
+												title="Changeset"><img src="./resources/rm_changeset_icon.png"
+													alt="Changeset" height="14"></label>
+										</div>
 									</div>
 									<div class="dropdown-divider m-0"></div>
 									<ul id="gui_oldconfigBtnContent"
@@ -285,14 +313,42 @@
 						<div class="col-auto">
 							<div class="btn-group btn-group-sm">
 								<button type="button" class="btn btn-outline-success dropdown-toggle"
-									data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-									id="gui_newconfigBtn">
+									data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-haspopup="true"
+									aria-expanded="false" id="gui_newconfigBtn">
 									Select Configuration
 								</button>
 								<div class="dropdown-menu p-0" aria-labelledby="gui_newconfigBtn">
 									<div class="px-2 pt-2 pb-1">
 										<input type="text" class="form-control form-control-sm dropdown-search"
 											placeholder="Filter...">
+									</div>
+									<div class="px-2 pb-2">
+										<div class="btn-group btn-group-sm w-100 dropdown-typefilter" role="group"
+											aria-label="Filter by configuration type">
+											<input type="radio" class="btn-check" name="newconftype"
+												id="newconftype-all" autocomplete="off" checked>
+											<label class="btn btn-outline-secondary" for="newconftype-all"
+												title="All">All</label>
+
+											<input type="radio" class="btn-check" name="newconftype"
+												id="newconftype-stream" autocomplete="off" data-conftype="stream">
+											<label class="btn btn-outline-secondary" for="newconftype-stream"
+												title="Stream"><img src="./resources/rm_stream_icon.png" alt="Stream"
+													height="14"></label>
+
+											<input type="radio" class="btn-check" name="newconftype"
+												id="newconftype-baseline" autocomplete="off" data-conftype="baseline">
+											<label class="btn btn-outline-secondary" for="newconftype-baseline"
+												title="Baseline"><img src="./resources/rm_baseline_icon.png"
+													alt="Baseline" height="14"></label>
+
+											<input type="radio" class="btn-check" name="newconftype"
+												id="newconftype-changeset" autocomplete="off"
+												data-conftype="changeset">
+											<label class="btn btn-outline-secondary" for="newconftype-changeset"
+												title="Changeset"><img src="./resources/rm_changeset_icon.png"
+													alt="Changeset" height="14"></label>
+										</div>
 									</div>
 									<div class="dropdown-divider m-0"></div>
 									<ul id="gui_newconfigBtnContent"

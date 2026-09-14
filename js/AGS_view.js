@@ -347,9 +347,10 @@ function gui_BuildConfBtn() {
       }
 
       const myLabel = '<img src="' + myIcon.src + '" alt="' + myIcon.alt + '"> ' + myConf.getName();
+      const myTypeAttr = ' data-conftype="' + myConf.getType() + '"';
 
-      gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, '<li id="_old' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myLabel + '</a></li>');
-      gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, '<li id="_new' + myConf.getIdentifier() + '" onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myLabel + '</a></li>');
+      gui_mgtButtonDrop(GUI_ITEM_OLDCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, '<li id="_old' + myConf.getIdentifier() + '"' + myTypeAttr + ' onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myLabel + '</a></li>');
+      gui_mgtButtonDrop(GUI_ITEM_NEWCONFIG_BTN_ROOT, ACTION_APPENDCONTENT, '<li id="_new' + myConf.getIdentifier() + '"' + myTypeAttr + ' onclick="gui_SelectConf (this)"><a class="dropdown-item">' + myLabel + '</a></li>');
    }
 
    // ---- Activer le bouton 
@@ -365,6 +366,11 @@ function gui_BuildConfBtn() {
 
 function gui_SelectConf(object) {
    const myConfId = object.id.match(/^_(old|new)(.+)/); // ---- Groupe 1 = prefix | Groupe 2 = identifiant de la configuration
+
+   // ---- Le dropdown est ouvert avec autoClose="outside" (pour ne pas se refermer sur un clic
+   // ---- dans le filtre de type de configuration) : il faut donc le refermer explicitement ici
+
+   bootstrap.Dropdown.getOrCreateInstance(object.closest('.dropdown-menu').previousElementSibling).hide();
 
    let mySelectedConf;
    let myConfigurationList = [];
@@ -1156,20 +1162,42 @@ function view_init() {
       new bootstrap.Popover(el);
    });
 
-   // ---- Filtrage des dropdowns avec champ de recherche
+   // ---- Filtrage des dropdowns avec champ de recherche texte, combine avec le filtre par type
+   // ---- de configuration (stream/baseline/changeset) quand ce dernier est present sur le dropdown
+
+   function gui_ApplyDropdownFilter(menu) {
+      let textFilter = menu.find('.dropdown-search').val();
+      textFilter = (textFilter || '').toLowerCase();
+
+      let typeFilter = menu.find('.dropdown-typefilter input:checked').data('conftype'); // ---- undefined = pas de filtre (option "All")
+
+      menu.find('ul > li').each(function () {
+         let matchText = $(this).text().toLowerCase().includes(textFilter);
+         let matchType = (typeFilter === undefined) || ($(this).data('conftype') === typeFilter);
+
+         $(this).toggle(matchText && matchType);
+      });
+   }
 
    $(document).on('input', '.dropdown-search', function () {
-      let filter = $(this).val().toLowerCase();
-      $(this).closest('.dropdown-menu').find('ul > li').each(function () {
-         $(this).toggle($(this).text().toLowerCase().includes(filter));
-      });
+      gui_ApplyDropdownFilter($(this).closest('.dropdown-menu'));
+   });
+
+   $(document).on('change', '.dropdown-typefilter input[type="radio"]', function () {
+      gui_ApplyDropdownFilter($(this).closest('.dropdown-menu'));
    });
 
    $(document).on('shown.bs.dropdown', '[data-bs-toggle="dropdown"]', function () {
-      let search = $(this).next('.dropdown-menu').find('.dropdown-search');
-      if (search.length) {
+      let menu = $(this).next('.dropdown-menu');
+      let search = menu.find('.dropdown-search');
+      let typeFilter = menu.find('.dropdown-typefilter');
+
+      if (search.length || typeFilter.length) {
          search.val('');
-         search.closest('.dropdown-menu').find('ul > li').show();
+         typeFilter.find('input[type="radio"]').first().prop('checked', true); // ---- Reinitialiser sur "All"
+
+         menu.find('ul > li').show();
+
          search.trigger('focus');
       }
    });
