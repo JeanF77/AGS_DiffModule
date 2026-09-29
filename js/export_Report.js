@@ -191,8 +191,10 @@ body{font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10pt;color:#222;
 .rpt-row-changed{background:#FFEB9C}
 .rpt-row-image  {background:#BDD7EE}
 
-/* ---- Cellule "Diff Content" : conteneur du rendu de la diff */
-.rpt-diffcontent{min-width:360px}
+/* ---- Cellules "Old Content" / "New Content" : HTML canonique du "Primary Text" */
+.rpt-content{min-width:280px}
+.rpt-content table{border-collapse:collapse}
+.rpt-content td,.rpt-content td:first-child{border:1px solid #999;padding:2px 4px;text-align:left;font-weight:normal;white-space:normal}
 
 /* ---- Impression (PDF et papier) */
 @media print{
@@ -289,8 +291,8 @@ function export_report(isCompact) {
         console.log("$$$ Compact Export Diff Report to HTML");
 
         // ---- Compacter la table : regrouper les lignes par artefact (même logique que rev. 2)
-        // ---- Structure entrée  : [ID, Type, Diff Label, Attribute, Old, New, Content]
-        // ---- Structure sortie  : {id, type, difflabel, diffcontent, nbdiff, newtype, custattr[]}
+        // ---- Structure entrée  : [ID, Type, Section, Diff Label, Attribute, Old Value, New Value, Old Content, New Content, Bookorder]
+        // ---- Structure sortie  : {id, type, section, difflabel, oldcontent, newcontent, nbdiff, newtype, custattr[]}
 
         for (let i = 0; i < myFilteredTable.length; i++) {
             let myCompactRow = myCompactTable.find(row => row.id === myFilteredTable[i][RPT_COL_ID]);
@@ -301,7 +303,8 @@ function export_report(isCompact) {
                     'type':        myFilteredTable[i][RPT_COL_TYPE],
                     'section':     myFilteredTable[i][RPT_COL_SECTION],
                     'difflabel':   myFilteredTable[i][RPT_COL_DIFFLABEL],
-                    'diffcontent': '',
+                    'oldcontent':  '',
+                    'newcontent':  '',
                     'nbdiff':      1,
                     'newtype':     '',
                     'custattr':    []
@@ -322,8 +325,9 @@ function export_report(isCompact) {
                 case DIFF_LABEL[DIFF_CONTENTCHANGED]:
                 case DIFF_LABEL[DIFF_NEWARTIFACT]:
                 case DIFF_LABEL[DIFF_DELARTIFACT]:
-                    // ---- Conserver le HTML de la diff tel quel (rendu riche dans le rapport HTML)
-                    myCompactRow.diffcontent = myFilteredTable[i][RPT_COL_DIFFCONTENT];
+                    // ---- Conserver le HTML canonique tel quel (rendu riche dans le rapport HTML)
+                    myCompactRow.oldcontent = myFilteredTable[i][RPT_COL_OLDCONTENT];
+                    myCompactRow.newcontent = myFilteredTable[i][RPT_COL_NEWCONTENT];
                     break;
 
                 case DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED]:
@@ -352,13 +356,13 @@ function export_report(isCompact) {
         myCustAttrChangeList.sort();
 
         // ---- Compact report - Structure de sortie
-        // ---- +----+------+---------+------------+--------------+------------------+----...----+
-        // ---- | ID | Type | Section | Diff Label | Diff Content | Old Artifact (*) | Attr  (*) |
-        // ---- |    |      |         |            |              | Type             | Old | New  |
+        // ---- +----+------+---------+------------+-------------+-------------+------------------+----...----+
+        // ---- | ID | Type | Section | Diff Label | Old Content | New Content | Old Artifact (*) | Attr  (*) |
+        // ---- |    |      |         |            |             |             | Type             | Old | New  |
         // ---- (*) : colonnes présentes uniquement si des changements de ce type existent
 
-        const myCols   = ['5%', '10%', '8%', '15%', ''];  // ---- '' : Diff Content prend l'espace restant
-        const myLabels = ['ID', 'Type', 'Section', 'Diff Label', 'Diff Content'];
+        const myCols   = ['5%', '10%', '8%', '15%', '', ''];  // ---- '' : Old Content / New Content se partagent l'espace restant
+        const myLabels = ['ID', 'Type', 'Section', 'Diff Label', 'Old Content', 'New Content'];
 
         if (myTypeChange) {
             myCols.push('12%');
@@ -401,7 +405,8 @@ function export_report(isCompact) {
                 // ---- Le retour a la ligne entre labels cumules doit rester du HTML (<br>), donc echappement
                 // ---- manuel prealable puis insertion "raw" ({{{...}}}) dans le gabarit
                 difflabelHtml: rpt_escHtml(myRow.difflabel).replace(/\n/g, '<br>'),
-                diffcontent:   myRow.diffcontent || '', // ---- HTML de la diff deja construit, rendu tel quel
+                oldcontent:    myRow.oldcontent || '',  // ---- HTML canonique deja construit, rendu tel quel
+                newcontent:    myRow.newcontent || '',
                 typeChange:    myTypeChange,
                 newtype:       myRow.newtype,
                 custattr:      myCustattrCells
@@ -412,14 +417,14 @@ function export_report(isCompact) {
         console.log("$$$ Standard Export Diff Report to HTML");
 
         // ---- Standard report - Structure de sortie
-        // ---- +----+------+---------+------------+-----------+-----------+-----------+----------------+
-        // ---- | ID | Type | Section | Diff Label | Attribute | Old Value | New Value | Diff Content   |
-        // ---- +----+------+---------+------------+-----------+-----------+-----------+----------------+
+        // ---- +----+------+---------+------------+-----------+-----------+-----------+-------------+-------------+
+        // ---- | ID | Type | Section | Diff Label | Attribute | Old Value | New Value | Old Content | New Content |
+        // ---- +----+------+---------+------------+-----------+-----------+-----------+-------------+-------------+
 
-        myHeaderColgroup = '<col style="width:5%"><col style="width:10%"><col style="width:8%"><col style="width:13%">'
-                         + '<col style="width:10%"><col style="width:13%"><col style="width:13%"><col>';
+        myHeaderColgroup = '<col style="width:5%"><col style="width:8%"><col style="width:6%"><col style="width:11%">'
+                         + '<col style="width:8%"><col style="width:10%"><col style="width:10%"><col><col>';
         myHeaderThs = '<th>ID</th><th>Type</th><th>Section</th><th>Diff Label</th>'
-                    + '<th>Attribute</th><th>Old Value</th><th>New Value</th><th>Diff Content</th>';
+                    + '<th>Attribute</th><th>Old Value</th><th>New Value</th><th>Old Content</th><th>New Content</th>';
 
         // ---- Génération des lignes de données (gabarit Handlebars "templ-rpt-row-standard")
 
@@ -439,7 +444,8 @@ function export_report(isCompact) {
                 attr:        rpt_stripHtml(myRow[RPT_COL_ATTR]),
                 oldval:      rpt_stripHtml(myRow[RPT_COL_OLDVAL]),
                 newval:      rpt_stripHtml(myRow[RPT_COL_NEWVAL]),
-                diffcontent: myRow[RPT_COL_DIFFCONTENT] || '' // ---- HTML de la diff deja construit, rendu tel quel
+                oldcontent:  myRow[RPT_COL_OLDCONTENT] || '', // ---- HTML canonique deja construit, rendu tel quel
+                newcontent:  myRow[RPT_COL_NEWCONTENT] || ''
             });
         }
     }

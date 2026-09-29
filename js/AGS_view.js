@@ -79,8 +79,9 @@ const RPT_COL_DIFFLABEL = 3;
 const RPT_COL_ATTR = 4;
 const RPT_COL_OLDVAL = 5;
 const RPT_COL_NEWVAL = 6;
-const RPT_COL_DIFFCONTENT = 7;
-const RPT_COL_BOOKORDER = 8; // ---- Colonne technique (masquee) : position de l'artefact dans le module, utilisee pour le tri par defaut
+const RPT_COL_OLDCONTENT = 7;
+const RPT_COL_NEWCONTENT = 8;
+const RPT_COL_BOOKORDER = 9; // ---- Colonne technique (masquee) : position de l'artefact dans le module, utilisee pour le tri par defaut
 
 /* --------------------------------------------------------------------------- */
 
@@ -976,18 +977,19 @@ function gui_DisplayDiff() {
          order: [[RPT_COL_BOOKORDER, 'asc']], // ---- Tri par defaut = position de l'artefact dans le module (localisation)
          columnDefs: [
             { targets: RPT_COL_ID, type: "num", width: "4%" },
-            { targets: RPT_COL_TYPE, type: "string", width: "9%", searchPanes: { show: true } },
-            { targets: RPT_COL_SECTION, type: "string", width: "6%", searchPanes: { show: false } },
+            { targets: RPT_COL_TYPE, type: "string", width: "8%", searchPanes: { show: true } },
+            { targets: RPT_COL_SECTION, type: "string", width: "5%", searchPanes: { show: false } },
             { targets: RPT_COL_BOOKORDER, type: "num", visible: false, searchable: false },
-            { targets: RPT_COL_ATTR, type: "string", width: "9%", searchPanes: { show: true } },
-            { targets: RPT_COL_OLDVAL, type: "string", width: "14%", orderable: false, searchPanes: { show: false } },
-            { targets: RPT_COL_NEWVAL, type: "string", width: "14%", orderable: false, searchPanes: { show: false } },
-            { targets: RPT_COL_DIFFCONTENT, width: "35%", orderable: false, searchable: false, searchPanes: { show: false } },
+            { targets: RPT_COL_ATTR, type: "string", width: "8%", searchPanes: { show: true } },
+            { targets: RPT_COL_OLDVAL, type: "string", width: "10%", orderable: false, searchPanes: { show: false } },
+            { targets: RPT_COL_NEWVAL, type: "string", width: "10%", orderable: false, searchPanes: { show: false } },
+            { targets: RPT_COL_OLDCONTENT, width: "22%", orderable: false, searchable: false, searchPanes: { show: false } },
+            { targets: RPT_COL_NEWCONTENT, width: "22%", orderable: false, searchable: false, searchPanes: { show: false } },
             { targets: RPT_COL_ID, searchPanes: { show: false } },
             {
                targets: RPT_COL_DIFFLABEL,
                type: "string",
-               width: "15%",
+               width: "11%",
                searchPanes: { show: true },
                render: function (data, type) {             // ---- Badge coloré selon le type de différence
                   if (type !== 'display') return data;
@@ -1028,10 +1030,10 @@ function gui_DisplayDiff() {
 function fmt_diffreport(diffObjList) {
    let myHtmlCode = "";
 
-   // ---- +----+------+---------+------------+-----------+-----------+-----------+---------+-----------+
-   // ---- | ID | Type | Section | Diff Label | Attribute | Old Value | New Value | Content | Bookorder |
-   // ---- | 0  | 1    | 2       | 3          | 4         | 5         | 6         | 7       | 8 (cachee)|
-   // ---- +----+------+---------+------------+-----------+-----------+-----------+---------+-----------+
+   // ---- +----+------+---------+------------+-----------+-----------+-----------+-------------+-------------+-----------+
+   // ---- | ID | Type | Section | Diff Label | Attribute | Old Value | New Value | Old Content | New Content | Bookorder |
+   // ---- | 0  | 1    | 2       | 3          | 4         | 5         | 6         | 7           | 8           | 9 (cachee)|
+   // ---- +----+------+---------+------------+-----------+-----------+-----------+-------------+-------------+-----------+
 
    myHtmlCode = '<thead><tr>';
    myHtmlCode += '<th>ID</th>';
@@ -1041,7 +1043,8 @@ function fmt_diffreport(diffObjList) {
    myHtmlCode += '<th>Attribute</th>';
    myHtmlCode += '<th>Old Value</th>';
    myHtmlCode += '<th>New Value</th>';
-   myHtmlCode += '<th>Diff Content</th>';
+   myHtmlCode += '<th>Old Content</th>';
+   myHtmlCode += '<th>New Content</th>';
    myHtmlCode += '<th>Bookorder</th>'; // ---- Colonne masquee (voir RPT_COL_BOOKORDER) : sert uniquement de cle de tri
    myHtmlCode += '</tr></thead><tbody style="font-size: 12px;">';
 
@@ -1053,7 +1056,7 @@ function fmt_diffreport(diffObjList) {
       }
 
       myHtmlCode += '<tr>' + gui_genCell([myDiffObj.id, myDiffObj.arttype, myDiffObj.section, myDiffObj.difflabel]);
-      myHtmlCode += gui_genCell(myMeta !== undefined ? myMeta.cells(myDiffObj) : ["", "", "", ""]);
+      myHtmlCode += gui_genCell(myMeta !== undefined ? myMeta.cells(myDiffObj) : ["", "", "", "", ""]);
       myHtmlCode += gui_genCell([myDiffObj.bookorder]);
       myHtmlCode += '</tr>';
    }

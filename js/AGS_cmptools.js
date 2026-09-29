@@ -62,55 +62,55 @@ class ClassDiffResult {       // ---- Resultat de comparaison
    static META = {
       [DIFF_NEWARTIFACT]: {
          label: DIFF_LABEL[DIFF_NEWARTIFACT], badgeClass: 'bg-success', dtRowClass: 'table-success', rptRowClass: 'rpt-row-newart',
-         cells: (d) => [d.attrname, "", "", d.content]
+         cells: (d) => [d.attrname, "", "", "", d.newcontent]
       },
       [DIFF_DELARTIFACT]: {
          label: DIFF_LABEL[DIFF_DELARTIFACT], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
-         cells: (d) => [d.attrname, "", "", d.content]
+         cells: (d) => [d.attrname, "", "", d.oldcontent, ""]
       },
       [DIFF_ARTIFACTTYPECHANGED]: {
          label: DIFF_LABEL[DIFF_ARTIFACTTYPECHANGED], badgeClass: 'bg-warning text-dark', dtRowClass: 'table-warning', rptRowClass: 'rpt-row-changed',
-         cells: (d) => ["", d.oldvalue, "", ""]
+         cells: (d) => ["", d.oldvalue, "", "", ""]
       },
       [DIFF_CUSTATTRCHANGED]: {
          label: DIFF_LABEL[DIFF_CUSTATTRCHANGED], badgeClass: 'bg-warning text-dark', dtRowClass: 'table-warning', rptRowClass: 'rpt-row-changed',
-         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, "", ""]
       },
       [DIFF_CONTENTCHANGED]: {
          label: DIFF_LABEL[DIFF_CONTENTCHANGED], badgeClass: 'bg-primary', dtRowClass: 'table-primary', rptRowClass: 'rpt-row-content',
-         cells: (d) => [d.attrname, "", "", d.content]
+         cells: (d) => [d.attrname, "", "", d.oldcontent, d.newcontent]
       },
       [DIFF_IMAGECHANGED]: {
          label: DIFF_LABEL[DIFF_IMAGECHANGED], badgeClass: 'bg-info text-dark', dtRowClass: 'table-info', rptRowClass: 'rpt-row-image',
-         cells: () => ["", "", "", ""]
+         cells: () => ["", "", "", "", ""]
       },
       [DIFF_IMAGENEW]: {
          label: DIFF_LABEL[DIFF_IMAGENEW], badgeClass: 'bg-info text-dark', dtRowClass: 'table-info', rptRowClass: 'rpt-row-image',
-         cells: () => ["", "", "", ""]
+         cells: () => ["", "", "", "", ""]
       },
       [DIFF_IMAGEDEL]: {
          label: DIFF_LABEL[DIFF_IMAGEDEL], badgeClass: 'bg-secondary', dtRowClass: 'table-secondary', rptRowClass: 'rpt-row-image',
-         cells: () => ["", "", "", ""]
+         cells: () => ["", "", "", "", ""]
       },
       [DIFF_IMAGENOTFOUND_NEW]: {
          label: DIFF_LABEL[DIFF_IMAGENOTFOUND_NEW], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
-         cells: () => ["", "", "", ""]
+         cells: () => ["", "", "", "", ""]
       },
       [DIFF_IMAGENOTFOUND_OLD]: {
          label: DIFF_LABEL[DIFF_IMAGENOTFOUND_OLD], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
-         cells: () => ["", "", "", ""]
+         cells: () => ["", "", "", "", ""]
       },
       [DIFF_TAGCHANGED]: {
          label: DIFF_LABEL[DIFF_TAGCHANGED], badgeClass: 'bg-warning text-dark', dtRowClass: 'table-warning', rptRowClass: 'rpt-row-changed',
-         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, "", ""]
       },
       [DIFF_CUSTATTRCLEARED]: {
          label: DIFF_LABEL[DIFF_CUSTATTRCLEARED], badgeClass: 'bg-danger', dtRowClass: 'table-danger', rptRowClass: 'rpt-row-delart',
-         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, "", ""]
       },
       [DIFF_CUSTATTRFILLED]: {
          label: DIFF_LABEL[DIFF_CUSTATTRFILLED], badgeClass: 'bg-primary', dtRowClass: 'table-primary', rptRowClass: 'rpt-row-content',
-         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, ""]
+         cells: (d) => [d.attrname, d.oldvalue, d.newvalue, "", ""]
       }
    };
 
@@ -118,7 +118,8 @@ class ClassDiffResult {       // ---- Resultat de comparaison
     * @param {Object} context - Identification/localisation de l'artefact en ecart : {id, type, section, bookorder}
     *                            (cf ERM_Artefact.getDiffContext())
     * @param {Number} diffcode - Code du type d'ecart (DIFF_NEWARTIFACT, DIFF_CUSTATTRCHANGED, ...)
-    * @param {Object} payload - Champs specifiques au type d'ecart (optionnel) : {attrname, oldvalue, newvalue, content}
+    * @param {Object} payload - Champs specifiques au type d'ecart (optionnel) : {attrname, oldvalue, newvalue, oldcontent, newcontent}
+    *                            (oldcontent / newcontent : HTML canonique du "Primary Text", cf richTextCompare())
     */
 
    constructor(context, diffcode, payload = {}) {
@@ -133,8 +134,9 @@ class ClassDiffResult {       // ---- Resultat de comparaison
       this.attrname = payload.attrname;
       this.oldvalue = payload.oldvalue;
       this.newvalue = payload.newvalue;
-      this.content = payload.content;
-      this.canvas = undefined;        // ---- Representation graphique de "content"
+      this.oldcontent = payload.oldcontent || "";   // ---- Contenu de l'ancienne version (colonne "Old Content")
+      this.newcontent = payload.newcontent || "";   // ---- Contenu de la nouvelle version (colonne "New Content")
+      this.canvas = undefined;        // ---- Representation graphique du contenu
    }
 }
 
@@ -156,14 +158,32 @@ function cmp_DiffModArtefact(modTest, modRef) {
       if (modTest.get_artefactById(myRefArtefact.getId()) === undefined) {
          // ---- On detecte l'artefact en ecart (existe dans le module de reference, mais pas dans le module a tester)
 
+         // ---- Nouvel artefact : contenu en colonne "New Content" | Artefact supprime : contenu en colonne "Old Content"
+
          const myDiffcode = (modRef.getStatus() === IS_NEW) ? DIFF_NEWARTIFACT : DIFF_DELARTIFACT;
+         const myContent = cmp_canonicalContent(myRefArtefact.getContent());
 
          myDiffList.push(new ClassDiffResult(myRefArtefact.getDiffContext(), myDiffcode,
-            { attrname: ClassDiffResult.SYS_ATTR_CONTENT, content: myRefArtefact.getContent() }));
+            (myDiffcode === DIFF_NEWARTIFACT)
+               ? { attrname: ClassDiffResult.SYS_ATTR_CONTENT, newcontent: myContent }
+               : { attrname: ClassDiffResult.SYS_ATTR_CONTENT, oldcontent: myContent }));
       }
    }
 
    return myDiffList;
+}
+
+/**
+ * Obtenir le HTML canonique d'un "Primary Text" (meme mise en forme que les colonnes "Old Content" / "New Content"
+ * des artefacts dont le contenu a change, cf richTextCompare())
+ * @param {String} richText - Contenu riche de l'artefact
+ * @returns {String} - HTML canonique ("" si le contenu est vide)
+ */
+
+function cmp_canonicalContent(richText) {
+   const myResult = richTextCompare(null, richText);
+
+   return (myResult !== null) ? myResult.canonicalNew : "";
 }
 
 /**
@@ -540,8 +560,8 @@ function cmpImgEmbedded(imgInfo, imgDate) {
 
 /**
   * Detecter les ecarts de contenu entre 2 modules
-  * @param {Object} modTest - Module dont on veut detecter les ecarts
-  * @param {Object} modRef - Module de reference sur lequel on va boucler
+  * @param {Object} modTest - Module dont on veut detecter les ecarts (ancienne version : g_ModuleOld)
+  * @param {Object} modRef - Module de reference sur lequel on va boucler (nouvelle version : g_ModuleNew)
   * @returns - Tableau des artefacts en ecart (Taille tableau = 0, si pas d'ecart) - Index = Identifiant artefact en ecart | Contenu = Tableau des attributs en ecart
   */
 
@@ -558,11 +578,19 @@ function cmp_DiffContentArtefact(modTest, modRef) {
 
                mgt_Console(cmp_DiffContentArtefact.name + " : Artifact '" + myRefArtefact.getId() + "' has different content", CONSOLE_INFO);
 
-               myDiffContent = compare_RichTextContent(myRefArtefact.getContent(true), myTestArtefact.getContent(true));
+               // ---- richTextCompare(ancien, nouveau) : l'artefact "test" est l'ancienne version, l'artefact "ref" la nouvelle
+               // ---- Retourne null si les 2 contenus sont equivalents (differences non significatives uniquement)
 
-               if (myDiffContent.isEqual === false && myDiffContent.diffHtml !== null) {
+               myDiffContent = richTextCompare(myTestArtefact.getContent(), myRefArtefact.getContent());
+
+               if (myDiffContent !== null) {
+                  for (let myWarning of myDiffContent.warnings) {
+                     mgt_Console(cmp_DiffContentArtefact.name + " : Artifact '" + myRefArtefact.getId() + "' (" + myWarning.detail.origin + ") - "
+                        + myWarning.code + " : " + myWarning.message, CONSOLE_WARNING);
+                  }
+
                   myDiffList.push(new ClassDiffResult(myRefArtefact.getDiffContext(), DIFF_CONTENTCHANGED,
-                     { attrname: ClassDiffResult.SYS_ATTR_CONTENT, content: myDiffContent.diffHtml }));
+                     { attrname: ClassDiffResult.SYS_ATTR_CONTENT, oldcontent: myDiffContent.canonicalOld, newcontent: myDiffContent.canonicalNew }));
                }
             }
          }
