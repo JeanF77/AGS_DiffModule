@@ -18,19 +18,6 @@
     ---- Constantes
    --------------------------------------------------------------------------- */
 
-// ---- CSS diff2html minimal embarqué en fallback si le fetch du fichier échoue
-const RPT_DIFF2HTML_CSS_FALLBACK = [
-    '.d2h-diff-table{border-collapse:collapse;width:100%;font-family:monospace;font-size:11px}',
-    '.d2h-diff-table td{padding:1px 6px;white-space:pre-wrap;word-break:break-all}',
-    '.d2h-del{background:#ffe8e8}.d2h-ins{background:#e8ffe8}.d2h-info{background:#f0f7ff;color:#888}',
-    '.d2h-del .d2h-code-line-ctn{background:#ffc0c0}.d2h-ins .d2h-code-line-ctn{background:#9cf09c}',
-    '.d2h-code-linenumber{width:30px;min-width:30px;max-width:30px;color:rgba(0,0,0,.3);',
-    'padding:0 4px;border-right:1px solid #eee;text-align:right}',
-    '.d2h-file-wrapper{border:1px solid #e0e0e0;border-radius:3px;margin:3px 0;overflow:hidden}',
-    '.d2h-file-header{padding:4px 8px;background:#f6f8fa;font-size:11px;',
-    'color:#586069;border-bottom:1px solid #e0e0e0}'
-].join('');
-
 // ---- Gabarits Handlebars (voir main.html, section "Export report templates")
 const TEMPL_RPT_SHELL        = "templ-rpt-shell";
 const TEMPL_RPT_ROW_STANDARD = "templ-rpt-row-standard";
@@ -147,11 +134,10 @@ function rpt_downloadHtml(htmlContent, filename) {
 
 /**
  * Construire la feuille de style CSS complète du rapport
- * Inclut le CSS du rapport + le CSS diff2html embarqué pour un fichier autonome
- * @param {String} diff2htmlCss - CSS diff2html (complet ou fallback minimal)
+ * CSS embarqué dans le fichier pour un rapport autonome
  * @returns {String}            - Bloc CSS complet
  */
-function rpt_buildCss(diff2htmlCss) {
+function rpt_buildCss() {
     return `
 /* ---- Reset et base */
 *,*::before,*::after{box-sizing:border-box}
@@ -205,10 +191,8 @@ body{font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10pt;color:#222;
 .rpt-row-changed{background:#FFEB9C}
 .rpt-row-image  {background:#BDD7EE}
 
-/* ---- Cellule "Diff Content" : conteneur du rendu diff2html */
+/* ---- Cellule "Diff Content" : conteneur du rendu de la diff */
 .rpt-diffcontent{min-width:360px}
-.rpt-diffcontent .d2h-wrapper{font-size:.85em}
-.rpt-diffcontent .d2h-file-wrapper{margin:0}
 
 /* ---- Impression (PDF et papier) */
 @media print{
@@ -220,9 +204,6 @@ body{font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:10pt;color:#222;
     .rpt-table tr{page-break-inside:avoid;page-break-after:auto}
     *{print-color-adjust:exact;-webkit-print-color-adjust:exact}
 }
-
-/* ---- CSS diff2html intégré (rendu coloré des diffs de contenu) */
-${diff2htmlCss}
 `;
 }
 
@@ -287,10 +268,9 @@ function rpt_buildHtml(info, headers, rows, labels, css, isCompact) {
 
 /**
  * Exporter le rapport de comparaison au format HTML autonome
- * Le CSS diff2html est récupéré en fetch pour garantir un rendu fidèle de la diff
  * @param {Boolean} isCompact - true = format compact, false = format standard
  */
-async function export_report(isCompact) {
+function export_report(isCompact) {
     let myFilteredTable;
     let myCompactTable       = [];
     let myDate               = new Date();
@@ -299,16 +279,6 @@ async function export_report(isCompact) {
 
     // ---- Récupérer uniquement les lignes visibles (filtre DataTables appliqué)
     myFilteredTable = g_DiffTable.DataTable().rows({ filter: 'applied' }).data().toArray();
-
-    // ---- Récupérer le CSS diff2html depuis le serveur pour l'embarquer dans le rapport
-    // ---- (fallback minimal si le fetch échoue, ex : hors réseau)
-    let myDiff2htmlCss = RPT_DIFF2HTML_CSS_FALLBACK;
-    try {
-        const myResp = await fetch('lib/diff2html/diff2html.min.css');
-        if (myResp.ok) myDiff2htmlCss = await myResp.text();
-    } catch(e) {
-        console.warn("$$$ CSS diff2html non récupéré, utilisation du fallback :", e.message);
-    }
 
     let myHeaderColgroup;  // ---- Balises <col> pour les largeurs de colonnes
     let myHeaderThs;       // ---- Balises <th> de l'entête
@@ -352,7 +322,7 @@ async function export_report(isCompact) {
                 case DIFF_LABEL[DIFF_CONTENTCHANGED]:
                 case DIFF_LABEL[DIFF_NEWARTIFACT]:
                 case DIFF_LABEL[DIFF_DELARTIFACT]:
-                    // ---- Conserver le HTML diff2html tel quel (rendu riche dans le rapport HTML)
+                    // ---- Conserver le HTML de la diff tel quel (rendu riche dans le rapport HTML)
                     myCompactRow.diffcontent = myFilteredTable[i][RPT_COL_DIFFCONTENT];
                     break;
 
@@ -431,7 +401,7 @@ async function export_report(isCompact) {
                 // ---- Le retour a la ligne entre labels cumules doit rester du HTML (<br>), donc echappement
                 // ---- manuel prealable puis insertion "raw" ({{{...}}}) dans le gabarit
                 difflabelHtml: rpt_escHtml(myRow.difflabel).replace(/\n/g, '<br>'),
-                diffcontent:   myRow.diffcontent || '', // ---- HTML diff2html deja construit, rendu tel quel
+                diffcontent:   myRow.diffcontent || '', // ---- HTML de la diff deja construit, rendu tel quel
                 typeChange:    myTypeChange,
                 newtype:       myRow.newtype,
                 custattr:      myCustattrCells
@@ -469,7 +439,7 @@ async function export_report(isCompact) {
                 attr:        rpt_stripHtml(myRow[RPT_COL_ATTR]),
                 oldval:      rpt_stripHtml(myRow[RPT_COL_OLDVAL]),
                 newval:      rpt_stripHtml(myRow[RPT_COL_NEWVAL]),
-                diffcontent: myRow[RPT_COL_DIFFCONTENT] || '' // ---- HTML diff2html deja construit, rendu tel quel
+                diffcontent: myRow[RPT_COL_DIFFCONTENT] || '' // ---- HTML de la diff deja construit, rendu tel quel
             });
         }
     }
@@ -490,7 +460,7 @@ async function export_report(isCompact) {
         { colgroup: myHeaderColgroup, ths: myHeaderThs },
         myRowsHtml,
         [...myLabelSet],
-        rpt_buildCss(myDiff2htmlCss),
+        rpt_buildCss(),
         isCompact === true
     );
 
