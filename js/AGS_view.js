@@ -859,7 +859,7 @@ function gui_DisplayStat() {
       "nb_newart": g_DiffList.filter((obj) => obj.diffcode === DIFF_NEWARTIFACT).length,
       "nb_delart": g_DiffList.filter((obj) => obj.diffcode === DIFF_DELARTIFACT).length,
       "nb_updtype": g_DiffList.filter((obj) => obj.diffcode === DIFF_ARTIFACTTYPECHANGED).length,
-      "nb_updattr": g_DiffList.filter((obj) => obj.diffcode === DIFF_CUSTATTRCHANGED).length,
+      "nb_updattr": g_DiffList.filter((obj) => [DIFF_CUSTATTRCHANGED, DIFF_CUSTATTRCLEARED, DIFF_CUSTATTRFILLED].includes(obj.diffcode)).length,
       "nb_updtag": g_DiffList.filter((obj) => obj.diffcode === DIFF_TAGCHANGED).length,
       "nb_updcontent": g_DiffList.filter((obj) => obj.diffcode === DIFF_CONTENTCHANGED).length,
       "nb_newimg": g_DiffList.filter((obj) => obj.diffcode === DIFF_IMAGENEW).length,
