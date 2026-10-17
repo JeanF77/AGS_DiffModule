@@ -633,6 +633,9 @@ class ClassModule extends ClassJazzItem { // ---- Caracteristiques d'un module J
 }
 
 class ERM_Artefact { // ---- Caracteristiques d'un artefact
+   static FORMAT_TEXT = "Text";                       // ---- Seul format pris en charge par la "DNG Reportable REST API" (publish/text)
+   static TYPE_NOTSUPPORTED = "Format Not Supported"; // ---- Type affiche pour les artefacts dont le format n'est pas pris en charge
+
    #id = null;             // ---- Identifiant artefact
    #uri = null;            // ---- URI artefact
    #description = null;    // ---- Artifact Description
@@ -728,13 +731,15 @@ class ERM_Artefact { // ---- Caracteristiques d'un artefact
 
    /**
     * Obtenir le contexte d'identification/localisation de l'artefact (utilise pour construire un "ClassDiffResult")
+    * Les artefacts dont le format n'est pas "Text" ne sont pas renvoyes par la "DNG Reportable REST API" : leur
+    * type n'est jamais valorise, on affiche alors "Format Not Supported" a la place
     * @returns {Object} - {id, type, section, bookorder}
     */
 
    getDiffContext() {
       return {
          id: this.#id,
-         type: this.#type,
+         type: (this.#type === null && this.#format !== ERM_Artefact.FORMAT_TEXT) ? ERM_Artefact.TYPE_NOTSUPPORTED : this.#type,
          section: this.#section,
          bookorder: this.#bookorder
       };
