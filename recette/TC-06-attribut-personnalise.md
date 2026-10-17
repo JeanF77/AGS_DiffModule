@@ -29,3 +29,12 @@
 | # | Action | Résultat attendu |
 |---|--------|-------------------|
 | 1 | Rechercher l'artefact du cas « rempli ». | Ligne avec badge `Custom Attribut Filled` ; « Old Value » vide, « New Value » renseignée. |
+
+## TS-06-04 — Indicateur « Updated custom attributes »
+
+**Prérequis :** comparaison exécutée (TC-04, étape 1).
+
+| # | Action | Résultat attendu |
+|---|--------|-------------------|
+| 1 | Relever la valeur « Updated custom attributes » dans les statistiques affichées sous le panneau « New Module Info ». | — |
+| 2 | Ouvrir la fenêtre de résultats et compter les lignes portant les badges `Custom Attribut Has Changed`, `Custom Attribut Cleared` et `Custom Attribut Filled`. | Le total des trois badges est égal à la valeur relevée à l'étape 1 : les cas « vidé » et « rempli » sont comptabilisés au même titre que le cas « modifié ». |

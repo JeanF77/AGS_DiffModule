@@ -6,13 +6,14 @@ Plan de test au niveau acceptation (pas de tests unitaires ni d'intégration) po
 
 - Le widget est utilisé tel qu'exposé dans la page Jazz : sélection Projet → Composant → Configuration (Old/New) → Module (Old/New), comparaison, consultation et export des résultats.
 - **Mode de comparaison :** à ce jour, le sélecteur "Mode" de l'interface n'expose que le mode *Local Conf vs Local Conf* (comparaison de deux configurations d'un même environnement RM). Le mode "vs ReqIF" existe dans le code mais n'est pas sélectionnable depuis l'interface actuelle (`COMPARE_MODE_LABEL` ne contient qu'une seule entrée) — il est donc **hors périmètre** de cette recette.
-- Seuls les artefacts de format **Text** sont analysés par le widget (message affiché au survol du bouton `Load Modules`) : le module de test doit être construit en conséquence.
+- Seuls les artefacts de format **Text** sont analysés par le widget (message affiché au survol du bouton `Load Modules`). Les artefacts d'un autre format (diagramme, fichier joint, ...) restent dans la structure du module : ils ne sont signalés que lorsqu'ils sont créés ou supprimés, avec la mention `Format Not Supported` dans la colonne « Type » (cf. TC-04).
 
 ## Matériel de test requis
 
 Un **projet** et un **composant** RM contenant au moins deux configurations (streams/baselines/changesets) exploitables comme configurations "Old" et "New", et un **module** présent dans les deux configurations, dont les artefacts couvrent, à minima :
 
 - un artefact présent uniquement côté New (créé) et un artefact présent uniquement côté Old (supprimé) ;
+- un artefact d'un format autre que Text (ex. diagramme ou fichier joint) présent uniquement côté New, un autre présent uniquement côté Old, et un troisième présent des deux côtés ;
 - un artefact dont le **type** diffère entre Old et New ;
 - un artefact avec un attribut personnalisé renseigné différemment des deux côtés (cas « modifié »), un avec un attribut renseigné côté Old et vidé côté New (cas « vidé »), un avec un attribut vide côté Old et renseigné côté New (cas « rempli ») ;
 - un artefact dont la liste de **tags** diffère entre les deux versions ;
